@@ -28,7 +28,10 @@ export function VolumeTree() {
       const items = reordered.map((c, i) => ({ id: c.id, sortOrder: i }));
       useProjectStore.setState({ chapters: reordered });
 
-      await chapterService.reorder(items);
+      await chapterService.reorder(
+        useProjectStore.getState().currentProject?.id ?? "",
+        items
+      );
     },
     []
   );
@@ -71,7 +74,7 @@ export function VolumeTree() {
 
       {chapters.length === 0 && (
         <div className="py-8 text-center text-[var(--text-sm)] text-[var(--color-text-muted)]">
-          No chapters yet
+          暂无章节
         </div>
       )}
 
@@ -85,7 +88,7 @@ export function VolumeTree() {
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M8 3v10M3 8h10" />
           </svg>
-          New Chapter
+          新建章节
         </Button>
       </div>
     </div>
@@ -112,12 +115,12 @@ function groupByVolume(chapters: Chapter[]): VolumeGroup[] {
   }
 
   if (map.size === 0) {
-    return [{ volumeId: "default", volumeTitle: "Volume 1", chapters: [] }];
+    return [{ volumeId: "default", volumeTitle: "第一卷", chapters: [] }];
   }
 
   return Array.from(map.entries()).map(([volumeId, chaps], index) => ({
     volumeId,
-    volumeTitle: `Volume ${index + 1}`,
+    volumeTitle: `第${index + 1}卷`,
     chapters: chaps.sort((a, b) => a.sortOrder - b.sortOrder),
   }));
 }

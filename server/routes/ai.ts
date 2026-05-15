@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { processAiRequest, listSkills, getSkill, isConfigured } from '../services/aiService.js';
 import { setupSSE, sendSSE, sendSSEError, sendSSEDone } from '../middleware/sse.js';
-import { getConfig, updateConfig, type AiConfig } from '../ai/agentFactory.js';
+import { getConfig, updateConfig } from '../ai/agentFactory.js';
 
 const router = Router();
 
@@ -26,7 +26,19 @@ router.get('/status', (_req, res) => {
 // Update AI configuration
 router.patch('/config', (req, res) => {
   const { model, temperature, maxTokens } = req.body;
-  const updated = updateConfig({ model, temperature, maxTokens } as Partial<AiConfig>);
+  if (temperature !== undefined && (typeof temperature !== 'number' || temperature < 0 || temperature > 2)) {
+    res.status(400).json({ success: false, error: 'temperature must be between 0 and 2' });
+    return;
+  }
+  if (maxTokens !== undefined && (typeof maxTokens !== 'number' || maxTokens < 1 || maxTokens > 128000)) {
+    res.status(400).json({ success: false, error: 'maxTokens must be between 1 and 128000' });
+    return;
+  }
+  if (model !== undefined && typeof model !== 'string') {
+    res.status(400).json({ success: false, error: 'model must be a string' });
+    return;
+  }
+  const updated = updateConfig({ model, temperature, maxTokens });
   res.json({
     success: true,
     data: {

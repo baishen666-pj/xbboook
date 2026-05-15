@@ -73,7 +73,7 @@ export const GhostMark = Mark.create<GhostTextOptions>({
         () =>
         ({ tr, state }) => {
           const { doc } = state;
-          let modified = false;
+          const ranges: [number, number][] = [];
 
           doc.descendants((node, pos) => {
             if (!node.isLeaf) return;
@@ -81,12 +81,16 @@ export const GhostMark = Mark.create<GhostTextOptions>({
               (m) => m.type.name === this.name
             );
             if (ghostMark) {
-              tr.delete(pos, pos + node.nodeSize);
-              modified = true;
+              ranges.push([pos, pos + node.nodeSize]);
             }
           });
 
-          return modified;
+          for (let i = ranges.length - 1; i >= 0; i--) {
+            const range = ranges[i]!;
+            tr.delete(range[0], range[1]);
+          }
+
+          return ranges.length > 0;
         },
     };
   },

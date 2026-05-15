@@ -1,9 +1,12 @@
 import { useEffect, useRef } from "react";
 import { useEditorStore } from "@/stores/editorStore";
+import { useProjectStore } from "@/stores/projectStore";
 import { chapterService } from "@/services/chapterService";
+import { versionService } from "@/services/versionService";
 
 const DEBOUNCE_MS = 1000;
 const PERIODIC_MS = 30_000;
+const MIN_VERSION_INTERVAL_MS = 5 * 60 * 1000;
 
 export function useAutoSave(): void {
   const activeChapterId = useEditorStore((s) => s.activeChapterId);
@@ -14,6 +17,7 @@ export function useAutoSave(): void {
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const periodicRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastVersionTimeRef = useRef<number>(0);
 
   useEffect(() => {
     if (!activeChapterId) return;
@@ -49,9 +53,17 @@ export function useAutoSave(): void {
 
   async function saveContent(chapterId: string, text: string): Promise<void> {
     useEditorStore.getState().saveContent();
-    const res = await chapterService.saveContent(chapterId, text);
+    const projectId = useProjectStore.getState().currentProject?.id;
+    if (!projectId) return;
+    const res = await chapterService.saveContent(projectId, chapterId, text);
     if (res.success) {
       markSaved();
+
+      const now = Date.now();
+      if (now - lastVersionTimeRef.current >= MIN_VERSION_INTERVAL_MS) {
+        lastVersionTimeRef.current = now;
+        void versionService.create(projectId, chapterId).catch(() => {});
+      }
     } else {
       useEditorStore.setState({ isSaving: false, isDirty: true });
     }

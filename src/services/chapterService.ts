@@ -2,43 +2,44 @@ import { apiClient } from "./apiClient";
 import type { Chapter } from "@/types/project";
 import type { ApiResponse } from "@/types/api";
 
-const PATH = "/chapters";
-
 export const chapterService = {
   async list(projectId: string): Promise<ApiResponse<Chapter[]>> {
-    return apiClient.get<Chapter[]>(`${PATH}?projectId=${projectId}`);
+    return apiClient.get<Chapter[]>(`/projects/${projectId}/chapters`);
   },
 
-  async getById(id: string): Promise<ApiResponse<Chapter>> {
-    return apiClient.get<Chapter>(`${PATH}/${id}`);
+  async getById(projectId: string, id: string): Promise<ApiResponse<Chapter>> {
+    return apiClient.get<Chapter>(`/projects/${projectId}/chapters/${id}`);
   },
 
   async create(
-    data: Pick<Chapter, "projectId" | "volumeId" | "title"> & {
+    projectId: string,
+    data: Pick<Chapter, "volumeId" | "title"> & {
       sortOrder?: number;
     }
   ): Promise<ApiResponse<Chapter>> {
-    return apiClient.post<Chapter>(PATH, data);
+    return apiClient.post<Chapter>(`/projects/${projectId}/chapters`, data);
   },
 
   async update(
+    projectId: string,
     id: string,
     data: Partial<Pick<Chapter, "title" | "status" | "sortOrder" | "volumeId">>
   ): Promise<ApiResponse<Chapter>> {
-    return apiClient.put<Chapter>(`${PATH}/${id}`, data);
+    return apiClient.put<Chapter>(`/projects/${projectId}/chapters/${id}`, data);
   },
 
-  async saveContent(id: string, content: string): Promise<ApiResponse<Chapter>> {
-    return apiClient.put<Chapter>(`${PATH}/${id}/content`, { content });
+  async saveContent(projectId: string, id: string, content: string): Promise<ApiResponse<Chapter>> {
+    return apiClient.put<Chapter>(`/projects/${projectId}/chapters/${id}/content`, { content });
   },
 
-  async remove(id: string): Promise<ApiResponse<void>> {
-    return apiClient.delete<void>(`${PATH}/${id}`);
+  async remove(projectId: string, id: string): Promise<ApiResponse<void>> {
+    return apiClient.delete<void>(`/projects/${projectId}/chapters/${id}`);
   },
 
   async reorder(
+    projectId: string,
     items: Array<{ id: string; sortOrder: number }>
   ): Promise<ApiResponse<void>> {
-    return apiClient.put<void>(`${PATH}/reorder`, { items });
+    return apiClient.put<void>(`/projects/${projectId}/chapters/reorder`, { items });
   },
 };

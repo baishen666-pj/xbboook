@@ -34,7 +34,7 @@ async function request<T>(
       return {
         success: false,
         data: null,
-        error: `HTTP ${response.status}: ${errorText}`,
+        error: `请求失败 (${response.status}): ${errorText}`,
       };
     }
 
@@ -42,7 +42,7 @@ async function request<T>(
     return { success: true, data, error: null };
   } catch (err) {
     const message =
-      err instanceof Error ? err.message : "Network request failed";
+      err instanceof Error ? err.message : "网络请求失败";
     return { success: false, data: null, error: message };
   }
 }

@@ -3,14 +3,8 @@ import { useProjectStore } from "@/stores/projectStore";
 import { characterService } from "@/services/characterService";
 import { CharacterCard } from "./CharacterCard";
 import { CharacterForm } from "./CharacterForm";
+import { ROLE_TYPES } from "@/lib/role-types";
 import type { Character } from "@/types/project";
-
-const ROLE_TYPES = [
-  { value: "protagonist", label: "主角" },
-  { value: "supporting", label: "配角" },
-  { value: "antagonist", label: "反派" },
-  { value: "minor", label: "路人" },
-];
 
 export function CharacterList() {
   const currentProject = useProjectStore((s) => s.currentProject);

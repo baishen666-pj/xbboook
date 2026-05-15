@@ -38,24 +38,24 @@ export function ProjectList() {
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">
-              NovelPen
+              网文笔阁
             </h1>
             <p className="mt-1 text-[var(--text-sm)] text-[var(--color-text-muted)]">
-              Your writing workspace
+              你的写作工作台
             </p>
           </div>
           <Button variant="primary" onClick={() => setIsModalOpen(true)}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M8 3v10M3 8h10" />
             </svg>
-            New Project
+            新建作品
           </Button>
         </div>
 
         {/* Loading */}
         {isLoading && projects.length === 0 && (
           <div className="py-20 text-center text-[var(--color-text-muted)]">
-            Loading projects...
+            加载中...
           </div>
         )}
 
@@ -68,13 +68,13 @@ export function ProjectList() {
               </svg>
             </div>
             <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">
-              Start your first story
+              开始你的第一部作品
             </h2>
             <p className="max-w-sm text-center text-[var(--text-sm)] text-[var(--color-text-muted)]">
-              Create a new project to begin writing. Organize your chapters, build characters, and let AI assist your creative process.
+              创建一个新项目开始写作。管理章节、构建角色、设定世界观，让 AI 辅助你的创作之旅。
             </p>
             <Button variant="primary" onClick={() => setIsModalOpen(true)}>
-              Create Project
+              创建作品
             </Button>
           </div>
         )}

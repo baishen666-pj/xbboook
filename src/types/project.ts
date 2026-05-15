@@ -101,3 +101,34 @@ export interface StatsSummary {
   avgDaily: number;
   bestDay: { date: string; words: number } | null;
 }
+
+export interface ChapterVersion {
+  id: string;
+  chapterId: string;
+  projectId: string;
+  versionNumber: number;
+  contentHash: string;
+  wordCount: number;
+  snapshotType: "auto" | "manual" | "rollback";
+  label: string | null;
+  createdAt: string;
+  content?: string;
+}
+
+export interface TemplateNode {
+  title: string;
+  content?: string;
+  level: number;
+}
+
+export interface OutlineTemplate {
+  id: string;
+  name: string;
+  genre: string;
+  description: string | null;
+  isBuiltin: number;
+  sourceProjectId: string | null;
+  structure: string;
+  createdAt: string;
+  updatedAt: string;
+}

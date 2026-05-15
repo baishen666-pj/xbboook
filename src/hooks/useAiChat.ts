@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { useAiStore } from "@/stores/aiStore";
 import { useEditorStore } from "@/stores/editorStore";
 import { useProjectStore } from "@/stores/projectStore";
@@ -8,10 +8,15 @@ export function useAiChat() {
   const { activeSkillId, addMessage, appendToMessage, finalizeMessage, setStreaming, appendStreamContent, clearStreamContent, setError } = useAiStore();
   const { activeChapterId, selectedText } = useEditorStore();
   const currentProject = useProjectStore((s) => s.currentProject);
+  const abortRef = useRef<AbortController | null>(null);
 
   const send = useCallback(
     async (userMessage: string) => {
       if (!currentProject) return;
+
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
 
       addMessage({ role: "user", content: userMessage, skillId: activeSkillId });
 
@@ -35,7 +40,8 @@ export function useAiChat() {
       };
 
       try {
-        for await (const event of streamAi(req)) {
+        for await (const event of streamAi(req, controller.signal)) {
+          if (controller.signal.aborted) break;
           if (event.type === "chunk") {
             appendToMessage(assistantId, event.content);
             appendStreamContent(event.content);
@@ -44,12 +50,15 @@ export function useAiChat() {
           }
         }
       } catch (err) {
-        const message = err instanceof Error ? err.message : "AI request failed";
+        if (controller.signal.aborted) return;
+        const message = err instanceof Error ? err.message : "AI 请求失败";
         setError(message);
         finalizeMessage(assistantId);
       } finally {
-        setStreaming(false);
-        clearStreamContent();
+        if (abortRef.current === controller) {
+          setStreaming(false);
+          clearStreamContent();
+        }
       }
     },
     [currentProject, activeChapterId, selectedText, activeSkillId, addMessage, appendToMessage, finalizeMessage, setStreaming, appendStreamContent, clearStreamContent, setError]

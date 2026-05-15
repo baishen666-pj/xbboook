@@ -34,7 +34,7 @@ export async function* processAiRequest(
     maxTokens: 8000,
   };
 
-  const sources = buildContext(contextOptions);
+  const sources = await buildContext(contextOptions);
   const userPrompt = buildUserPrompt(req.skillId, {
     selectedText: req.selectedText,
     currentChapterTitle: sources.find((s) => s.label.startsWith('当前章节'))?.label?.replace('当前章节', '').replace(/[「」]/g, ''),
@@ -63,10 +63,10 @@ export async function* processAiRequest(
     }
     if (chunk.done) {
       yield { type: 'done', content: fullContent };
+      return;
     }
   }
 
-  if (!fullContent.endsWith('\n')) {
-    yield { type: 'done', content: fullContent };
-  }
+  // Fallback: stream ended without done flag
+  yield { type: 'done', content: fullContent };
 }

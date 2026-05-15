@@ -29,7 +29,7 @@ export function WorldviewForm({ worldview, categories, onSubmit, onCancel }: Pro
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const finalCategory = customCategory ? category : category;
+    const finalCategory = customCategory ? category.trim() : category;
     if (!finalCategory.trim() || !title.trim()) return;
     onSubmit({ category: finalCategory, title, content: content || undefined });
   };

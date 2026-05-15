@@ -10,12 +10,14 @@ export function StatsPanel() {
 
   useEffect(() => {
     if (!currentProject) return;
+    const controller = new AbortController();
     statsService.getStats(currentProject.id).then((res) => {
-      if (res.success && res.data) {
+      if (!controller.signal.aborted && res.success && res.data) {
         setSummary(res.data.summary);
         setRecent(res.data.recent);
       }
-    });
+    }).catch(() => {});
+    return () => controller.abort();
   }, [currentProject]);
 
   if (!currentProject) return null;
@@ -62,7 +64,7 @@ export function StatsPanel() {
                 <div
                   key={day.date}
                   className="flex-1 rounded-t bg-[var(--color-primary)]/40 hover:bg-[var(--color-primary)]/60 transition-colors"
-                  style={{ height: `${height}%` }}
+                  style={{ height: `${height}px` }}
                   title={`${day.date}: ${day.wordsAdded} 字`}
                 />
               );

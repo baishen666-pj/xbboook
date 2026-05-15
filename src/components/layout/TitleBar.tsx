@@ -16,10 +16,10 @@ export function TitleBar() {
   const themeIcon = theme === "dark" ? "🌙" : theme === "light" ? "☀️" : "📖";
 
   const saveLabel = isDirty
-    ? "Editing..."
+    ? "编辑中..."
     : lastSavedAt
-      ? `Saved at ${lastSavedAt.toLocaleTimeString()}`
-      : "Ready";
+      ? `已保存于 ${lastSavedAt.toLocaleTimeString()}`
+      : "就绪";
 
   return (
     <header className="flex h-10 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface-1)] px-4">
@@ -94,7 +94,7 @@ export function TitleBar() {
         <button
           onClick={cycleTheme}
           className="rounded-[var(--radius-sm)] px-2 py-1 text-[var(--text-xs)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)] transition-colors"
-          title={`Theme: ${theme} (click to switch)`}
+          title={`主题：${theme === "dark" ? "暗色" : theme === "light" ? "亮色" : "阅读"}（点击切换）`}
         >
           {themeIcon}
         </button>
@@ -102,7 +102,7 @@ export function TitleBar() {
         <button
           onClick={toggleFullscreen}
           className="rounded-[var(--radius-sm)] p-1 text-[var(--color-text-muted)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)] transition-colors duration-[var(--duration-fast)]"
-          title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+          title={isFullscreen ? "退出全屏" : "全屏"}
         >
           {isFullscreen ? (
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">

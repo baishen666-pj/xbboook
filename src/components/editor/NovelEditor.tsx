@@ -37,7 +37,7 @@ export function NovelEditor({ content, onUpdate }: NovelEditorProps) {
         heading: { levels: [1, 2, 3] },
       }),
       Placeholder.configure({
-        placeholder: "Start writing your story...",
+        placeholder: "开始写作你的故事...",
       }),
       CharacterCount,
       Highlight.configure({

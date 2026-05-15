@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { outlineService } from "@/services/outlineService";
+import { TemplateGallery } from "@/components/template/TemplateGallery";
 import type { Outline } from "@/types/project";
 
 interface OutlineNode extends Outline {
@@ -91,12 +92,15 @@ export function OutlinePanel() {
   const [editContent, setEditContent] = useState("");
   const [newTitle, setNewTitle] = useState("");
   const [addingChildOf, setAddingChildOf] = useState<string | null>(null);
+  const [showTemplates, setShowTemplates] = useState(false);
 
   useEffect(() => {
     if (!currentProject) return;
+    const controller = new AbortController();
     outlineService.list(currentProject.id).then((res) => {
-      if (res.success && res.data) setItems(res.data);
-    });
+      if (!controller.signal.aborted && res.success && res.data) setItems(res.data);
+    }).catch(() => {});
+    return () => controller.abort();
   }, [currentProject]);
 
   if (!currentProject) return null;
@@ -104,7 +108,7 @@ export function OutlinePanel() {
   const tree = buildTree(items);
 
   const handleCreate = async (parentId?: string) => {
-    const title = parentId ? newTitle : newTitle;
+    const title = newTitle;
     if (!title.trim()) return;
     const parent = parentId ? items.find((i) => i.id === parentId) : undefined;
     const res = await outlineService.create(currentProject.id, {
@@ -157,16 +161,38 @@ export function OutlinePanel() {
         >
           添加
         </button>
+        <button
+          onClick={() => setShowTemplates(!showTemplates)}
+          className={[
+            "rounded px-2 py-1 text-xs transition-colors",
+            showTemplates
+              ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
+              : "text-white/30 hover:text-white/50",
+          ].join(" ")}
+          title="从模板导入"
+        >
+          模板
+        </button>
       </div>
 
-      {/* Tree */}
-      <div className="flex-1 overflow-y-auto py-1">
-        {tree.length === 0 && (
-          <div className="py-8 text-center text-xs text-white/20">
-            还没有大纲，添加你的第一个节点
-          </div>
-        )}
-        {tree.map((node) => (
+      {/* Tree or Template Gallery */}
+      {showTemplates ? (
+        <TemplateGallery
+          onSelect={() => {
+            setShowTemplates(false);
+            outlineService.list(currentProject.id).then((res) => {
+              if (res.success && res.data) setItems(res.data);
+            });
+          }}
+        />
+      ) : (
+        <div className="flex-1 overflow-y-auto py-1">
+          {tree.length === 0 && (
+            <div className="py-8 text-center text-xs text-white/20">
+              还没有大纲，添加你的第一个节点
+            </div>
+          )}
+          {tree.map((node) => (
           <OutlineItem
             key={node.id}
             node={node}
@@ -182,7 +208,8 @@ export function OutlinePanel() {
             }}
           />
         ))}
-      </div>
+        </div>
+      )}
 
       {/* Add child input */}
       {addingChildOf && (

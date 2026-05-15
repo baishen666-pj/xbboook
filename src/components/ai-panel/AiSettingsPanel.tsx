@@ -7,10 +7,14 @@ export function AiSettingsPanel() {
   const [status, setStatus] = useState<{ configured: boolean; model: string } | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
     fetchStatus().then((s) => {
-      setStatus(s);
-      setModel(s.model);
-    });
+      if (!controller.signal.aborted) {
+        setStatus(s);
+        setModel(s.model);
+      }
+    }).catch(() => {});
+    return () => controller.abort();
   }, []);
 
   const handleSave = async () => {

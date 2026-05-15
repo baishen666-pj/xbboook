@@ -16,10 +16,12 @@ interface CreateProjectModalProps {
 }
 
 const WRITING_MODES: Array<{ value: WritingMode; label: string }> = [
-  { value: "webnovel", label: "Web Novel" },
-  { value: "literary", label: "Literary" },
-  { value: "script", label: "Script" },
+  { value: "webnovel", label: "网文" },
+  { value: "literary", label: "文学" },
+  { value: "script", label: "剧本" },
 ];
+
+const GENRE_SUGGESTIONS = ["玄幻", "仙侠", "都市", "言情", "科幻", "历史", "游戏", "悬疑"];
 
 export function CreateProjectModal({
   isOpen,
@@ -36,7 +38,7 @@ export function CreateProjectModal({
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!name.trim()) {
-      setError("Project name is required");
+      setError("请输入作品名称");
       return;
     }
 
@@ -52,7 +54,7 @@ export function CreateProjectModal({
       });
       handleClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create project");
+      setError(err instanceof Error ? err.message : "创建失败");
     } finally {
       setIsSubmitting(false);
     }
@@ -68,32 +70,49 @@ export function CreateProjectModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Create New Project">
+    <Modal isOpen={isOpen} onClose={handleClose} title="新建作品">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Input
-          label="Project Name *"
-          placeholder="My Novel"
+          label="作品名称 *"
+          placeholder="输入你的书名"
           value={name}
           onChange={(e) => setName(e.target.value)}
           error={error && !name.trim() ? error : undefined}
           autoFocus
         />
 
-        <Input
-          label="Genre"
-          placeholder="Fantasy, Romance, Sci-Fi..."
-          value={genre}
-          onChange={(e) => setGenre(e.target.value)}
-        />
+        <div className="flex flex-col gap-1">
+          <label className="text-[var(--text-sm)] text-[var(--color-text-secondary)]">
+            题材类型
+          </label>
+          <input
+            className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2 text-[var(--text-sm)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] transition-colors focus:outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
+            placeholder="玄幻、言情、科幻..."
+            value={genre}
+            onChange={(e) => setGenre(e.target.value)}
+          />
+          <div className="flex flex-wrap gap-1.5 mt-1">
+            {GENRE_SUGGESTIONS.map((g) => (
+              <button
+                key={g}
+                type="button"
+                onClick={() => setGenre(g)}
+                className="rounded-full border border-[var(--color-border-subtle)] px-2 py-0.5 text-[var(--text-xs)] text-[var(--color-text-muted)] hover:border-[var(--color-primary)]/40 hover:text-[var(--color-primary)] transition-colors"
+              >
+                {g}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="flex flex-col gap-1">
           <label className="text-[var(--text-sm)] text-[var(--color-text-secondary)]">
-            Description
+            简介
           </label>
           <textarea
             className="w-full rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-2)] px-3 py-2 text-[var(--text-sm)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] transition-colors focus:outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
             rows={3}
-            placeholder="Brief description of your story..."
+            placeholder="简要描述你的故事..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
@@ -101,7 +120,7 @@ export function CreateProjectModal({
 
         <div className="flex flex-col gap-1">
           <label className="text-[var(--text-sm)] text-[var(--color-text-secondary)]">
-            Writing Mode
+            写作模式
           </label>
           <div className="flex gap-2">
             {WRITING_MODES.map((mode) => (
@@ -128,10 +147,10 @@ export function CreateProjectModal({
 
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="ghost" onClick={handleClose} type="button">
-            Cancel
+            取消
           </Button>
           <Button variant="primary" type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Creating..." : "Create Project"}
+            {isSubmitting ? "创建中..." : "创建作品"}
           </Button>
         </div>
       </form>

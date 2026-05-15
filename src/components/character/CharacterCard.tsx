@@ -1,17 +1,11 @@
 import type { Character } from "@/types/project";
+import { ROLE_LABELS } from "@/lib/role-types";
 
 interface Props {
   character: Character;
   onEdit: () => void;
   onDelete: () => void;
 }
-
-const ROLE_LABELS: Record<string, string> = {
-  protagonist: "主角",
-  supporting: "配角",
-  antagonist: "反派",
-  minor: "路人",
-};
 
 const ROLE_COLORS: Record<string, string> = {
   protagonist: "bg-amber-500/20 text-amber-400",

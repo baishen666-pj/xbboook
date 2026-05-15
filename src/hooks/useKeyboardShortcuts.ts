@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useEditorStore } from "@/stores/editorStore";
 import { useUiStore } from "@/stores/uiStore";
 import { useAiStore } from "@/stores/aiStore";
+import { useProjectStore } from "@/stores/projectStore";
 import { chapterService } from "@/services/chapterService";
 
 export function useKeyboardShortcuts() {
@@ -18,11 +19,14 @@ export function useKeyboardShortcuts() {
       if (mod && e.key === "s") {
         e.preventDefault();
         const state = useEditorStore.getState();
-        if (state.activeChapterId && state.isDirty && !state.isSaving) {
+        const projectId = useProjectStore.getState().currentProject?.id;
+        if (state.activeChapterId && state.isDirty && !state.isSaving && projectId) {
           useEditorStore.getState().saveContent();
-          chapterService.saveContent(state.activeChapterId, state.content).then((res) => {
+          chapterService.saveContent(projectId, state.activeChapterId, state.content).then((res) => {
             if (res.success) useEditorStore.getState().markSaved();
             else useEditorStore.setState({ isSaving: false, isDirty: true });
+          }).catch(() => {
+            useEditorStore.setState({ isSaving: false, isDirty: true });
           });
         }
         return;

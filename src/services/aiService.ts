@@ -33,12 +33,6 @@ export async function fetchStatus(): Promise<AiStatus> {
   return json.data;
 }
 
-export async function fetchAiConfig(): Promise<{ model: string; temperature: number; maxTokens: number }> {
-  const res = await fetch('/api/ai/status');
-  const json = await res.json();
-  return json.data;
-}
-
 export async function updateAiConfig(patch: { model?: string; temperature?: number; maxTokens?: number }): Promise<void> {
   await fetch('/api/ai/config', {
     method: 'PATCH',
@@ -47,11 +41,12 @@ export async function updateAiConfig(patch: { model?: string; temperature?: numb
   });
 }
 
-export async function* streamAi(req: StreamRequest): AsyncGenerator<{ type: 'chunk' | 'done'; content: string }> {
+export async function* streamAi(req: StreamRequest, signal?: AbortSignal): AsyncGenerator<{ type: 'chunk' | 'done'; content: string }> {
   const response = await fetch('/api/ai/stream', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),
+    signal,
   });
 
   if (!response.ok) {
@@ -60,7 +55,7 @@ export async function* streamAi(req: StreamRequest): AsyncGenerator<{ type: 'chu
   }
 
   const body = response.body;
-  if (!body) throw new Error('No response body');
+  if (!body) throw new Error('无响应内容');
 
   const reader = body.getReader();
   const decoder = new TextDecoder();
@@ -94,10 +89,11 @@ export async function* streamAi(req: StreamRequest): AsyncGenerator<{ type: 'chu
           } else if (eventType === 'done') {
             yield { type: 'done', content: data.content };
           } else if (eventType === 'error') {
-            throw new Error(data.error || 'AI stream error');
+            throw new Error(data.error || 'AI 流式响应错误');
           }
         } catch (err) {
           if (err instanceof Error && err.message.includes('AI')) throw err;
+          console.warn('[SSE] Failed to parse event:', err);
         }
       }
     }

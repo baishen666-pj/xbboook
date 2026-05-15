@@ -11,19 +11,19 @@ function formatDate(dateStr: string): string {
   const diffMs = now.getTime() - d.getTime();
   const diffHours = Math.floor(diffMs / 3_600_000);
 
-  if (diffHours < 1) return "Just now";
-  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffHours < 1) return "刚刚";
+  if (diffHours < 24) return `${diffHours}小时前`;
 
   const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 7) return `${diffDays}d ago`;
+  if (diffDays < 7) return `${diffDays}天前`;
 
   return d.toLocaleDateString("zh-CN", { month: "short", day: "numeric" });
 }
 
 const MODE_LABELS: Record<string, string> = {
-  webnovel: "Web Novel",
-  literary: "Literary",
-  script: "Script",
+  webnovel: "网文",
+  literary: "文学",
+  script: "剧本",
 };
 
 export function ProjectCard({ project, onClick }: ProjectCardProps) {
@@ -54,8 +54,8 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
       )}
 
       <div className="mt-auto flex items-center gap-4 pt-2 text-[var(--text-xs)] text-[var(--color-text-muted)]">
-        <span>{project.wordCount.toLocaleString()} words</span>
-        <span>{project.chapterCount} chapters</span>
+        <span>{project.wordCount.toLocaleString()} 字</span>
+        <span>{project.chapterCount} 章</span>
         <span className="ml-auto">{formatDate(project.updatedAt)}</span>
       </div>
     </button>

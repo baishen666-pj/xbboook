@@ -66,10 +66,17 @@ export function EditorContextMenu() {
 
   if (!menu.visible) return null;
 
+  const menuWidth = 180;
+  const menuHeight = AI_ACTIONS.length * 36 + 40;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const x = menu.x + menuWidth > vw ? Math.max(4, vw - menuWidth - 4) : menu.x;
+  const y = menu.y + menuHeight > vh ? Math.max(4, vh - menuHeight - 4) : menu.y;
+
   return (
     <div
       className="fixed z-50 min-w-[180px] rounded-lg border border-white/10 bg-[oklch(0.18_0_0)] py-1 shadow-xl"
-      style={{ left: menu.x, top: menu.y }}
+      style={{ left: x, top: y }}
     >
       <div className="px-3 py-1.5 text-xs text-white/40 border-b border-white/5">
         AI 操作

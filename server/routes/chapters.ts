@@ -1,7 +1,7 @@
 import { Router, type Request } from 'express';
 import { z } from 'zod';
 import * as chapterRepo from '../db/repositories/chapterRepo.js';
-import { readChapter, writeChapter } from '../services/fileService.js';
+import { readChapter } from '../services/fileService.js';
 import { validate } from '../middleware/validate.js';
 
 type ChapterParams = { projectId: string; id: string };
@@ -18,7 +18,7 @@ const updateSchema = z.object({
   title: z.string().min(1).optional(),
   volume_id: z.string().nullable().optional(),
   summary: z.string().nullable().optional(),
-  status: z.string().optional(),
+  status: z.enum(['draft', 'writing', 'revised', 'done']).optional(),
   sort_order: z.number().optional(),
 });
 
@@ -42,19 +42,19 @@ router.get('/', (req: Request<ChapterParams>, res) => {
   res.json({ success: true, data: chapters });
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
   const chapter = chapterRepo.findById(req.params.id);
   if (!chapter) {
     res.status(404).json({ success: false, error: '章节不存在' });
     return;
   }
-  const content = readChapter(chapter.project_id, chapter.id);
+  const content = await readChapter(chapter.project_id, chapter.id);
   res.json({ success: true, data: { ...chapter, content } });
 });
 
-router.post('/', validate(createSchema), (req: Request<ChapterParams>, res) => {
+router.post('/', validate(createSchema), async (req: Request<ChapterParams>, res) => {
   const { projectId } = req.params;
-  const chapter = chapterRepo.create({ ...req.body, projectId });
+  const chapter = await chapterRepo.create({ ...req.body, projectId });
   res.status(201).json({ success: true, data: chapter });
 });
 
@@ -72,8 +72,8 @@ router.put('/:id', validate(updateSchema), (req: Request<ChapterParams>, res) =>
   res.json({ success: true, data: chapter });
 });
 
-router.put('/:id/content', validate(contentSchema), (req: Request<ChapterParams>, res) => {
-  const chapter = chapterRepo.updateContent(req.params.id, req.body.content);
+router.put('/:id/content', validate(contentSchema), async (req: Request<ChapterParams>, res) => {
+  const chapter = await chapterRepo.updateContent(req.params.id, req.body.content);
   if (!chapter) {
     res.status(404).json({ success: false, error: '章节不存在' });
     return;
@@ -81,8 +81,8 @@ router.put('/:id/content', validate(contentSchema), (req: Request<ChapterParams>
   res.json({ success: true, data: chapter });
 });
 
-router.delete('/:id', (req, res) => {
-  const deleted = chapterRepo.deleteById(req.params.id);
+router.delete('/:id', async (req, res) => {
+  const deleted = await chapterRepo.deleteById(req.params.id);
   if (!deleted) {
     res.status(404).json({ success: false, error: '章节不存在' });
     return;

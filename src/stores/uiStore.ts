@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-type LeftTab = "chapters" | "characters" | "worldview" | "outline";
+type LeftTab = "chapters" | "characters" | "worldview" | "outline" | "versions";
 type Theme = "dark" | "light" | "sepia";
 
 interface UiState {
@@ -50,16 +50,20 @@ export const useUiStore = create<UiState & UiActions>((set) => ({
 
   setRightPanelWidth: (width) => set({ rightPanelWidth: width }),
 
-  setTheme: (theme) => {
-    document.documentElement.setAttribute("data-theme", theme);
-    set({ theme });
-  },
+  setTheme: (theme) => set({ theme }),
 
   cycleTheme: () =>
     set((state) => {
       const idx = THEME_CYCLE.indexOf(state.theme);
       const next = THEME_CYCLE[(idx + 1) % THEME_CYCLE.length] as Theme;
-      document.documentElement.setAttribute("data-theme", next);
       return { theme: next };
     }),
 }));
+
+useUiStore.subscribe((state, prev) => {
+  if (state.theme !== prev.theme) {
+    document.documentElement.setAttribute("data-theme", state.theme);
+  }
+});
+
+document.documentElement.setAttribute("data-theme", useUiStore.getState().theme);

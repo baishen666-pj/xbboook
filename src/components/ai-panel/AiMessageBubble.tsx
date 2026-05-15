@@ -1,10 +1,11 @@
+import { memo } from "react";
 import type { AiMessage } from "@/stores/aiStore";
 
 interface Props {
   message: AiMessage;
 }
 
-export function AiMessageBubble({ message }: Props) {
+export const AiMessageBubble = memo(function AiMessageBubble({ message }: Props) {
   const isUser = message.role === "user";
 
   return (
@@ -23,4 +24,4 @@ export function AiMessageBubble({ message }: Props) {
       </div>
     </div>
   );
-}
+});

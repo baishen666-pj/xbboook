@@ -21,7 +21,7 @@ const updateSchema = z.object({
   writing_style: z.string().nullable().optional(),
   writing_mode: z.string().optional(),
   target_words: z.number().nullable().optional(),
-  status: z.string().optional(),
+  status: z.enum(['active', 'archived', 'completed']).optional(),
   sort_order: z.number().optional(),
 });
 
@@ -39,8 +39,8 @@ router.get('/:id', (req, res) => {
   res.json({ success: true, data: project });
 });
 
-router.post('/', validate(createSchema), (req, res) => {
-  const project = projectRepo.create(req.body);
+router.post('/', validate(createSchema), async (req, res) => {
+  const project = await projectRepo.create(req.body);
   res.status(201).json({ success: true, data: project });
 });
 
@@ -53,8 +53,8 @@ router.put('/:id', validate(updateSchema), (req: Request<{ id: string }>, res) =
   res.json({ success: true, data: project });
 });
 
-router.delete('/:id', (req, res) => {
-  const deleted = projectRepo.deleteById(req.params.id);
+router.delete('/:id', async (req, res) => {
+  const deleted = await projectRepo.deleteById(req.params.id);
   if (!deleted) {
     res.status(404).json({ success: false, error: '项目不存在' });
     return;

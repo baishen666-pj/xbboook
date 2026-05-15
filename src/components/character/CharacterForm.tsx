@@ -1,18 +1,12 @@
 import { useState } from "react";
 import type { Character } from "@/types/project";
+import { ROLE_TYPES } from "@/lib/role-types";
 
 interface Props {
   character?: Character | null;
   onSubmit: (data: Record<string, string>) => Promise<void> | void;
   onCancel: () => void;
 }
-
-const ROLE_TYPES = [
-  { value: "protagonist", label: "主角" },
-  { value: "supporting", label: "配角" },
-  { value: "antagonist", label: "反派" },
-  { value: "minor", label: "路人" },
-];
 
 const FIELDS: Array<{ key: string; label: string; multiline?: boolean; placeholder?: string }> = [
   { key: "name", label: "姓名", placeholder: "角色姓名" },

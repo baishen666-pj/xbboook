@@ -61,7 +61,7 @@ export const useProjectStore = create<ProjectState & ProjectActions>(
       if (res.success && res.data) {
         set({ projects: res.data, isLoading: false });
       } else {
-        set({ error: res.error ?? "Failed to load projects", isLoading: false });
+        set({ error: res.error ?? "加载作品列表失败", isLoading: false });
       }
     },
 
@@ -73,7 +73,7 @@ export const useProjectStore = create<ProjectState & ProjectActions>(
         set({ projects, isLoading: false });
         return res.data;
       }
-      set({ error: res.error ?? "Failed to create project", isLoading: false });
+      set({ error: res.error ?? "创建作品失败", isLoading: false });
       return null;
     },
 
@@ -83,22 +83,25 @@ export const useProjectStore = create<ProjectState & ProjectActions>(
       const projectRes = await projectService.getById(projectId);
       if (!projectRes.success || !projectRes.data) {
         set({
-          error: projectRes.error ?? "Failed to load project",
+          error: projectRes.error ?? "加载作品失败",
           isLoading: false,
         });
         return;
       }
 
-      const chaptersRes = await chapterService.list(projectId);
+      const [chaptersRes, charsRes, wvRes] = await Promise.all([
+        chapterService.list(projectId),
+        characterService.list(projectId),
+        worldviewService.list(projectId),
+      ]);
+
       const chapters = chaptersRes.success && chaptersRes.data
         ? chaptersRes.data
         : [];
 
-      const charsRes = await characterService.list(projectId);
       const characters = charsRes.success && charsRes.data ? charsRes.data.characters : [];
       const characterRelations = charsRes.success && charsRes.data ? charsRes.data.relations : [];
 
-      const wvRes = await worldviewService.list(projectId);
       const worldviews = wvRes.success && wvRes.data ? wvRes.data.items : [];
       const worldviewCategories = wvRes.success && wvRes.data ? wvRes.data.categories : [];
 
@@ -120,11 +123,14 @@ export const useProjectStore = create<ProjectState & ProjectActions>(
     },
 
     openChapter: async (chapterId) => {
-      const res = await chapterService.getById(chapterId);
+      const project = get().currentProject;
+      if (!project) return null;
+
+      const res = await chapterService.getById(project.id, chapterId);
       if (res.success && res.data) {
         return res.data;
       }
-      set({ error: res.error ?? "Failed to open chapter" });
+      set({ error: res.error ?? "打开章节失败" });
       return null;
     },
 
@@ -132,10 +138,9 @@ export const useProjectStore = create<ProjectState & ProjectActions>(
       const project = get().currentProject;
       if (!project) return null;
 
-      const res = await chapterService.create({
-        projectId: project.id,
+      const res = await chapterService.create(project.id, {
         volumeId,
-        title: title ?? "New Chapter",
+        title: title ?? "新章节",
         sortOrder: get().chapters.length,
       });
 
@@ -145,7 +150,7 @@ export const useProjectStore = create<ProjectState & ProjectActions>(
         return res.data;
       }
 
-      set({ error: res.error ?? "Failed to create chapter" });
+      set({ error: res.error ?? "创建章节失败" });
       return null;
     },
 

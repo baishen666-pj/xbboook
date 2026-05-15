@@ -23,9 +23,9 @@ export function StatusBar() {
         )}
         {activeChapterId && (
           <>
-            <span>{stats.words} words</span>
-            <span>{stats.characters} chars</span>
-            <span>{stats.paragraphs} paragraphs</span>
+            <span>{stats.words} 字</span>
+            <span>{stats.characters} 字符</span>
+            <span>{stats.paragraphs} 段</span>
           </>
         )}
       </div>
@@ -38,7 +38,7 @@ export function StatusBar() {
         </button>
         <span className="flex items-center gap-1">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-success)]" />
-          AI Ready
+          AI 就绪
         </span>
       </div>
 

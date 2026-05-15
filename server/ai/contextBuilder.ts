@@ -16,13 +16,6 @@ export interface BuildContextOptions {
   maxTokens?: number;
 }
 
-interface ProjectMeta {
-  name?: string;
-  genre?: string;
-  writingMode?: string;
-  writingStyle?: string;
-}
-
 const CHARS_PER_TOKEN = 2.5;
 
 function estimateTokens(text: string): number {
@@ -75,7 +68,7 @@ function lostInMiddleSort(sources: ContextSource[]): ContextSource[] {
   return result;
 }
 
-export function buildContext(options: BuildContextOptions): ContextSource[] {
+export async function buildContext(options: BuildContextOptions): Promise<ContextSource[]> {
   const {
     projectId,
     currentChapterId,
@@ -101,7 +94,7 @@ export function buildContext(options: BuildContextOptions): ContextSource[] {
     : undefined;
 
   if (currentChapter) {
-    const content = readChapter(projectId, currentChapter.id);
+    const content = await readChapter(projectId, currentChapter.id);
     if (content) {
       const idx = chapters.findIndex((c) => c.id === currentChapter.id);
       sources.push({
@@ -113,7 +106,7 @@ export function buildContext(options: BuildContextOptions): ContextSource[] {
       // Priority 7: previous 2 chapters for continuity
       for (let i = Math.max(0, idx - 2); i < idx; i++) {
         const prev = chapters[i];
-        const prevContent = readChapter(projectId, prev.id);
+        const prevContent = await readChapter(projectId, prev.id);
         if (prevContent) {
           sources.push({
             priority: 7,

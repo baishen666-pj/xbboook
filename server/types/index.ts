@@ -103,3 +103,33 @@ export interface DailyStat {
   writing_time_ms: number;
   chapters_worked: number;
 }
+
+export interface ChapterVersion {
+  id: string;
+  chapter_id: string;
+  project_id: string;
+  version_number: number;
+  content_hash: string;
+  word_count: number;
+  snapshot_type: 'auto' | 'manual' | 'rollback';
+  label: string | null;
+  created_at: string;
+}
+
+export interface TemplateNode {
+  title: string;
+  content?: string;
+  level: number;
+}
+
+export interface OutlineTemplate {
+  id: string;
+  name: string;
+  genre: string;
+  description: string | null;
+  is_builtin: number;
+  source_project_id: string | null;
+  structure: string;
+  created_at: string;
+  updated_at: string;
+}

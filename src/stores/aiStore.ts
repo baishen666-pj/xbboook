@@ -37,7 +37,9 @@ interface AiActions {
   clearMessages: () => void;
 }
 
-let msgCounter = 0;
+function nextMsgId(): string {
+  return `msg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
 
 export const useAiStore = create<AiState & AiActions>((set) => ({
   isOpen: false,
@@ -56,7 +58,7 @@ export const useAiStore = create<AiState & AiActions>((set) => ({
   setActiveSkill: (skillId) => set({ activeSkillId: skillId }),
 
   addMessage: (msg) => {
-    const id = `msg-${++msgCounter}`;
+    const id = nextMsgId();
     set((s) => ({
       messages: [...s.messages, { ...msg, id, timestamp: Date.now() }],
     }));

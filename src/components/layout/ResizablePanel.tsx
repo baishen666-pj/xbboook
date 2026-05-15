@@ -21,13 +21,14 @@ export function ResizablePanel({
   const isDragging = useRef(false);
   const startX = useRef(0);
   const startWidth = useRef(0);
+  const latestWidth = useRef(defaultWidth);
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
       isDragging.current = true;
       startX.current = e.clientX;
-      startWidth.current = width;
+      startWidth.current = latestWidth.current;
 
       const handleMouseMove = (moveEvent: MouseEvent) => {
         if (!isDragging.current) return;
@@ -39,6 +40,7 @@ export function ResizablePanel({
           maxWidth,
           Math.max(minWidth, startWidth.current + delta)
         );
+        latestWidth.current = nextWidth;
         setWidth(nextWidth);
       };
 
@@ -46,13 +48,13 @@ export function ResizablePanel({
         isDragging.current = false;
         document.removeEventListener("mousemove", handleMouseMove);
         document.removeEventListener("mouseup", handleMouseUp);
-        onResize?.(width);
+        onResize?.(latestWidth.current);
       };
 
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
     },
-    [width, minWidth, maxWidth, side, onResize]
+    [minWidth, maxWidth, side, onResize]
   );
 
   return (

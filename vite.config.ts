@@ -33,7 +33,6 @@ export default defineConfig({
             if (id.includes('zustand')) {
               return 'vendor-zustand';
             }
-            return 'vendor';
           }
         },
       },

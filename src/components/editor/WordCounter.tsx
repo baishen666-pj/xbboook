@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { countMixedText } from "@/lib/word-count";
 import { useEditorStore } from "@/stores/editorStore";
 import { useProjectStore } from "@/stores/projectStore";
@@ -7,25 +8,23 @@ export function WordCounter() {
   const activeChapterId = useEditorStore((s) => s.activeChapterId);
   const chapters = useProjectStore((s) => s.chapters);
 
-  const currentStats = countMixedText(content);
-
-  // Calculate total word count across all chapters
-  const totalWords = chapters.reduce((sum, ch) => sum + ch.wordCount, 0);
+  const currentStats = useMemo(() => countMixedText(content), [content]);
+  const totalWords = useMemo(() => chapters.reduce((sum, ch) => sum + ch.wordCount, 0), [chapters]);
 
   if (!activeChapterId) return null;
 
   return (
     <div className="flex items-center gap-4 border-t border-[var(--color-border)] bg-[var(--color-surface-1)] px-4 py-1 text-[var(--text-xs)] text-[var(--color-text-muted)]">
       <span>
-        Total: <strong className="text-[var(--color-text-secondary)]">{totalWords.toLocaleString()}</strong>
+        总计：<strong className="text-[var(--color-text-secondary)]">{totalWords.toLocaleString()}</strong> 字
       </span>
       <span className="text-[var(--color-border)]">|</span>
       <span>
-        Chapter: <strong className="text-[var(--color-text-secondary)]">{currentStats.words.toLocaleString()}</strong>
+        本章：<strong className="text-[var(--color-text-secondary)]">{currentStats.words.toLocaleString()}</strong> 字
       </span>
       <span className="text-[var(--color-border)]">|</span>
       <span>
-        Paragraphs: <strong className="text-[var(--color-text-secondary)]">{currentStats.paragraphs}</strong>
+        <strong className="text-[var(--color-text-secondary)]">{currentStats.paragraphs}</strong> 段
       </span>
     </div>
   );

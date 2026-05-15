@@ -5,14 +5,16 @@ import { VolumeTree } from "./VolumeTree";
 import { CharacterList } from "@/components/character/CharacterList";
 import { WorldviewList } from "@/components/worldview/WorldviewList";
 import { OutlinePanel } from "@/components/outline/OutlinePanel";
+import { VersionPanel } from "@/components/version/VersionPanel";
 
-type Tab = "chapters" | "characters" | "worldview" | "outline";
+type Tab = "chapters" | "characters" | "worldview" | "outline" | "versions";
 
 const TABS: Array<{ key: Tab; label: string }> = [
-  { key: "chapters", label: "Chapters" },
-  { key: "characters", label: "Characters" },
-  { key: "worldview", label: "World" },
-  { key: "outline", label: "Outline" },
+  { key: "chapters", label: "章节" },
+  { key: "characters", label: "角色" },
+  { key: "worldview", label: "世界观" },
+  { key: "outline", label: "大纲" },
+  { key: "versions", label: "历史" },
 ];
 
 export function ChapterSidebar() {
@@ -26,12 +28,12 @@ export function ChapterSidebar() {
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[var(--color-border)] px-3 py-2">
         <span className="truncate text-[var(--text-sm)] font-medium text-[var(--color-text-primary)]">
-          {currentProject?.name ?? "No Project"}
+          {currentProject?.name ?? "未选择作品"}
         </span>
         <button
           onClick={toggleLeftPanel}
           className="rounded-[var(--radius-sm)] p-1 text-[var(--color-text-muted)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)] transition-colors"
-          title="Close panel"
+          title="关闭面板"
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M9 2L4 7l5 5" />
@@ -58,12 +60,16 @@ export function ChapterSidebar() {
       </div>
 
       {/* Content */}
-      <ScrollArea className="flex-1">
-        {activeLeftTab === "chapters" && <VolumeTree />}
-        {activeLeftTab === "characters" && <CharacterList />}
-        {activeLeftTab === "worldview" && <WorldviewList />}
-        {activeLeftTab === "outline" && <OutlinePanel />}
-      </ScrollArea>
+      {activeLeftTab === "versions" ? (
+        <VersionPanel />
+      ) : (
+        <ScrollArea className="flex-1">
+          {activeLeftTab === "chapters" && <VolumeTree />}
+          {activeLeftTab === "characters" && <CharacterList />}
+          {activeLeftTab === "worldview" && <WorldviewList />}
+          {activeLeftTab === "outline" && <OutlinePanel />}
+        </ScrollArea>
+      )}
     </div>
   );
 }

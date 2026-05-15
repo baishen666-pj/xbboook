@@ -35,9 +35,17 @@ export function getConfig(): AiConfig {
   return cachedConfig;
 }
 
-export function updateConfig(patch: Partial<AiConfig>): AiConfig {
+const SAFE_CONFIG_FIELDS = new Set(['model', 'temperature', 'maxTokens']);
+
+export function updateConfig(patch: Record<string, unknown>): AiConfig {
   const current = getConfig();
-  cachedConfig = { ...current, ...patch };
+  const safe: Partial<AiConfig> = {};
+  for (const [key, value] of Object.entries(patch)) {
+    if (SAFE_CONFIG_FIELDS.has(key)) {
+      (safe as Record<string, unknown>)[key] = value;
+    }
+  }
+  cachedConfig = { ...current, ...safe };
   return cachedConfig;
 }
 
@@ -73,7 +81,8 @@ export async function* streamChat(
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`AI API error (${response.status}): ${errorText}`);
+    const sanitized = errorText.replace(/sk-[a-zA-Z0-9]{20,}/g, '***');
+    throw new Error(`AI API error (${response.status}): ${sanitized}`);
   }
 
   const body = response.body;
@@ -108,8 +117,8 @@ export async function* streamChat(
           if (delta) {
             yield { content: delta, done: false };
           }
-        } catch {
-          // skip malformed SSE lines
+        } catch (e) {
+          console.warn('[AI SSE] Malformed line:', trimmed, e);
         }
       }
     }
@@ -118,13 +127,3 @@ export async function* streamChat(
   }
 }
 
-export async function chatOnce(
-  messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
-  overrides?: Partial<Pick<AiConfig, 'model' | 'temperature' | 'maxTokens'>>,
-): Promise<string> {
-  const chunks: string[] = [];
-  for await (const chunk of streamChat(messages, overrides)) {
-    if (chunk.content) chunks.push(chunk.content);
-  }
-  return chunks.join('');
-}

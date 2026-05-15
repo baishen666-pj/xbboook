@@ -1,4 +1,4 @@
-import { getSkill, type WritingSkill } from './writingSkills.js';
+import { getSkill } from './writingSkills.js';
 import { contextToString, type ContextSource } from './contextBuilder.js';
 
 export interface BuildPromptOptions {
@@ -59,8 +59,6 @@ export function buildUserPrompt(skillId: string, params: {
   targetStyle?: string;
   question?: string;
 }): string {
-  const skill = getSkill(skillId);
-
   switch (skillId) {
     case 'continue':
       return `请续写以下内容（当前章节：${params.currentChapterTitle || '未知'}）`;
