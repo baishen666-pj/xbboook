@@ -68,3 +68,10 @@ body {
   transition: width var(--duration-normal) var(--ease-out),
     opacity var(--duration-normal) var(--ease-out);
 }
+
+/* ---- Mobile ---- */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .mobile-nav {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

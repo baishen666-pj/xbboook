@@ -1,6 +1,8 @@
 /* Design Tokens — oklch color space */
-:root {
-  /* ---- Color ---- */
+
+/* Dark Theme (default) */
+:root,
+[data-theme="dark"] {
   --color-primary: oklch(65% 0.22 280);
   --color-primary-hover: oklch(58% 0.24 280);
   --color-primary-active: oklch(52% 0.25 280);
@@ -22,6 +24,75 @@
   --color-border: oklch(35% 0.02 280);
   --color-border-subtle: oklch(28% 0.02 280);
 
+  --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.3);
+  --shadow-md: 0 4px 12px oklch(0% 0 0 / 0.4);
+  --shadow-lg: 0 8px 24px oklch(0% 0 0 / 0.5);
+
+  color-scheme: dark;
+}
+
+/* Light Theme */
+[data-theme="light"] {
+  --color-primary: oklch(55% 0.22 270);
+  --color-primary-hover: oklch(48% 0.24 270);
+  --color-primary-active: oklch(42% 0.25 270);
+  --color-primary-subtle: oklch(55% 0.22 270 / 0.1);
+
+  --color-surface-0: oklch(98% 0.005 280);
+  --color-surface-1: oklch(100% 0 0);
+  --color-surface-2: oklch(96% 0.005 280);
+  --color-surface-3: oklch(93% 0.01 280);
+
+  --color-text-primary: oklch(20% 0.02 280);
+  --color-text-secondary: oklch(40% 0.02 280);
+  --color-text-muted: oklch(55% 0.02 280);
+
+  --color-success: oklch(55% 0.19 155);
+  --color-warning: oklch(60% 0.16 75);
+  --color-error: oklch(55% 0.22 25);
+
+  --color-border: oklch(85% 0.01 280);
+  --color-border-subtle: oklch(90% 0.01 280);
+
+  --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.08);
+  --shadow-md: 0 4px 12px oklch(0% 0 0 / 0.1);
+  --shadow-lg: 0 8px 24px oklch(0% 0 0 / 0.12);
+
+  color-scheme: light;
+}
+
+/* Sepia / Eye-care Theme */
+[data-theme="sepia"] {
+  --color-primary: oklch(52% 0.12 60);
+  --color-primary-hover: oklch(46% 0.14 60);
+  --color-primary-active: oklch(40% 0.15 60);
+  --color-primary-subtle: oklch(52% 0.12 60 / 0.12);
+
+  --color-surface-0: oklch(93% 0.03 75);
+  --color-surface-1: oklch(95% 0.03 75);
+  --color-surface-2: oklch(90% 0.03 75);
+  --color-surface-3: oklch(87% 0.03 75);
+
+  --color-text-primary: oklch(28% 0.03 60);
+  --color-text-secondary: oklch(42% 0.03 60);
+  --color-text-muted: oklch(55% 0.03 60);
+
+  --color-success: oklch(52% 0.14 145);
+  --color-warning: oklch(58% 0.12 70);
+  --color-error: oklch(52% 0.16 25);
+
+  --color-border: oklch(80% 0.03 75);
+  --color-border-subtle: oklch(85% 0.03 75);
+
+  --shadow-sm: 0 1px 2px oklch(40% 0.03 60 / 0.1);
+  --shadow-md: 0 4px 12px oklch(40% 0.03 60 / 0.12);
+  --shadow-lg: 0 8px 24px oklch(40% 0.03 60 / 0.15);
+
+  color-scheme: light;
+}
+
+/* Shared tokens (all themes) */
+:root {
   /* ---- Typography ---- */
   --text-xs: 0.75rem;
   --text-sm: 0.8125rem;

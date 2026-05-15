@@ -7,9 +7,13 @@ export function TitleBar() {
   const currentProject = useProjectStore((s) => s.currentProject);
   const toggleFullscreen = useUiStore((s) => s.toggleFullscreen);
   const isFullscreen = useUiStore((s) => s.isFullscreen);
+  const theme = useUiStore((s) => s.theme);
+  const cycleTheme = useUiStore((s) => s.cycleTheme);
   const lastSavedAt = useEditorStore((s) => s.lastSavedAt);
   const isDirty = useEditorStore((s) => s.isDirty);
   const [showExport, setShowExport] = useState(false);
+
+  const themeIcon = theme === "dark" ? "🌙" : theme === "light" ? "☀️" : "📖";
 
   const saveLabel = isDirty
     ? "Editing..."
@@ -48,12 +52,12 @@ export function TitleBar() {
               导出
             </button>
             {showExport && (
-              <div className="absolute right-0 top-full mt-1 z-20 w-36 rounded-lg border border-white/10 bg-[oklch(0.18_0_0)] py-1 shadow-xl">
+              <div className="absolute right-0 top-full mt-1 z-20 w-40 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-1)] py-1 shadow-xl">
                 <a
                   href={`/api/projects/${currentProject.id}/export/txt`}
                   download
                   onClick={() => setShowExport(false)}
-                  className="block px-3 py-1.5 text-xs text-white/60 hover:bg-white/5 hover:text-white"
+                  className="block px-3 py-1.5 text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)]"
                 >
                   导出 TXT
                 </a>
@@ -61,14 +65,39 @@ export function TitleBar() {
                   href={`/api/projects/${currentProject.id}/export/md`}
                   download
                   onClick={() => setShowExport(false)}
-                  className="block px-3 py-1.5 text-xs text-white/60 hover:bg-white/5 hover:text-white"
+                  className="block px-3 py-1.5 text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)]"
                 >
                   导出 Markdown
+                </a>
+                <a
+                  href={`/api/projects/${currentProject.id}/export/epub`}
+                  download
+                  onClick={() => setShowExport(false)}
+                  className="block px-3 py-1.5 text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)]"
+                >
+                  导出 EPUB
+                </a>
+                <a
+                  href={`/api/projects/${currentProject.id}/export/docx`}
+                  download
+                  onClick={() => setShowExport(false)}
+                  className="block px-3 py-1.5 text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)]"
+                >
+                  导出 DOCX
                 </a>
               </div>
             )}
           </div>
         )}
+
+        {/* Theme toggle */}
+        <button
+          onClick={cycleTheme}
+          className="rounded-[var(--radius-sm)] px-2 py-1 text-[var(--text-xs)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)] transition-colors"
+          title={`Theme: ${theme} (click to switch)`}
+        >
+          {themeIcon}
+        </button>
 
         <button
           onClick={toggleFullscreen}
