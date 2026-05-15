@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import type { Chapter } from "@/types/project";
+import { LockIndicator } from "@/components/collab/LockIndicator";
 
 interface ChapterItemProps {
   chapter: Chapter;
@@ -87,6 +88,7 @@ export function ChapterItem({ chapter, isActive, onClick, onReorder }: ChapterIt
         <span className="flex-1 truncate text-[var(--text-sm)]">
           {chapter.title}
         </span>
+        <LockIndicator chapterId={chapter.id} />
         <span className="text-[var(--text-xs)] text-[var(--color-text-muted)] opacity-0 group-hover:opacity-100 transition-opacity">
           {chapter.wordCount > 0 ? `${chapter.wordCount}` : ""}
         </span>

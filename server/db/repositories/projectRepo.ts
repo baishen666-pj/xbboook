@@ -15,14 +15,19 @@ export function findById(id: string): Project | undefined {
   return db.prepare('SELECT * FROM projects WHERE id = ?').get(id) as Project | undefined;
 }
 
-export function create(data: {
+const PROJECT_UPDATE_FIELDS = new Set([
+  'name', 'description', 'genre', 'writing_style', 'writing_mode',
+  'target_words', 'status', 'sort_order',
+]);
+
+export async function create(data: {
   name: string;
   description?: string;
   genre?: string;
   writing_style?: string;
   writing_mode?: string;
   target_words?: number;
-}): Project {
+}): Promise<Project> {
   const db = getDb();
   const id = uuid();
   const now = new Date().toISOString();
@@ -47,9 +52,11 @@ export function create(data: {
     now,
   );
 
-  ensureProjectDir(id);
+  await ensureProjectDir(id);
 
-  return findById(id)!;
+  const created = findById(id);
+  if (!created) throw new Error(`Failed to retrieve created project: ${id}`);
+  return created;
 }
 
 export function update(
@@ -73,7 +80,7 @@ export function update(
   const values: unknown[] = [];
 
   for (const [key, value] of Object.entries(data)) {
-    if (value !== undefined) {
+    if (value !== undefined && PROJECT_UPDATE_FIELDS.has(key)) {
       fields.push(`${key} = ?`);
       values.push(value);
     }
@@ -89,12 +96,12 @@ export function update(
   return findById(id);
 }
 
-export function deleteById(id: string): boolean {
+export async function deleteById(id: string): Promise<boolean> {
   const db = getDb();
   const existing = findById(id);
   if (!existing) return false;
 
   db.prepare('DELETE FROM projects WHERE id = ?').run(id);
-  deleteProjectDir(id);
+  await deleteProjectDir(id);
   return true;
 }

@@ -132,3 +132,48 @@ export interface OutlineTemplate {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface DashboardData {
+  summary: StatsSummary;
+  velocity: { date: string; words: number; sessions: number }[];
+  chapterStatus: { status: string; count: number }[];
+  streak: { current: number; longest: number };
+  target: { target: number; current: number; percentage: number };
+  peakHours: { hour: number; count: number }[];
+}
+
+export interface CharacterAppearance {
+  name: string;
+  count: number;
+}
+
+export interface WritingSession {
+  id: string;
+  projectId: string;
+  chapterId: string;
+  startedAt: string;
+  endedAt: string | null;
+  wordsStart: number;
+  wordsEnd: number;
+  durationMs: number;
+}
+
+export interface CollabUser {
+  id: string;
+  username: string;
+  displayName: string;
+  avatarColor: string;
+}
+
+export interface OnlineUser {
+  userId: string;
+  displayName: string;
+  avatarColor: string;
+}
+
+export interface ChapterLock {
+  chapterId: string;
+  userId: string;
+  displayName: string;
+  lockedAt: string;
+}

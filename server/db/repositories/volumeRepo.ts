@@ -14,6 +14,8 @@ export function findById(id: string): Volume | undefined {
   return db.prepare('SELECT * FROM volumes WHERE id = ?').get(id) as Volume | undefined;
 }
 
+const VOLUME_UPDATE_FIELDS = new Set(['title', 'summary', 'sort_order']);
+
 export function create(data: { projectId: string; title: string; summary?: string }): Volume {
   const db = getDb();
   const id = uuid();
@@ -30,7 +32,9 @@ export function create(data: { projectId: string; title: string; summary?: strin
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `).run(id, data.projectId, data.title, data.summary ?? null, maxOrder.next, now, now);
 
-  return findById(id)!;
+  const created = findById(id);
+  if (!created) throw new Error(`Failed to retrieve created volume: ${id}`);
+  return created;
 }
 
 export function update(
@@ -49,7 +53,7 @@ export function update(
   const values: unknown[] = [];
 
   for (const [key, value] of Object.entries(data)) {
-    if (value !== undefined) {
+    if (value !== undefined && VOLUME_UPDATE_FIELDS.has(key)) {
       fields.push(`${key} = ?`);
       values.push(value);
     }

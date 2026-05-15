@@ -3,12 +3,15 @@ import { useEditorStore } from "@/stores/editorStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { countMixedText } from "@/lib/word-count";
 import { StatsPanel } from "@/components/stats/StatsPanel";
+import { DashboardPanel } from "@/components/dashboard/DashboardPanel";
+import { CollabStatusBar } from "@/components/collab/CollabStatusBar";
 
 export function StatusBar() {
   const content = useEditorStore((s) => s.content);
   const activeChapterId = useEditorStore((s) => s.activeChapterId);
   const chapters = useProjectStore((s) => s.chapters);
   const [showStats, setShowStats] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false);
 
   const stats = countMixedText(content);
   const activeChapter = chapters.find((c) => c.id === activeChapterId);
@@ -31,11 +34,18 @@ export function StatusBar() {
       </div>
       <div className="flex items-center gap-3">
         <button
-          onClick={() => setShowStats(!showStats)}
+          onClick={() => { setShowDashboard(false); setShowStats(!showStats); }}
           className="flex items-center gap-1 hover:text-[var(--color-text-primary)] transition-colors"
         >
           统计
         </button>
+        <button
+          onClick={() => { setShowStats(false); setShowDashboard(!showDashboard); }}
+          className="flex items-center gap-1 hover:text-[var(--color-text-primary)] transition-colors"
+        >
+          仪表盘
+        </button>
+        <CollabStatusBar />
         <span className="flex items-center gap-1">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-success)]" />
           AI 就绪
@@ -50,6 +60,13 @@ export function StatusBar() {
             <button onClick={() => setShowStats(false)} className="text-xs text-white/30 hover:text-white/60">×</button>
           </div>
           <StatsPanel />
+        </div>
+      )}
+
+      {/* Dashboard popover */}
+      {showDashboard && (
+        <div className="absolute bottom-7 right-0 z-30 w-[640px] h-[480px] rounded-xl border border-white/10 bg-[oklch(0.14_0_0)] shadow-2xl">
+          <DashboardPanel onClose={() => setShowDashboard(false)} />
         </div>
       )}
     </footer>

@@ -29,6 +29,8 @@ export function getCategories(projectId: string): string[] {
   return rows.map((r) => r.category);
 }
 
+const WORLDVIEW_UPDATE_FIELDS = new Set(['category', 'title', 'content', 'sort_order']);
+
 export function create(data: {
   projectId: string;
   category: string;
@@ -57,7 +59,9 @@ export function create(data: {
     now,
   );
 
-  return findById(id)!;
+  const created = findById(id);
+  if (!created) throw new Error(`Failed to retrieve created worldview: ${id}`);
+  return created;
 }
 
 export function update(
@@ -77,7 +81,7 @@ export function update(
   const values: unknown[] = [];
 
   for (const [key, value] of Object.entries(data)) {
-    if (value !== undefined) {
+    if (value !== undefined && WORLDVIEW_UPDATE_FIELDS.has(key)) {
       fields.push(`${key} = ?`);
       values.push(value);
     }

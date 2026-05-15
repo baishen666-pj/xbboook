@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, useParams } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ProjectList } from "@/components/project/ProjectList";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { TitleBar } from "@/components/layout/TitleBar";
@@ -11,8 +11,13 @@ import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { useProjectStore } from "@/stores/projectStore";
 import { useUiStore } from "@/stores/uiStore";
 import { useAiStore } from "@/stores/aiStore";
+import { useCollabStore, getStoredUserId } from "@/stores/collabStore";
 import { fetchSkills } from "@/services/aiService";
+import { collabService } from "@/services/collabService";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { useSessionTracker } from "@/hooks/useSessionTracker";
+import { useCollabPresence } from "@/hooks/useCollabPresence";
+import { UserPicker } from "@/components/collab/UserPicker";
 
 function Workspace() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -25,6 +30,8 @@ function Workspace() {
   const setSkills = useAiStore((s) => s.setSkills);
 
   useKeyboardShortcuts();
+  useSessionTracker();
+  useCollabPresence();
 
   useEffect(() => {
     if (projectId) {
@@ -75,12 +82,35 @@ function Workspace() {
 }
 
 export function App() {
+  const setCurrentUser = useCollabStore((s) => s.setCurrentUser);
+  const currentUser = useCollabStore((s) => s.currentUser);
+  const [showPicker, setShowPicker] = useState(false);
+
+  useEffect(() => {
+    const stored = getStoredUserId();
+    if (stored) {
+      collabService.getMe(stored).then((res) => {
+        if (res.success && res.data) {
+          setCurrentUser(res.data);
+        } else {
+          localStorage.removeItem("xbboook_user_id");
+          setShowPicker(true);
+        }
+      });
+    } else {
+      setShowPicker(true);
+    }
+  }, [setCurrentUser]);
+
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<ProjectList />} />
         <Route path="/project/:projectId" element={<Workspace />} />
       </Routes>
+      {showPicker && !currentUser && (
+        <UserPicker onComplete={() => setShowPicker(false)} />
+      )}
     </BrowserRouter>
   );
 }

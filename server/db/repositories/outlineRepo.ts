@@ -28,6 +28,10 @@ export function findById(id: string): Outline | undefined {
   return db.prepare('SELECT * FROM outlines WHERE id = ?').get(id) as Outline | undefined;
 }
 
+const OUTLINE_UPDATE_FIELDS = new Set([
+  'level', 'parent_id', 'target_ref_id', 'title', 'content', 'sort_order',
+]);
+
 export function create(data: {
   projectId: string;
   level?: number;
@@ -60,7 +64,9 @@ export function create(data: {
     now,
   );
 
-  return findById(id)!;
+  const created = findById(id);
+  if (!created) throw new Error(`Failed to retrieve created outline: ${id}`);
+  return created;
 }
 
 export function update(
@@ -82,7 +88,7 @@ export function update(
   const values: unknown[] = [];
 
   for (const [key, value] of Object.entries(data)) {
-    if (value !== undefined) {
+    if (value !== undefined && OUTLINE_UPDATE_FIELDS.has(key)) {
       fields.push(`${key} = ?`);
       values.push(value);
     }

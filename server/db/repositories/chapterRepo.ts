@@ -17,12 +17,16 @@ export function findById(id: string): Chapter | undefined {
   return db.prepare('SELECT * FROM chapters WHERE id = ?').get(id) as Chapter | undefined;
 }
 
-export function create(data: {
+const CHAPTER_UPDATE_FIELDS = new Set([
+  'title', 'volume_id', 'summary', 'status', 'sort_order',
+]);
+
+export async function create(data: {
   projectId: string;
   title: string;
   volumeId?: string;
   summary?: string;
-}): Chapter {
+}): Promise<Chapter> {
   const db = getDb();
   const id = uuid();
   const now = new Date().toISOString();
@@ -49,9 +53,11 @@ export function create(data: {
     now,
   );
 
-  writeChapter(data.projectId, id, '');
+  await writeChapter(data.projectId, id, '');
 
-  return findById(id)!;
+  const created = findById(id);
+  if (!created) throw new Error(`Failed to retrieve created chapter: ${id}`);
+  return created;
 }
 
 export function update(
@@ -72,7 +78,7 @@ export function update(
   const values: unknown[] = [];
 
   for (const [key, value] of Object.entries(data)) {
-    if (value !== undefined) {
+    if (value !== undefined && CHAPTER_UPDATE_FIELDS.has(key)) {
       fields.push(`${key} = ?`);
       values.push(value);
     }
@@ -88,28 +94,28 @@ export function update(
   return findById(id);
 }
 
-export function updateContent(id: string, content: string): Chapter | undefined {
+export async function updateContent(id: string, content: string): Promise<Chapter | undefined> {
   const db = getDb();
   const existing = findById(id);
   if (!existing) return undefined;
 
-  const wordCount = content.length;
+  const charCount = content.length;
 
-  writeChapter(existing.project_id, id, content);
+  await writeChapter(existing.project_id, id, content);
 
   db.prepare(
     "UPDATE chapters SET word_count = ?, updated_at = datetime('now') WHERE id = ?",
-  ).run(wordCount, id);
+  ).run(charCount, id);
 
   return findById(id);
 }
 
-export function deleteById(id: string): boolean {
+export async function deleteById(id: string): Promise<boolean> {
   const db = getDb();
   const existing = findById(id);
   if (!existing) return false;
 
-  deleteChapter(existing.project_id, id);
+  await deleteChapter(existing.project_id, id);
   db.prepare('DELETE FROM chapters WHERE id = ?').run(id);
   return true;
 }

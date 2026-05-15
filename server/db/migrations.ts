@@ -132,6 +132,21 @@ export function runMigrations(): void {
 
     CREATE INDEX IF NOT EXISTS idx_chapter_versions_chapter ON chapter_versions(chapter_id, version_number DESC);
 
+    CREATE TABLE IF NOT EXISTS writing_sessions (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL,
+      chapter_id TEXT NOT NULL,
+      started_at TEXT NOT NULL,
+      ended_at TEXT,
+      words_start INTEGER DEFAULT 0,
+      words_end INTEGER DEFAULT 0,
+      duration_ms INTEGER DEFAULT 0,
+      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+      FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_sessions_project_date ON writing_sessions(project_id, started_at DESC);
+
     CREATE TABLE IF NOT EXISTS outline_templates (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -142,6 +157,33 @@ export function runMigrations(): void {
       structure TEXT NOT NULL,
       created_at TEXT DEFAULT (datetime('now')),
       updated_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      username TEXT NOT NULL UNIQUE,
+      display_name TEXT NOT NULL,
+      avatar_color TEXT NOT NULL DEFAULT '#6366f1',
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS project_members (
+      project_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'writer',
+      joined_at TEXT DEFAULT (datetime('now')),
+      PRIMARY KEY (project_id, user_id),
+      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS chapter_locks (
+      chapter_id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      locked_at TEXT DEFAULT (datetime('now')),
+      expires_at TEXT,
+      FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
   `);
 }

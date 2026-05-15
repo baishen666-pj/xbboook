@@ -6,12 +6,20 @@ import { readChapter } from '../services/fileService.js';
 
 const router = Router({ mergeParams: true });
 
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 interface ChapterGroup {
   volumeTitle: string;
   chapters: Array<{ title: string; content: string }>;
 }
 
-function buildChapterGroups(projectId: string): ChapterGroup[] {
+async function buildChapterGroups(projectId: string): Promise<ChapterGroup[]> {
   const chapters = findChapters(projectId);
   const volumes = findVolumes(projectId);
   const volumeMap = new Map(volumes.map((v) => [v.id, v.title]));
@@ -20,7 +28,7 @@ function buildChapterGroups(projectId: string): ChapterGroup[] {
   const byVolume = new Map<string, ChapterGroup['chapters']>();
 
   for (const ch of chapters) {
-    const content = readChapter(projectId, ch.id);
+    const content = await readChapter(projectId, ch.id);
     if (ch.volume_id) {
       const list = byVolume.get(ch.volume_id) || [];
       list.push({ title: ch.title, content });
@@ -45,12 +53,12 @@ function buildChapterGroups(projectId: string): ChapterGroup[] {
 }
 
 // Export as TXT
-router.get('/txt', (req, res) => {
+router.get('/txt', async (req, res) => {
   const { projectId } = req.params as { projectId: string };
 
-  const groups = buildChapterGroups(projectId);
+  const groups = await buildChapterGroups(projectId);
   if (groups.length === 0 || groups.every((g) => g.chapters.length === 0)) {
-    res.status(404).json({ success: false, error: 'No chapters to export' });
+    res.status(404).json({ success: false, error: '没有可导出的章节' });
     return;
   }
 
@@ -70,12 +78,12 @@ router.get('/txt', (req, res) => {
 });
 
 // Export as Markdown
-router.get('/md', (req, res) => {
+router.get('/md', async (req, res) => {
   const { projectId } = req.params as { projectId: string };
 
-  const groups = buildChapterGroups(projectId);
+  const groups = await buildChapterGroups(projectId);
   if (groups.length === 0 || groups.every((g) => g.chapters.length === 0)) {
-    res.status(404).json({ success: false, error: 'No chapters to export' });
+    res.status(404).json({ success: false, error: '没有可导出的章节' });
     return;
   }
 
@@ -99,9 +107,9 @@ router.get('/epub', async (req, res) => {
   const { projectId } = req.params as { projectId: string };
 
   try {
-    const groups = buildChapterGroups(projectId);
+    const groups = await buildChapterGroups(projectId);
     if (groups.length === 0 || groups.every((g) => g.chapters.length === 0)) {
-      res.status(404).json({ success: false, error: 'No chapters to export' });
+      res.status(404).json({ success: false, error: '没有可导出的章节' });
       return;
     }
 
@@ -114,7 +122,7 @@ router.get('/epub', async (req, res) => {
 
     const content = allChapters.map((ch) => ({
       title: ch.title,
-      content: ch.content ? ch.content.split('\n').map((p) => `<p>${p}</p>`).join('') : '<p></p>',
+      content: ch.content ? ch.content.split('\n').map((p) => `<p>${escapeHtml(p)}</p>`).join('') : '<p></p>',
     }));
 
     const buffer: Buffer = await epubGen.default(
@@ -127,7 +135,7 @@ router.get('/epub', async (req, res) => {
     res.send(buffer);
   } catch (err) {
     console.error('EPUB export error:', err);
-    res.status(500).json({ success: false, error: 'EPUB export failed' });
+    res.status(500).json({ success: false, error: 'EPUB 导出失败' });
   }
 });
 
@@ -136,9 +144,9 @@ router.get('/docx', async (req, res) => {
   const { projectId } = req.params as { projectId: string };
 
   try {
-    const groups = buildChapterGroups(projectId);
+    const groups = await buildChapterGroups(projectId);
     if (groups.length === 0 || groups.every((g) => g.chapters.length === 0)) {
-      res.status(404).json({ success: false, error: 'No chapters to export' });
+      res.status(404).json({ success: false, error: '没有可导出的章节' });
       return;
     }
 
@@ -194,7 +202,7 @@ router.get('/docx', async (req, res) => {
     res.send(buffer);
   } catch (err) {
     console.error('DOCX export error:', err);
-    res.status(500).json({ success: false, error: 'DOCX export failed' });
+    res.status(500).json({ success: false, error: 'DOCX 导出失败' });
   }
 });
 

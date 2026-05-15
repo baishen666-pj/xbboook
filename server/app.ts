@@ -14,6 +14,8 @@ import statsRouter from './routes/stats.js';
 import exportRouter from './routes/export.js';
 import versionsRouter from './routes/versions.js';
 import templatesRouter from './routes/templates.js';
+import usersRouter from './routes/users.js';
+import collabRouter from './routes/collab.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -42,6 +44,8 @@ app.use('/api/projects/:projectId/stats', statsRouter);
 app.use('/api/projects/:projectId/export', exportRouter);
 app.use('/api/ai', aiLimiter, aiRouter);
 app.use('/api/templates', templatesRouter);
+app.use('/api/users', usersRouter);
+app.use('/api/projects/:projectId/collab', collabRouter);
 
 app.use(errorHandler);
 
