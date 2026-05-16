@@ -19,6 +19,8 @@ import {
 import { useProjectStore } from "@/stores/projectStore";
 import { useEditorStore } from "@/stores/editorStore";
 import { useChapterContent } from "@/hooks/useChapterContent";
+import { chapterService } from "@/services/chapterService";
+import { streamAi } from "@/services/aiService";
 import { ChapterItem } from "./ChapterItem";
 import { Button } from "@/components/ui/Button";
 import type { Chapter } from "@/types/project";
@@ -52,6 +54,7 @@ function groupByVolume(chapters: Chapter[]): VolumeGroup[] {
 }
 
 export function VolumeTree({ onBatchPolish }: { onBatchPolish?: () => void }) {
+  const currentProject = useProjectStore((s) => s.currentProject);
   const chapters = useProjectStore((s) => s.chapters);
   const createChapter = useProjectStore((s) => s.createChapter);
   const reorderChapters = useProjectStore((s) => s.reorderChapters);
@@ -61,6 +64,7 @@ export function VolumeTree({ onBatchPolish }: { onBatchPolish?: () => void }) {
   const { loadChapter } = useChapterContent();
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [activeChapter, setActiveChapter] = useState<Chapter | null>(null);
+  const [polishStatus, setPolishStatus] = useState<string | null>(null);
 
   const volumeGroups = groupByVolume(chapters);
 
@@ -185,11 +189,46 @@ export function VolumeTree({ onBatchPolish }: { onBatchPolish?: () => void }) {
     setIsSelectMode(false);
   }
 
-  function handleBatchPolish() {
-    if (onBatchPolish) {
-      onBatchPolish();
+  const handleBatchPolish = useCallback(async () => {
+    if (!currentProject?.id || selectedChapterIds.length === 0) return;
+    if (onBatchPolish) { onBatchPolish(); return; }
+
+    const pid = currentProject.id;
+    const ids = [...selectedChapterIds];
+    const total = ids.length;
+    setPolishStatus(`0/${total} 润色中...`);
+
+    for (let i = 0; i < ids.length; i++) {
+      const chapterId = ids[i];
+      if (!chapterId) continue;
+      const chapter = chapters.find((c) => c.id === chapterId);
+      if (!chapter) continue;
+
+      setPolishStatus(`${i + 1}/${total} 润色: ${chapter.title}`);
+
+      try {
+        let polished = "";
+        for await (const event of streamAi({
+          projectId: pid,
+          skillId: "polish",
+          chapterId,
+        })) {
+          if (event.type === "chunk") polished += event.content;
+        }
+
+        if (polished) {
+          await chapterService.saveContent(pid, chapterId, polished);
+        }
+      } catch {
+        setPolishStatus(`${i + 1}/${total} 失败: ${chapter.title}`);
+      }
     }
-  }
+
+    setPolishStatus(`完成: ${total} 章润色`);
+    setTimeout(() => setPolishStatus(null), 3000);
+    clearChapterSelection();
+    setIsSelectMode(false);
+  }, [currentProject?.id, selectedChapterIds, chapters, onBatchPolish, clearChapterSelection]);
 
   return (
     <div className="p-2">
@@ -276,10 +315,14 @@ export function VolumeTree({ onBatchPolish }: { onBatchPolish?: () => void }) {
       {isSelectMode && selectedChapterIds.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--color-border)] bg-[var(--color-surface-1)] px-4 py-3 shadow-lg md:bottom-0 bottom-14">
           <div className="flex items-center justify-center gap-3">
+            {polishStatus && (
+              <span className="text-[var(--text-xs)] text-[var(--color-primary)]">{polishStatus}</span>
+            )}
             <Button
               variant="primary"
               size="md"
               onClick={handleBatchPolish}
+              disabled={!!polishStatus}
             >
               批量润色 ({selectedChapterIds.length})
             </Button>
