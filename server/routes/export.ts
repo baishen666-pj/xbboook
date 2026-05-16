@@ -3,6 +3,8 @@ import { findByProject as findChapters } from '../db/repositories/chapterRepo.js
 import { findByProject as findVolumes } from '../db/repositories/volumeRepo.js';
 import { findById as findProject } from '../db/repositories/projectRepo.js';
 import { readChapter } from '../services/fileService.js';
+import fs from 'fs';
+import path from 'path';
 
 const router = Router({ mergeParams: true });
 
@@ -13,6 +15,41 @@ function escapeHtml(text: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 }
+
+function isHtmlContent(text: string): boolean {
+  return /<[a-z][\s\S]*>/i.test(text);
+}
+
+function textToHtml(text: string): string {
+  return text
+    .split('\n')
+    .map((p) => (p.trim() ? `<p>${escapeHtml(p)}</p>` : '<p><br/></p>'))
+    .join('\n');
+}
+
+function stripHtml(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&nbsp;/g, ' ');
+}
+
+const CJK_FONT_PATH = (() => {
+  const candidates = [
+    'C:/Windows/Fonts/simhei.ttf',
+    'C:/Windows/Fonts/msyh.ttc',
+    'C:/Windows/Fonts/simsun.ttc',
+  ];
+  for (const f of candidates) {
+    if (fs.existsSync(f)) return f;
+  }
+  return '';
+})();
 
 interface ChapterGroup {
   volumeTitle: string;
@@ -68,7 +105,8 @@ router.get('/txt', async (req, res) => {
       parts.push(`${'='.repeat(50)}\n${group.volumeTitle}\n${'='.repeat(50)}`);
     }
     for (const ch of group.chapters) {
-      parts.push(`${ch.title}\n${'─'.repeat(40)}\n\n${ch.content}`);
+      const content = isHtmlContent(ch.content) ? stripHtml(ch.content) : ch.content;
+      parts.push(`${ch.title}\n${'─'.repeat(40)}\n\n${content}`);
     }
   }
 
@@ -93,7 +131,8 @@ router.get('/md', async (req, res) => {
       parts.push(`# ${group.volumeTitle}`);
     }
     for (const ch of group.chapters) {
-      parts.push(`## ${ch.title}\n\n${ch.content}`);
+      const content = isHtmlContent(ch.content) ? stripHtml(ch.content) : ch.content;
+      parts.push(`## ${ch.title}\n\n${content}`);
     }
   }
 
@@ -101,6 +140,17 @@ router.get('/md', async (req, res) => {
   res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(projectId)}.md"`);
   res.send(parts.join('\n\n---\n\n'));
 });
+
+const EPUB_CSS = `
+body { font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; line-height: 1.8; padding: 0 1em; }
+h1 { text-align: center; font-size: 1.6em; margin: 1.5em 0 0.8em; border-bottom: 2px solid #333; padding-bottom: 0.3em; }
+h2 { font-size: 1.3em; margin: 1.2em 0 0.6em; page-break-before: always; }
+h2:first-of-type { page-break-before: auto; }
+p { text-indent: 2em; margin: 0.4em 0; font-size: 1em; }
+.volume-title { text-align: center; font-size: 1.5em; font-weight: bold; margin: 2em 0 1em; letter-spacing: 0.1em; }
+strong, b { font-weight: bold; }
+em, i { font-style: italic; }
+`;
 
 // Export as EPUB
 router.get('/epub', async (req, res) => {
@@ -118,15 +168,31 @@ router.get('/epub', async (req, res) => {
 
     const epubGen = await import('epub-gen-memory');
 
-    const allChapters = groups.flatMap((g) => g.chapters);
+    const content: Array<{ title: string; content: string }> = [];
 
-    const content = allChapters.map((ch) => ({
-      title: ch.title,
-      content: ch.content ? ch.content.split('\n').map((p) => `<p>${escapeHtml(p)}</p>`).join('') : '<p></p>',
-    }));
+    for (const group of groups) {
+      if (group.volumeTitle) {
+        content.push({
+          title: group.volumeTitle,
+          content: `<div class="volume-title">${escapeHtml(group.volumeTitle)}</div>`,
+        });
+      }
+      for (const ch of group.chapters) {
+        const htmlContent = isHtmlContent(ch.content) ? ch.content : textToHtml(ch.content);
+        content.push({ title: ch.title, content: htmlContent });
+      }
+    }
 
     const buffer: Buffer = await epubGen.default(
-      { title: projectName, author: 'xbboook Author' },
+      {
+        title: projectName,
+        author: 'xbboook Author',
+        lang: 'zh',
+        description: project?.description || undefined,
+        css: EPUB_CSS,
+        tocTitle: '目录',
+        appendChapterTitles: true,
+      },
       content,
     );
 
@@ -157,7 +223,6 @@ router.get('/docx', async (req, res) => {
 
     const children: InstanceType<typeof Paragraph>[] = [];
 
-    // Title
     children.push(new Paragraph({
       text: projectName,
       heading: HeadingLevel.TITLE,
@@ -179,7 +244,8 @@ router.get('/docx', async (req, res) => {
           heading: HeadingLevel.HEADING_2,
         }));
 
-        const paragraphs = (ch.content || '').split('\n');
+        const text = isHtmlContent(ch.content) ? stripHtml(ch.content) : ch.content;
+        const paragraphs = text.split('\n');
         for (const p of paragraphs) {
           children.push(new Paragraph({
             children: [new TextRun(p)],
@@ -195,7 +261,6 @@ router.get('/docx', async (req, res) => {
     });
 
     const buffer = await Packer.toBuffer(doc);
-
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(projectName)}.docx"`);
     res.send(buffer);
@@ -219,39 +284,79 @@ router.get('/pdf', async (req, res) => {
     const projectName = project?.name || 'Novel';
 
     const PDFDocument = (await import('pdfkit')).default;
-    const doc = new PDFDocument({ size: 'A4', margin: 60, info: { Title: projectName } });
+    const doc = new PDFDocument({
+      size: 'A4',
+      margin: 60,
+      info: {
+        Title: projectName,
+        Author: 'xbboook Author',
+        Subject: project?.description || '',
+      },
+    });
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(projectName)}.pdf"`);
-    doc.pipe(res);
+    const hasCjkFont = CJK_FONT_PATH !== '';
+    if (hasCjkFont) {
+      doc.registerFont('CJK', CJK_FONT_PATH);
+    }
 
-    doc.fontSize(24).text(projectName, { align: 'center' });
-    doc.moveDown(2);
+    const chunks: Buffer[] = [];
+    doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+    const endPromise = new Promise<void>((resolve) => doc.on('end', resolve));
+
+    const bodyFont = hasCjkFont ? 'CJK' : 'Helvetica';
+    const titleFont = hasCjkFont ? 'CJK' : 'Helvetica-Bold';
+
+    doc.font(titleFont).fontSize(28).text(projectName, { align: 'center' });
+    if (project?.description) {
+      doc.moveDown(1);
+      doc.font(bodyFont).fontSize(12).text(project.description, { align: 'center' });
+    }
+    doc.moveDown(4);
+
+    doc.font(titleFont).fontSize(16).text('目录', { align: 'center' });
+    doc.moveDown(1);
+    doc.font(bodyFont).fontSize(11);
+    for (const group of groups) {
+      if (group.volumeTitle) {
+        doc.font(titleFont).fontSize(12).text(group.volumeTitle);
+        doc.font(bodyFont).fontSize(11);
+      }
+      for (const ch of group.chapters) {
+        doc.text(`  ${ch.title}`);
+      }
+    }
+
+        doc.addPage();
 
     for (const group of groups) {
       if (group.volumeTitle) {
-        doc.fontSize(18).text(group.volumeTitle, { align: 'center' });
+        doc.font(titleFont).fontSize(20).text(group.volumeTitle, { align: 'center' });
         doc.moveDown(1);
       }
-
       for (const ch of group.chapters) {
-        doc.fontSize(14).text(ch.title);
+        doc.font(titleFont).fontSize(16).text(ch.title, { align: 'center' });
         doc.moveDown(0.5);
-
-        const paragraphs = (ch.content || '').split('\n');
+        const text = isHtmlContent(ch.content) ? stripHtml(ch.content) : ch.content;
+        const paragraphs = text.split('\n');
+        doc.font(bodyFont).fontSize(11);
         for (const p of paragraphs) {
           if (p.trim() === '') {
-            doc.moveDown(0.5);
+            doc.moveDown(0.3);
           } else {
-            doc.fontSize(11).text(p, { lineGap: 4 });
+            doc.text(p, { lineGap: 5, indent: 20 });
           }
         }
-
         doc.moveDown(1);
       }
     }
 
     doc.end();
+    await endPromise;
+
+    const buffer = Buffer.concat(chunks);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(projectName)}.pdf"`);
+    res.send(buffer);
   } catch {
     if (!res.headersSent) {
       res.status(500).json({ success: false, error: 'PDF 导出失败' });
