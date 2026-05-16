@@ -260,7 +260,7 @@ export function VolumeTree({ onBatchPolish }: { onBatchPolish?: () => void }) {
                     key={chapter.id}
                     chapter={chapter}
                     isActive={chapter.id === activeChapterId}
-                    onClick={() => void loadChapter(chapter.id)}
+                    onChapterClick={loadChapter}
                     isSelectMode={isSelectMode}
                   />
                 ))}

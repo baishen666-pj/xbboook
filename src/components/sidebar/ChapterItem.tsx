@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Chapter } from "@/types/project";
@@ -8,7 +8,7 @@ import { useProjectStore } from "@/stores/projectStore";
 interface ChapterItemProps {
   chapter: Chapter;
   isActive: boolean;
-  onClick: () => void;
+  onChapterClick: (id: string) => void;
   isSelectMode?: boolean;
 }
 
@@ -19,7 +19,7 @@ const STATUS_DOT: Record<string, string> = {
   done: "bg-[var(--color-success)]",
 };
 
-export function ChapterItem({ chapter, isActive, onClick, isSelectMode }: ChapterItemProps) {
+export const ChapterItem = memo(function ChapterItem({ chapter, isActive, onChapterClick, isSelectMode }: ChapterItemProps) {
   const {
     attributes,
     listeners,
@@ -50,7 +50,7 @@ export function ChapterItem({ chapter, isActive, onClick, isSelectMode }: Chapte
       onMouseLeave={() => setIsHovered(false)}
     >
       <button
-        onClick={isSelectMode ? () => toggleChapterSelection(chapter.id) : onClick}
+        onClick={isSelectMode ? () => toggleChapterSelection(chapter.id) : () => void onChapterClick(chapter.id)}
         className={[
           "group flex w-full items-center gap-2 rounded-[var(--radius-sm)] px-3 py-1.5 text-left transition-colors min-h-[36px]",
           isActive && !isSelectMode
@@ -114,4 +114,4 @@ export function ChapterItem({ chapter, isActive, onClick, isSelectMode }: Chapte
       </button>
     </div>
   );
-}
+});
