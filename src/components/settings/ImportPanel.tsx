@@ -4,6 +4,7 @@ import { useProjectStore } from "@/stores/projectStore";
 interface ImportResult {
   imported: number;
   chapters: Array<{ id: string; title: string; words: number }>;
+  warnings?: string[];
 }
 
 export function ImportPanel({ onClose }: { onClose?: () => void }) {
@@ -32,7 +33,7 @@ export function ImportPanel({ onClose }: { onClose?: () => void }) {
       const json = await res.json();
 
       if (json.success) {
-        setResult(json.data);
+        setResult({ ...json.data, warnings: json.warnings });
         setFile(null);
         if (inputRef.current) inputRef.current.value = "";
       } else {
@@ -108,6 +109,14 @@ export function ImportPanel({ onClose }: { onClose?: () => void }) {
 
       {result && (
         <div className="rounded-lg bg-[var(--color-success)]/10 px-3 py-3">
+          {result.warnings && result.warnings.length > 0 && (
+            <div className="mb-2 rounded bg-[var(--color-warning)]/10 px-2 py-1.5 text-[11px] text-[var(--color-warning)]">
+              <div className="font-medium mb-1">导入警告</div>
+              {result.warnings.map((w, i) => (
+                <div key={i}>{w}</div>
+              ))}
+            </div>
+          )}
           <div className="text-xs font-medium text-[var(--color-success)] mb-2">
             成功导入 {result.imported} 个章节
           </div>

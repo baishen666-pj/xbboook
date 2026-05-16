@@ -6,8 +6,9 @@ import { SCHEMA_SQL } from '../../server/db/schemaDefinitions.js';
 let testDb: Database.Database;
 let docxApp: any;
 
-const mockExtractRawText = vi.fn().mockResolvedValue({
-  value: '第一章 开始\n这是第一章内容。\n\n第二章 发展\n这是第二章内容。',
+const mockConvertToHtml = vi.fn().mockResolvedValue({
+  value: '<p>第一章 开始</p>\n<p>这是第一章内容。</p>\n<p>第二章 发展</p>\n<p>这是第二章内容。</p>',
+  messages: [],
 });
 
 function createTestDb(): Database.Database {
@@ -22,9 +23,10 @@ describe('Import Routes - DOCX with mocked mammoth', () => {
 
   beforeEach(async () => {
     testDb = createTestDb();
-    mockExtractRawText.mockReset();
-    mockExtractRawText.mockResolvedValue({
-      value: '第一章 开始\n这是第一章内容。\n\n第二章 发展\n这是第二章内容。',
+    mockConvertToHtml.mockReset();
+    mockConvertToHtml.mockResolvedValue({
+      value: '<p>第一章 开始</p>\n<p>这是第一章内容。</p>\n<p>第二章 发展</p>\n<p>这是第二章内容。</p>',
+      messages: [],
     });
     vi.doMock('../../server/db/database.js', () => ({
       getDb: () => testDb,
@@ -69,8 +71,8 @@ describe('Import Routes - DOCX with mocked mammoth', () => {
       }),
     }));
     vi.doMock('mammoth', () => ({
-      default: { extractRawText: mockExtractRawText },
-      extractRawText: mockExtractRawText,
+      default: { convertToHtml: mockConvertToHtml },
+      convertToHtml: mockConvertToHtml,
     }));
 
     const mod = await import('../../server/app.js');
@@ -90,7 +92,7 @@ describe('Import Routes - DOCX with mocked mammoth', () => {
     if (testDb) testDb.close();
   });
 
-  it('should import a DOCX file by extracting text and splitting chapters', async () => {
+  it('should import a DOCX file by converting to HTML and splitting chapters', async () => {
     const fakeDocx = Buffer.from('PKfake-docx-content', 'utf-8');
 
     const res = await request(docxApp)
@@ -104,8 +106,58 @@ describe('Import Routes - DOCX with mocked mammoth', () => {
     expect(res.body.data.chapters[1].title).toContain('第二章');
   });
 
-  it('should reject a DOCX file that extracts empty text', async () => {
-    mockExtractRawText.mockResolvedValueOnce({ value: '' });
+  it('should preserve HTML formatting in chapter content', async () => {
+    mockConvertToHtml.mockResolvedValueOnce({
+      value: '<p>第一章 测试</p>\n<p>这是<strong>加粗</strong>和<em>斜体</em>文字。</p>\n<p>第二章 继续</p>\n<p>更多内容。</p>',
+      messages: [],
+    });
+
+    const fakeDocx = Buffer.from('PKfake', 'utf-8');
+    const res = await request(docxApp)
+      .post(`/api/projects/${projectId}/import`)
+      .attach('file', fakeDocx, 'styled.docx');
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.chapters[0].title).toBe('第一章 测试');
+    expect(res.body.data.chapters[0].words).toBeGreaterThan(0);
+  });
+
+  it('should return warnings from mammoth', async () => {
+    mockConvertToHtml.mockResolvedValueOnce({
+      value: '<p>第一章</p><p>内容</p>',
+      messages: [
+        { type: 'warning', message: 'Unrecognised style: custom' },
+        { type: 'warning', message: 'Image skipped: unsupported format' },
+      ],
+    });
+
+    const fakeDocx = Buffer.from('PKfake', 'utf-8');
+    const res = await request(docxApp)
+      .post(`/api/projects/${projectId}/import`)
+      .attach('file', fakeDocx, 'warn.docx');
+
+    expect(res.status).toBe(200);
+    expect(res.body.warnings).toHaveLength(2);
+    expect(res.body.warnings[0]).toContain('Unrecognised style');
+  });
+
+  it('should not include warnings field when there are none', async () => {
+    mockConvertToHtml.mockResolvedValueOnce({
+      value: '<p>第一章</p><p>内容</p>',
+      messages: [],
+    });
+
+    const fakeDocx = Buffer.from('PKfake', 'utf-8');
+    const res = await request(docxApp)
+      .post(`/api/projects/${projectId}/import`)
+      .attach('file', fakeDocx, 'clean.docx');
+
+    expect(res.status).toBe(200);
+    expect(res.body.warnings).toBeUndefined();
+  });
+
+  it('should reject a DOCX file that converts to empty HTML', async () => {
+    mockConvertToHtml.mockResolvedValueOnce({ value: '', messages: [] });
 
     const fakeDocx = Buffer.from('PKfake', 'utf-8');
 
@@ -117,8 +169,8 @@ describe('Import Routes - DOCX with mocked mammoth', () => {
     expect(res.body.success).toBe(false);
   });
 
-  it('should handle mammoth extraction errors', async () => {
-    mockExtractRawText.mockRejectedValueOnce(new Error('Corrupt DOCX file'));
+  it('should handle mammoth conversion errors', async () => {
+    mockConvertToHtml.mockRejectedValueOnce(new Error('Corrupt DOCX file'));
 
     const fakeDocx = Buffer.from('PKcorrupt', 'utf-8');
 
@@ -132,8 +184,9 @@ describe('Import Routes - DOCX with mocked mammoth', () => {
   });
 
   it('should handle DOCX import with no chapter markers (single chapter)', async () => {
-    mockExtractRawText.mockResolvedValueOnce({
-      value: 'This is plain text from a DOCX without any chapter markers.',
+    mockConvertToHtml.mockResolvedValueOnce({
+      value: '<p>This is plain text from a DOCX without any chapter markers.</p>',
+      messages: [],
     });
 
     const fakeDocx = Buffer.from('PKfake', 'utf-8');
@@ -146,5 +199,22 @@ describe('Import Routes - DOCX with mocked mammoth', () => {
     expect(res.body.success).toBe(true);
     expect(res.body.data.imported).toBe(1);
     expect(res.body.data.chapters[0].title).toBe('第一章');
+  });
+
+  it('should split HTML chapters using heading tags', async () => {
+    mockConvertToHtml.mockResolvedValueOnce({
+      value: '<h1>第一章 开始</h1>\n<p>内容1</p>\n<h1>第二章 发展</h1>\n<p>内容2</p>',
+      messages: [],
+    });
+
+    const fakeDocx = Buffer.from('PKfake', 'utf-8');
+    const res = await request(docxApp)
+      .post(`/api/projects/${projectId}/import`)
+      .attach('file', fakeDocx, 'headings.docx');
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.imported).toBe(2);
+    expect(res.body.data.chapters[0].title).toBe('第一章 开始');
+    expect(res.body.data.chapters[1].title).toBe('第二章 发展');
   });
 });

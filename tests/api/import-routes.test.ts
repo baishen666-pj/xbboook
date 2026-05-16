@@ -426,9 +426,6 @@ describe('Import Routes', () => {
     });
 
     it('should handle a TXT file with "第X节" markers', async () => {
-      // Note: the regex pattern [章节回幕集] also matches "节" inside content lines like
-      // "第一节的内容", causing those lines to be treated as headings. To avoid this,
-      // content lines must not contain "第...节" patterns.
       const content = [
         '第一节 开端',
         '这是开端的文字描述。',
@@ -447,6 +444,25 @@ describe('Import Routes', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.imported).toBe(3);
+    });
+
+    it('should not treat "第N节的内容" in text as a chapter marker', async () => {
+      const content = [
+        '第一章 概述',
+        '这是第一节的内容，讲述背景。',
+        '这是第二节的内容，讲述发展。',
+        '',
+        '第二章 详解',
+        '本章详细说明各方面内容。',
+      ].join('\n');
+
+      const res = await request(app)
+        .post(`/api/projects/${projectId}/import`)
+        .attach('file', Buffer.from(content, 'utf-8'), 'no-false-match.txt');
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.imported).toBe(2);
     });
 
     it('should handle a TXT file with "第X回" markers', async () => {
