@@ -4,6 +4,47 @@ import type express from 'express';
 
 let testDb: Database.Database;
 
+vi.mock('../../server/db/database.js', () => ({
+  getDb: () => testDb,
+  closeDb: () => {},
+}));
+
+vi.mock('../../server/ws/presenceManager.js', () => ({
+  generateToken: (userId: string) => `test-token-${userId}`,
+  validateToken: (token: string) => {
+    const match = token.match(/^test-token-(.+)$/);
+    return match ? match[1] : null;
+  },
+  addConnection: vi.fn(),
+  removeConnection: vi.fn(),
+  getOnlineUsers: () => [],
+  broadcastToProject: vi.fn(),
+}));
+
+vi.mock('../../server/services/analyticsService.js', () => ({
+  getDashboardData: (projectId: string, days: number) => ({
+    summary: { totalWords: 0, totalDays: 0, avgDaily: 0, bestDay: null },
+    velocity: [],
+    chapterStatus: [{ status: 'draft', count: 0 }],
+    streak: { current: 0, longest: 0 },
+    target: { target: 0, current: 0, percentage: 0 },
+    peakHours: Array.from({ length: 24 }, (_, h) => ({ hour: h, count: 0 })),
+  }),
+  getCharacterAppearances: async () => [],
+}));
+
+vi.mock('../../server/services/fileService.js', () => ({
+  readChapter: vi.fn().mockResolvedValue(''),
+  writeChapter: vi.fn(),
+  writeVersion: vi.fn(),
+  readVersion: vi.fn().mockResolvedValue(''),
+  deleteVersionFile: vi.fn(),
+  deleteVersionDir: vi.fn(),
+  ensureProjectDir: vi.fn(),
+  deleteProjectDir: vi.fn(),
+  deleteChapter: vi.fn(),
+}));
+
 function createTestDb(): Database.Database {
   const db = new Database(':memory:');
   db.pragma('foreign_keys = ON');
@@ -65,14 +106,6 @@ function createTestDb(): Database.Database {
       UNIQUE(project_id, date),
       FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
     );
-    CREATE TABLE chapter_versions (
-      id TEXT PRIMARY KEY, chapter_id TEXT NOT NULL, project_id TEXT NOT NULL,
-      version_number INTEGER NOT NULL, content_hash TEXT NOT NULL,
-      word_count INTEGER DEFAULT 0, snapshot_type TEXT DEFAULT 'auto', label TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
-      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-      FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
-    );
     CREATE TABLE writing_sessions (
       id TEXT PRIMARY KEY, project_id TEXT NOT NULL, chapter_id TEXT NOT NULL,
       started_at TEXT NOT NULL, ended_at TEXT,
@@ -103,6 +136,14 @@ function createTestDb(): Database.Database {
       FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
+    CREATE TABLE chapter_versions (
+      id TEXT PRIMARY KEY, chapter_id TEXT NOT NULL, project_id TEXT NOT NULL,
+      version_number INTEGER NOT NULL, content_hash TEXT NOT NULL,
+      word_count INTEGER DEFAULT 0, snapshot_type TEXT DEFAULT 'auto', label TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+      FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
+    );
     CREATE TABLE chapter_comments (
       id TEXT PRIMARY KEY, chapter_id TEXT NOT NULL, project_id TEXT NOT NULL,
       user_id TEXT NOT NULL, content TEXT NOT NULL,
@@ -117,46 +158,49 @@ function createTestDb(): Database.Database {
   return db;
 }
 
+let cachedApp: any;
+
 export function setupTestServer() {
   beforeEach(async () => {
     testDb = createTestDb();
-    vi.mock('../../server/db/database.js', () => ({
-      getDb: () => testDb,
-      closeDb: () => {},
+    vi.doMock('../../server/db/database.js', () => ({ getDb: () => testDb, closeDb: () => {} }));
+    vi.doMock('../../server/ws/presenceManager.js', () => ({
+      generateToken: (uid: string) => `test-token-${uid}`,
+      validateToken: (token: string) => { const m = token.match(/^test-token-(.+)$/); return m ? m[1] : null; },
+      addConnection: vi.fn(), removeConnection: vi.fn(), getOnlineUsers: () => [], broadcastToProject: vi.fn(),
     }));
-    vi.mock('../../server/ws/presenceManager.js', () => ({
-      generateToken: (userId: string) => `test-token-${userId}`,
-      validateToken: (token: string) => {
-        const match = token.match(/^test-token-(.+)$/);
-        return match ? match[1] : null;
-      },
-      addConnection: vi.fn(),
-      removeConnection: vi.fn(),
-      getOnlineUsers: () => [],
-      broadcastToProject: vi.fn(),
-    }));
-    vi.mock('../../server/services/analyticsService.js', () => ({
-      getDashboardData: (projectId: string, days: number) => ({
-        summary: { totalWords: 0, totalDays: 0, avgDaily: 0, bestDay: null },
-        velocity: [],
-        chapterStatus: [{ status: 'draft', count: 0 }],
-        streak: { current: 0, longest: 0 },
-        target: { target: 0, current: 0, percentage: 0 },
-        peakHours: Array.from({ length: 24 }, (_, h) => ({ hour: h, count: 0 })),
-      }),
+    vi.doMock('../../server/services/analyticsService.js', () => ({
+      getDashboardData: () => ({ summary: { totalWords: 0, totalDays: 0, avgDaily: 0, bestDay: null }, velocity: [], chapterStatus: [], streak: { current: 0, longest: 0 }, target: { target: 0, current: 0, percentage: 0 }, peakHours: Array.from({ length: 24 }, (_, h) => ({ hour: h, count: 0 })) }),
       getCharacterAppearances: async () => [],
     }));
-    const { default: app } = await import('../../server/app.js');
-    return app;
+    vi.doMock('../../server/services/fileService.js', () => ({
+      readChapter: vi.fn().mockResolvedValue(''),
+      writeChapter: vi.fn(),
+      writeVersion: vi.fn(),
+      readVersion: vi.fn().mockResolvedValue(''),
+      deleteVersionFile: vi.fn(),
+      deleteVersionDir: vi.fn(),
+      ensureProjectDir: vi.fn(),
+      deleteProjectDir: vi.fn(),
+      deleteChapter: vi.fn(),
+    }));
+    const mod = await import('../../server/app.js');
+    cachedApp = mod.default;
   });
 
   afterEach(() => {
+    vi.doUnmock('../../server/db/database.js');
+    vi.doUnmock('../../server/ws/presenceManager.js');
+    vi.doUnmock('../../server/services/analyticsService.js');
+    vi.doUnmock('../../server/services/fileService.js');
     vi.restoreAllMocks();
     if (testDb) testDb.close();
+    cachedApp = undefined;
   });
 
   return async () => {
-    const { default: app } = await import('../../server/app.js');
-    return app;
+    if (cachedApp) return cachedApp;
+    const mod = await import('../../server/app.js');
+    return mod.default;
   };
 }
