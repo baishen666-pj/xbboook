@@ -141,6 +141,10 @@ export function RelationshipGraph({ characters, relations, onNodeClick, onEdgeCl
       ref={containerRef}
       className="w-full h-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-1)]"
       style={{ minHeight: 300 }}
-    />
+      role="img"
+      aria-label={`角色关系图谱: ${characters.length} 个角色, ${relations.length} 段关系`}
+    >
+      <span className="sr-only">此区域显示角色关系可视化图谱，支持拖拽和缩放交互</span>
+    </div>
   );
 }

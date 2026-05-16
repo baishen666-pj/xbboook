@@ -27,7 +27,7 @@ export class ErrorBoundary extends Component<Props, State> {
         <div className="flex h-full items-center justify-center p-4">
           <div className="max-w-sm text-center">
             <div className="mb-2 text-sm text-red-400">渲染出错</div>
-            <div className="mb-3 text-xs text-white/30">{this.state.error?.message}</div>
+            <div className="mb-3 text-xs text-[var(--color-text-muted)]">{this.state.error?.message}</div>
             <button
               onClick={() => this.setState({ hasError: false, error: null })}
               className="rounded bg-[var(--color-primary)] px-3 py-1 text-xs text-white hover:opacity-90"

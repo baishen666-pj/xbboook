@@ -2,6 +2,7 @@ import { useState, lazy, Suspense } from "react";
 import { useUiStore } from "@/stores/uiStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { ScrollArea } from "@/components/ui/ScrollArea";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 
 const VolumeTree = lazy(() => import("./VolumeTree").then(m => ({ default: m.VolumeTree })));
 const CharacterList = lazy(() => import("@/components/character/CharacterList").then(m => ({ default: m.CharacterList })));
@@ -112,14 +113,16 @@ export function ChapterSidebar() {
       {/* Search overlay */}
       {isSearchOpen && (
         <div className="border-b border-[var(--color-border)] tab-content-enter" style={{ height: "40vh", minHeight: 160 }}>
-          <Suspense fallback={<div className="p-4 text-[var(--color-text-muted)] text-[var(--text-sm)]">加载中...</div>}>
-            <SearchPanel onClose={closeSearch} />
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<div className="p-4 text-[var(--color-text-muted)] text-[var(--text-sm)]">加载中...</div>}>
+              <SearchPanel onClose={closeSearch} />
+            </Suspense>
+          </ErrorBoundary>
         </div>
       )}
 
       {/* Tabs */}
-      <div className="flex border-b border-[var(--color-border)]" role="tablist" aria-label="侧边栏标签页">
+      <div className="flex border-b border-[var(--color-border)] overflow-x-auto scrollbar-none" role="tablist" aria-label="侧边栏标签页">
         {TABS.map((tab) => (
           <button
             key={tab.key}
@@ -143,40 +146,50 @@ export function ChapterSidebar() {
       <div className="flex-1 overflow-hidden">
         {showImport ? (
           <div className="tab-content-enter h-full" role="tabpanel">
-            <Suspense fallback={<div className="p-4 text-[var(--color-text-muted)] text-[var(--text-sm)]">加载中...</div>}>
-              <ImportPanel onClose={() => setShowImport(false)} />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<div className="p-4 text-[var(--color-text-muted)] text-[var(--text-sm)]">加载中...</div>}>
+                <ImportPanel onClose={() => setShowImport(false)} />
+              </Suspense>
+            </ErrorBoundary>
           </div>
         ) : showGoal ? (
           <div className="tab-content-enter h-full" role="tabpanel">
-            <Suspense fallback={<div className="p-4 text-[var(--color-text-muted)] text-[var(--text-sm)]">加载中...</div>}>
-              <WritingGoalPanel />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<div className="p-4 text-[var(--color-text-muted)] text-[var(--text-sm)]">加载中...</div>}>
+                <WritingGoalPanel />
+              </Suspense>
+            </ErrorBoundary>
           </div>
         ) : activeLeftTab === "versions" ? (
           <div id="tabpanel-versions" className="tab-content-enter h-full" role="tabpanel" aria-label="历史版本">
-            <Suspense fallback={<div className="p-4 text-[var(--color-text-muted)] text-[var(--text-sm)]">加载中...</div>}>
-              <VersionPanel />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<div className="p-4 text-[var(--color-text-muted)] text-[var(--text-sm)]">加载中...</div>}>
+                <VersionPanel />
+              </Suspense>
+            </ErrorBoundary>
           </div>
         ) : activeLeftTab === "schedule" ? (
           <div id="tabpanel-schedule" className="tab-content-enter h-full" role="tabpanel" aria-label="排期">
-            <Suspense fallback={<div className="p-4 text-[var(--color-text-muted)] text-[var(--text-sm)]">加载中...</div>}>
-              <SchedulePanel />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<div className="p-4 text-[var(--color-text-muted)] text-[var(--text-sm)]">加载中...</div>}>
+                <SchedulePanel />
+              </Suspense>
+            </ErrorBoundary>
           </div>
         ) : (
           <ScrollArea className="h-full">
             <div className="tab-content-enter">
-              <Suspense fallback={<div className="p-4 text-[var(--color-text-muted)] text-[var(--text-sm)]">加载中...</div>}>
-                {activeLeftTab === "chapters" && <div id="tabpanel-chapters" role="tabpanel" aria-label="章节列表"><VolumeTree /></div>}
-                {activeLeftTab === "characters" && <div id="tabpanel-characters" role="tabpanel" aria-label="角色列表"><CharacterList /></div>}
-                {activeLeftTab === "worldview" && <div id="tabpanel-worldview" role="tabpanel" aria-label="世界观"><WorldviewList /></div>}
-                {activeLeftTab === "outline" && <div id="tabpanel-outline" role="tabpanel" aria-label="大纲"><OutlinePanel /></div>}
-                {activeLeftTab === "foreshadowing" && <div id="tabpanel-foreshadowing" role="tabpanel" aria-label="伏笔"><ForeshadowingPanel /></div>}
-                {activeLeftTab === "arcs" && <div id="tabpanel-arcs" role="tabpanel" aria-label="故事弧线"><StoryArcPanel /></div>}
-                {activeLeftTab === "snippets" && <div id="tabpanel-snippets" role="tabpanel" aria-label="片段"><SnippetPanel /></div>}
-              </Suspense>
+              <ErrorBoundary>
+                <Suspense fallback={<div className="p-4 text-[var(--color-text-muted)] text-[var(--text-sm)]">加载中...</div>}>
+                  {activeLeftTab === "chapters" && <div id="tabpanel-chapters" role="tabpanel" aria-label="章节列表"><VolumeTree /></div>}
+                  {activeLeftTab === "characters" && <div id="tabpanel-characters" role="tabpanel" aria-label="角色列表"><CharacterList /></div>}
+                  {activeLeftTab === "worldview" && <div id="tabpanel-worldview" role="tabpanel" aria-label="世界观"><WorldviewList /></div>}
+                  {activeLeftTab === "outline" && <div id="tabpanel-outline" role="tabpanel" aria-label="大纲"><OutlinePanel /></div>}
+                  {activeLeftTab === "foreshadowing" && <div id="tabpanel-foreshadowing" role="tabpanel" aria-label="伏笔"><ForeshadowingPanel /></div>}
+                  {activeLeftTab === "arcs" && <div id="tabpanel-arcs" role="tabpanel" aria-label="故事弧线"><StoryArcPanel /></div>}
+                  {activeLeftTab === "snippets" && <div id="tabpanel-snippets" role="tabpanel" aria-label="片段"><SnippetPanel /></div>}
+                </Suspense>
+              </ErrorBoundary>
             </div>
           </ScrollArea>
         )}

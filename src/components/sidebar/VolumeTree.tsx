@@ -274,7 +274,7 @@ export function VolumeTree({ onBatchPolish }: { onBatchPolish?: () => void }) {
       </div>
 
       {isSelectMode && selectedChapterIds.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--color-border)] bg-[var(--color-surface-1)] px-4 py-3 shadow-lg">
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--color-border)] bg-[var(--color-surface-1)] px-4 py-3 shadow-lg md:bottom-0 bottom-14">
           <div className="flex items-center justify-center gap-3">
             <Button
               variant="primary"

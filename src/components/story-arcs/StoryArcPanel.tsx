@@ -150,6 +150,10 @@ export function StoryArcPanel() {
             <div
               className="flex items-center gap-2 px-3 py-2 bg-[var(--color-surface-2)] cursor-pointer hover:bg-[var(--color-surface-3)] transition-colors"
               onClick={() => setExpandedArc(expandedArc === arc.id ? null : arc.id)}
+              role="button"
+              tabIndex={0}
+              aria-expanded={expandedArc === arc.id}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedArc(expandedArc === arc.id ? null : arc.id); } }}
             >
               <svg
                 width="12" height="12" viewBox="0 0 12 12"
@@ -182,7 +186,7 @@ export function StoryArcPanel() {
                 </span>
               )}
 
-              <button onClick={(e) => { e.stopPropagation(); cycleArcStatus(arc.id, arc.status); }}>
+              <button onClick={(e) => { e.stopPropagation(); cycleArcStatus(arc.id, arc.status); }} aria-label={`切换弧线状态: ${ARC_STATUS_LABELS[arc.status]}`}>
                 <StatusBadge label={ARC_STATUS_LABELS[arc.status] ?? DEFAULT_LABEL} color={ARC_STATUS_COLORS[arc.status] ?? DEFAULT_ARC_COLOR} />
               </button>
               <DeleteButton
@@ -230,7 +234,7 @@ export function StoryArcPanel() {
                 {/* Threads */}
                 {arcThreads(arc.id).map((thread) => (
                   <div key={thread.id} className="flex items-center gap-1.5 p-1.5 rounded-[var(--radius-sm)] hover:bg-[var(--color-surface-2)] transition-colors">
-                    <button onClick={() => cyclePriority(thread.id, thread.priority)} title="切换优先级">
+                    <button onClick={() => cyclePriority(thread.id, thread.priority)} title="切换优先级" aria-label={`切换优先级: ${PRIORITY_LABELS[thread.priority]}`}>
                       <StatusBadge label={PRIORITY_LABELS[thread.priority] ?? DEFAULT_LABEL} color={PRIORITY_COLORS[thread.priority] ?? DEFAULT_PRIORITY_COLOR} />
                     </button>
 
@@ -256,7 +260,7 @@ export function StoryArcPanel() {
                       </span>
                     )}
 
-                    <button onClick={() => cycleThreadStatus(thread.id, thread.status)}>
+                    <button onClick={() => cycleThreadStatus(thread.id, thread.status)} aria-label={`切换线索状态: ${THREAD_STATUS_LABELS[thread.status]}`}>
                       <StatusBadge label={THREAD_STATUS_LABELS[thread.status] ?? DEFAULT_LABEL} color={THREAD_STATUS_COLORS[thread.status] ?? DEFAULT_THREAD_COLOR} />
                     </button>
                     <DeleteButton onDelete={() => store.deleteThread(pid, thread.id)} />
@@ -292,11 +296,11 @@ export function StoryArcPanel() {
             <p className="text-[10px] text-[var(--color-text-muted)] px-2 mb-1">未分配线索</p>
             {unassignedThreads.map((thread) => (
               <div key={thread.id} className="flex items-center gap-1.5 p-1.5 rounded-[var(--radius-sm)] hover:bg-[var(--color-surface-2)] transition-colors">
-                <button onClick={() => cyclePriority(thread.id, thread.priority)}>
+                <button onClick={() => cyclePriority(thread.id, thread.priority)} aria-label={`切换优先级: ${PRIORITY_LABELS[thread.priority]}`}>
                   <StatusBadge label={PRIORITY_LABELS[thread.priority] ?? DEFAULT_LABEL} color={PRIORITY_COLORS[thread.priority] ?? DEFAULT_PRIORITY_COLOR} />
                 </button>
                 <span className="flex-1 text-[var(--text-xs)] text-[var(--color-text-muted)] truncate">{thread.name}</span>
-                <button onClick={() => cycleThreadStatus(thread.id, thread.status)}>
+                <button onClick={() => cycleThreadStatus(thread.id, thread.status)} aria-label={`切换线索状态: ${THREAD_STATUS_LABELS[thread.status]}`}>
                   <StatusBadge label={THREAD_STATUS_LABELS[thread.status] ?? DEFAULT_LABEL} color={THREAD_STATUS_COLORS[thread.status] ?? DEFAULT_THREAD_COLOR} />
                 </button>
                 <DeleteButton onDelete={() => store.deleteThread(pid, thread.id)} />

@@ -104,6 +104,7 @@ export function CharacterList() {
             value={filterRole}
             onChange={(e) => setFilterRole(e.target.value)}
             className="rounded border border-[var(--color-border)] bg-transparent px-2 py-1 text-[var(--text-xs)] text-[var(--color-text-secondary)] focus:outline-none"
+            aria-label="按角色类型筛选"
           >
             <option value="all">全部角色</option>
             {ROLE_TYPES.map((r) => (
@@ -123,6 +124,7 @@ export function CharacterList() {
                 : "text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-secondary)]"
             }`}
             title={viewMode === "list" ? "切换到图谱视图" : "切换到列表视图"}
+            aria-pressed={viewMode === "graph"}
           >
             {viewMode === "list" ? (
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.2">
@@ -188,6 +190,10 @@ export function CharacterList() {
                       key={r.id}
                       className="flex items-center gap-1.5 rounded px-2 py-1 text-[11px] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] cursor-pointer"
                       onClick={() => setSelectedRelation(r)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedRelation(r); } }}
+                      aria-label={`${a?.name ?? "?"} - ${r.relationType} - ${b?.name ?? "?"}`}
                     >
                       <span className="text-[var(--color-text-secondary)] truncate">{a?.name ?? "?"}</span>
                       <span className="shrink-0 text-[var(--color-primary)]/70">-</span>

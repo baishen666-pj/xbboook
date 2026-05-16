@@ -68,6 +68,24 @@ export function ResizablePanel({
         className="absolute top-0 bottom-0 z-10 w-1 cursor-col-resize hover:bg-[var(--color-primary)]/30 transition-colors duration-[var(--duration-fast)]"
         style={{ [side === "left" ? "right" : "left"]: 0 }}
         onMouseDown={handleMouseDown}
+        onKeyDown={(e) => {
+          const step = 20;
+          if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+            e.preventDefault();
+            const delta = side === "left" ? -step : step;
+            const next = Math.min(maxWidth, Math.max(minWidth, width + delta));
+            setWidth(next);
+            latestWidth.current = next;
+            onResize?.(next);
+          } else if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+            e.preventDefault();
+            const delta = side === "left" ? step : -step;
+            const next = Math.min(maxWidth, Math.max(minWidth, width + delta));
+            setWidth(next);
+            latestWidth.current = next;
+            onResize?.(next);
+          }
+        }}
         role="separator"
         aria-orientation="vertical"
         aria-valuenow={width}
