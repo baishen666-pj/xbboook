@@ -17,7 +17,11 @@ interface Props {
 
 export function DashboardPanel({ onClose }: Props) {
   const currentProject = useProjectStore((s) => s.currentProject);
-  const { dashboard, characters, loading, fetchDashboard, fetchCharacters } = useAnalyticsStore();
+  const dashboard = useAnalyticsStore((s) => s.dashboard);
+  const characters = useAnalyticsStore((s) => s.characters);
+  const loading = useAnalyticsStore((s) => s.loading);
+  const fetchDashboard = useAnalyticsStore((s) => s.fetchDashboard);
+  const fetchCharacters = useAnalyticsStore((s) => s.fetchCharacters);
   const [days, setDays] = useState(30);
 
   useEffect(() => {

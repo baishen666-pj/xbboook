@@ -16,19 +16,43 @@ function buildOnlinePayload(projectId: string) {
   });
 }
 
-export function createWsServer(server: Server): WebSocketServer {
-  const wss = new WebSocketServer({ server, path: '/ws' });
+const ALLOWED_ORIGINS = new Set([
+  'http://localhost:5210',
+  'http://localhost:3210',
+  'http://127.0.0.1:5210',
+  'http://127.0.0.1:3210',
+]);
+
+export function createWsServer(server: Server, corsOrigin?: string): WebSocketServer {
+  if (corsOrigin) {
+    ALLOWED_ORIGINS.add(corsOrigin);
+  }
+
+  const wss = new WebSocketServer({
+    server,
+    path: '/ws',
+    maxPayload: 1024 * 64,
+    verifyClient: (info, callback) => {
+      const origin = info.req.headers.origin;
+      if (!origin || ALLOWED_ORIGINS.has(origin)) {
+        callback(true);
+      } else {
+        callback(false, 403, 'Forbidden origin');
+      }
+    },
+  });
 
   const heartbeatInterval = setInterval(() => {
     const now = Date.now();
-    for (const entries of presenceManager['presence'].values()) {
+    for (const entries of presenceManager.getAllPresenceEntries()) {
       for (const entry of entries) {
         if (now - entry.lastActive.getTime() > 60_000 && entry.ws.readyState === 1) {
           entry.ws.terminate();
         }
       }
     }
-  }, 30_000).unref?.();
+  }, 30_000);
+  heartbeatInterval.unref?.();
 
   wss.on('close', () => {
     clearInterval(heartbeatInterval);
@@ -78,8 +102,7 @@ export function createWsServer(server: Server): WebSocketServer {
         case 'ping': {
           ws.send(JSON.stringify({ type: 'pong', payload: {} }));
           if (userId && projectId) {
-            const entries = presenceManager['presence']?.get(userId);
-            const entry = entries?.find((e) => e.ws === ws);
+            const entry = presenceManager.findEntryByWs(userId, ws);
             if (entry) entry.lastActive = new Date();
           }
           break;

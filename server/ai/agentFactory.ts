@@ -9,6 +9,15 @@ export type AiConfig = StoredAiConfig;
 
 export { isConfigured } from './configStore.js';
 
+function sanitizeApiKey(text: string): string {
+  return text
+    .replace(/sk-[a-zA-Z0-9]{20,}/g, '***')
+    .replace(/key-[a-zA-Z0-9]{20,}/g, '***')
+    .replace(/dify-[a-zA-Z0-9]{20,}/g, '***')
+    .replace(/(?:Bearer\s*)?[a-f0-9]{32,}/gi, '***')
+    .replace(/(?:Bearer\s*)?[A-Za-z0-9+_/-]{40,}/g, (m) => m.startsWith('Bearer ') ? m : '***');
+}
+
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 1000;
 const RETRYABLE_STATUS_CODES = new Set([429, 500, 502, 503, 504]);
@@ -63,7 +72,7 @@ export async function* streamChat(
 
       if (!response.ok) {
         const errorText = await response.text();
-        const sanitized = errorText.replace(/sk-[a-zA-Z0-9]{20,}/g, '***');
+        const sanitized = sanitizeApiKey(errorText);
 
         if (RETRYABLE_STATUS_CODES.has(response.status) && attempt < MAX_RETRIES) {
           lastError = new Error(`AI API error (${response.status}): ${sanitized}`);

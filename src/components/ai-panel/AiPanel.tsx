@@ -4,6 +4,7 @@ import { AiChatInput } from "./AiChatInput";
 import { AiSkillPicker } from "./AiSkillPicker";
 import { AiSettingsPanel } from "./AiSettingsPanel";
 import { CharacterDialoguePicker } from "./CharacterDialoguePicker";
+import { ContextHints } from "./ContextHints";
 
 export function AiPanel() {
   const activeSkillId = useAiStore((s) => s.activeSkillId);
@@ -29,6 +30,9 @@ export function AiPanel() {
 
       {/* Skill picker */}
       <AiSkillPicker />
+
+      {/* Context hints */}
+      <ContextHints />
 
       {/* Character dialogue picker (only for character-dialogue skill) */}
       {activeSkillId === "character-dialogue" && <CharacterDialoguePicker />}

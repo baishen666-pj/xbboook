@@ -10,7 +10,11 @@ export function CommentPanel() {
   const activeChapterId = useEditorStore((s) => s.activeChapterId);
   const currentProject = useProjectStore((s) => s.currentProject);
   const currentUser = useCollabStore((s) => s.currentUser);
-  const { comments, fetchComments, addComment, resolveComment, removeComment } = useCommentStore();
+  const comments = useCommentStore((s) => s.comments);
+  const fetchComments = useCommentStore((s) => s.fetchComments);
+  const addComment = useCommentStore((s) => s.addComment);
+  const resolveComment = useCommentStore((s) => s.resolveComment);
+  const removeComment = useCommentStore((s) => s.removeComment);
   const [showInput, setShowInput] = useState(false);
   const [filter, setFilter] = useState<"all" | "open" | "resolved">("all");
 

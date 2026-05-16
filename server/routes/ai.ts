@@ -3,7 +3,7 @@ import { processAiRequest, listSkills, getSkill, isConfigured } from '../service
 import { setupSSE, sendSSE, sendSSEError, sendSSEDone } from '../middleware/sse.js';
 import { getConfig } from '../ai/agentFactory.js';
 import { saveConfig, loadStoredConfig } from '../ai/configStore.js';
-import { PROVIDERS, getProvider } from '../ai/providers.js';
+import { PROVIDERS } from '../ai/providers.js';
 import { findById as findChapterById } from '../db/repositories/chapterRepo.js';
 import { findById as findProjectById } from '../db/repositories/projectRepo.js';
 import { findByProject as findCharacters } from '../db/repositories/characterRepo.js';
@@ -11,11 +11,34 @@ import { findByProject as findOutlines } from '../db/repositories/outlineRepo.js
 import { findByProject as findWorldviews } from '../db/repositories/worldviewRepo.js';
 import { findAll as findAllForeshadowing } from '../db/repositories/foreshadowingRepo.js';
 import { readChapter } from '../services/fileService.js';
-import { createJob, runPipeline, getJob, type PipelineJob } from '../ai/chapterPipeline.js';
-import { isBuiltInSkill } from '../ai/writingSkills.js';
+import { createJob, runPipeline, getJob } from '../ai/chapterPipeline.js';
 import { getPluginSkill, getPluginSkills } from '../plugins/registry.js';
 
 const router = Router();
+
+function validateBaseUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return 'baseUrl 仅支持 http/https 协议';
+    }
+    if (parsed.hostname === '169.254.169.254' || parsed.hostname === 'metadata.google.internal') {
+      return '不允许访问云元数据端点';
+    }
+    return null;
+  } catch {
+    return 'baseUrl 格式无效';
+  }
+}
+
+function sanitizeApiKey(text: string): string {
+  return text
+    .replace(/sk-[a-zA-Z0-9]{20,}/g, '***')
+    .replace(/key-[a-zA-Z0-9]{20,}/g, '***')
+    .replace(/dify-[a-zA-Z0-9]{20,}/g, '***')
+    .replace(/(?:Bearer\s*)?[a-f0-9]{32,}/gi, '***')
+    .replace(/(?:Bearer\s*)?[A-Za-z0-9+_/-]{40,}/g, (m) => m.startsWith('Bearer ') ? m : '***');
+}
 
 // List available providers
 router.get('/providers', (_req, res) => {
@@ -73,6 +96,17 @@ router.patch('/config', (req, res) => {
     res.status(400).json({ success: false, error: 'apiKey must be a string' });
     return;
   }
+  if (baseUrl !== undefined) {
+    if (typeof baseUrl !== 'string') {
+      res.status(400).json({ success: false, error: 'baseUrl must be a string' });
+      return;
+    }
+    const err = validateBaseUrl(baseUrl);
+    if (err) {
+      res.status(400).json({ success: false, error: err });
+      return;
+    }
+  }
 
   const updated = saveConfig({ provider, apiKey, baseUrl, model, temperature, maxTokens });
   const maskedKey = updated.apiKey
@@ -129,7 +163,7 @@ router.post('/test', async (_req, res) => {
       res.json({ success: true, data: { reply: reply.slice(0, 100) } });
     } else {
       const errorText = await response.text();
-      const sanitized = errorText.replace(/sk-[a-zA-Z0-9]{20,}/g, '***');
+      const sanitized = sanitizeApiKey(errorText);
       res.json({ success: false, error: `HTTP ${response.status}: ${sanitized.slice(0, 200)}` });
     }
   } catch (err) {

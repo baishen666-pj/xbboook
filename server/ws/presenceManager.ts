@@ -12,7 +12,15 @@ interface PresenceEntry {
 }
 
 const presence = new Map<string, PresenceEntry[]>();
-export { presence };
+
+export function getAllPresenceEntries(): IterableIterator<PresenceEntry[]> {
+  return presence.values();
+}
+
+export function findEntryByWs(userId: string, ws: WebSocket): PresenceEntry | undefined {
+  const entries = presence.get(userId);
+  return entries?.find((e) => e.ws === ws);
+}
 
 setInterval(() => {
   const now = Date.now();

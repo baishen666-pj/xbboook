@@ -8,8 +8,10 @@ import TextAlign from "@tiptap/extension-text-align";
 import { Markdown } from "tiptap-markdown";
 import { useEffect, useRef, useCallback } from "react";
 import { GhostMark } from "./GhostMark";
+import { GhostTextToolbar } from "./GhostTextToolbar";
 import { useEditorStore } from "@/stores/editorStore";
 import { useUiStore } from "@/stores/uiStore";
+import { useGhostCompletion } from "@/hooks/useGhostCompletion";
 import "@/styles/editor.css";
 
 interface NovelEditorProps {
@@ -21,6 +23,8 @@ export function NovelEditor({ content, onUpdate }: NovelEditorProps) {
   const updateContent = useEditorStore((s) => s.updateContent);
   const setEditor = useEditorStore((s) => s.setEditor);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useGhostCompletion();
 
   const handleUpdate = useCallback(
     (text: string) => {
@@ -109,8 +113,9 @@ export function NovelEditor({ content, onUpdate }: NovelEditorProps) {
   }, []);
 
   return (
-    <div className="h-full overflow-y-auto smooth-scroll">
+    <div className="relative h-full overflow-y-auto smooth-scroll">
       <EditorContent editor={editor} className="h-full" />
+      <GhostTextToolbar />
     </div>
   );
 }

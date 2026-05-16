@@ -54,31 +54,69 @@ router.post('/', validate(createSchema), (req, res) => {
 
 router.put('/:commentId', validate(updateSchema), (req, res) => {
   const { commentId } = req.params as { commentId: string };
-  const updated = commentRepo.updateContent(commentId, req.body.content);
-  if (!updated) {
+  const authHeader = req.headers.authorization;
+  let userId: string | null = null;
+  if (authHeader?.startsWith('Bearer ')) {
+    userId = validateToken(authHeader.slice(7));
+  }
+  if (!userId) {
+    res.status(401).json({ success: false, error: '未认证' });
+    return;
+  }
+  const existing = commentRepo.findById(commentId);
+  if (!existing) {
     res.status(404).json({ success: false, error: '批注不存在' });
     return;
   }
+  if (existing.user_id !== userId) {
+    res.status(403).json({ success: false, error: '只能修改自己的批注' });
+    return;
+  }
+  const updated = commentRepo.updateContent(commentId, req.body.content);
   res.json({ success: true, data: updated });
 });
 
 router.put('/:commentId/resolve', (req, res) => {
   const { commentId } = req.params as { commentId: string };
-  const resolved = commentRepo.resolve(commentId);
-  if (!resolved) {
+  const authHeader = req.headers.authorization;
+  let userId: string | null = null;
+  if (authHeader?.startsWith('Bearer ')) {
+    userId = validateToken(authHeader.slice(7));
+  }
+  if (!userId) {
+    res.status(401).json({ success: false, error: '未认证' });
+    return;
+  }
+  const existing = commentRepo.findById(commentId);
+  if (!existing) {
     res.status(404).json({ success: false, error: '批注不存在' });
     return;
   }
+  const resolved = commentRepo.resolve(commentId);
   res.json({ success: true, data: resolved });
 });
 
 router.delete('/:commentId', (req, res) => {
   const { commentId } = req.params as { commentId: string };
-  const removed = commentRepo.remove(commentId);
-  if (!removed) {
+  const authHeader = req.headers.authorization;
+  let userId: string | null = null;
+  if (authHeader?.startsWith('Bearer ')) {
+    userId = validateToken(authHeader.slice(7));
+  }
+  if (!userId) {
+    res.status(401).json({ success: false, error: '未认证' });
+    return;
+  }
+  const existing = commentRepo.findById(commentId);
+  if (!existing) {
     res.status(404).json({ success: false, error: '批注不存在' });
     return;
   }
+  if (existing.user_id !== userId) {
+    res.status(403).json({ success: false, error: '只能删除自己的批注' });
+    return;
+  }
+  commentRepo.remove(commentId);
   res.json({ success: true });
 });
 

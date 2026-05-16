@@ -322,6 +322,7 @@ describe('Comments Routes', () => {
 
       const res = await request(app)
         .put(`/api/projects/${projectId}/chapters/${chapterId}/comments/${commentId}`)
+        .set('Authorization', `Bearer test-token-${userId}`)
         .send({ content: 'Updated content' });
 
       expect(res.status).toBe(200);
@@ -332,6 +333,7 @@ describe('Comments Routes', () => {
     it('returns 404 for non-existent comment', async () => {
       const res = await request(app)
         .put(`/api/projects/${projectId}/chapters/${chapterId}/comments/nonexistent`)
+        .set('Authorization', `Bearer test-token-${userId}`)
         .send({ content: 'Nope' });
 
       expect(res.status).toBe(404);
@@ -349,7 +351,8 @@ describe('Comments Routes', () => {
       });
 
       const res = await request(app)
-        .put(`/api/projects/${projectId}/chapters/${chapterId}/comments/${commentId}/resolve`);
+        .put(`/api/projects/${projectId}/chapters/${chapterId}/comments/${commentId}/resolve`)
+        .set('Authorization', `Bearer test-token-${userId}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -358,7 +361,8 @@ describe('Comments Routes', () => {
 
     it('returns 404 for non-existent comment', async () => {
       const res = await request(app)
-        .put(`/api/projects/${projectId}/chapters/${chapterId}/comments/nonexistent/resolve`);
+        .put(`/api/projects/${projectId}/chapters/${chapterId}/comments/nonexistent/resolve`)
+        .set('Authorization', `Bearer test-token-${userId}`);
 
       expect(res.status).toBe(404);
       expect(res.body.success).toBe(false);
@@ -375,7 +379,8 @@ describe('Comments Routes', () => {
       });
 
       const res = await request(app)
-        .delete(`/api/projects/${projectId}/chapters/${chapterId}/comments/${commentId}`);
+        .delete(`/api/projects/${projectId}/chapters/${chapterId}/comments/${commentId}`)
+        .set('Authorization', `Bearer test-token-${userId}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -387,7 +392,8 @@ describe('Comments Routes', () => {
 
     it('returns 404 for non-existent comment', async () => {
       const res = await request(app)
-        .delete(`/api/projects/${projectId}/chapters/${chapterId}/comments/nonexistent`);
+        .delete(`/api/projects/${projectId}/chapters/${chapterId}/comments/nonexistent`)
+        .set('Authorization', `Bearer test-token-${userId}`);
 
       expect(res.status).toBe(404);
       expect(res.body.success).toBe(false);

@@ -268,7 +268,9 @@ export async function buildContext(options: BuildContextOptions): Promise<Contex
         .join('\n\n');
       sources.push({ priority: 7, label: '世界设定', content: truncateToTokens(wvText, 500) });
     }
-  } catch { /* worldview table may not exist */ }
+  } catch (err) {
+    if (process.env.NODE_ENV === 'development') console.warn('[contextBuilder] worldview load failed:', err);
+  }
 
   // Priority 6: foreshadowing (skill-aware filtering)
   try {
@@ -286,7 +288,9 @@ export async function buildContext(options: BuildContextOptions): Promise<Contex
         sources.push({ priority: 6, label: '伏笔线索', content: truncateToTokens(fsText, 400) });
       }
     }
-  } catch { /* foreshadowing table may not exist */ }
+  } catch (err) {
+    if (process.env.NODE_ENV === 'development') console.warn('[contextBuilder] foreshadowing load failed:', err);
+  }
 
   // Priority 6: character relations
   if (characters.length > 0) {
@@ -303,7 +307,9 @@ export async function buildContext(options: BuildContextOptions): Promise<Contex
           sources.push({ priority: 6, label: '角色关系', content: relationText });
         }
       }
-    } catch { /* relations table may not exist */ }
+    } catch (err) {
+      if (process.env.NODE_ENV === 'development') console.warn('[contextBuilder] relations load failed:', err);
+    }
   }
 
   // Priority 5: outline structure (when not passed via outlineContent)
@@ -316,7 +322,9 @@ export async function buildContext(options: BuildContextOptions): Promise<Contex
           .join('\n');
         sources.push({ priority: 5, label: '大纲结构', content: truncateToTokens(outlineText, 400) });
       }
-    } catch { /* outlines table may not exist */ }
+    } catch (err) {
+      if (process.env.NODE_ENV === 'development') console.warn('[contextBuilder] outlines load failed:', err);
+    }
   }
 
   // Apply Lost-in-Middle ordering and budget

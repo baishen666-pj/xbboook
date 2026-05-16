@@ -905,7 +905,7 @@ describe('Outlines API', () => {
 
       expect(deleteRes.status).toBe(200);
       expect(deleteRes.body.success).toBe(true);
-      expect(deleteRes.body.data).toBeNull();
+      expect(deleteRes.body.data).toBeUndefined();
 
       const listRes = await request(app)
         .get(`/api/projects/${projectId}/outlines`);

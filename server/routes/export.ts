@@ -27,6 +27,15 @@ function textToHtml(text: string): string {
     .join('\n');
 }
 
+function sanitizeHtml(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/ on\w+="[^"]*"/gi, '')
+    .replace(/ on\w+='[^']*'/gi, '')
+    .replace(/ javascript:/gi, '');
+}
+
 function stripHtml(html: string): string {
   return html
     .replace(/<br\s*\/?>/gi, '\n')
@@ -44,6 +53,11 @@ const CJK_FONT_PATH = (() => {
     'C:/Windows/Fonts/simhei.ttf',
     'C:/Windows/Fonts/msyh.ttc',
     'C:/Windows/Fonts/simsun.ttc',
+    '/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc',
+    '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
+    '/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc',
+    '/System/Library/Fonts/PingFang.ttc',
+    '/System/Library/Fonts/STHeiti Light.ttc',
   ];
   for (const f of candidates) {
     if (fs.existsSync(f)) return f;
@@ -178,7 +192,7 @@ router.get('/epub', async (req, res) => {
         });
       }
       for (const ch of group.chapters) {
-        const htmlContent = isHtmlContent(ch.content) ? ch.content : textToHtml(ch.content);
+        const htmlContent = isHtmlContent(ch.content) ? sanitizeHtml(ch.content) : textToHtml(ch.content);
         content.push({ title: ch.title, content: htmlContent });
       }
     }

@@ -74,7 +74,7 @@ router.delete('/:id', (req, res) => {
     res.status(404).json({ success: false, error: '设定不存在' });
     return;
   }
-  res.json({ success: true, data: null });
+  res.json({ success: true });
 });
 
 export default router;

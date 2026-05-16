@@ -86,6 +86,39 @@ export async function testConnection(): Promise<{ success: boolean; reply?: stri
   return res.json();
 }
 
+export interface CompletionRequest {
+  projectId: string;
+  chapterId: string;
+  cursorContext: string;
+  maxTokens?: number;
+}
+
+export async function fetchCompletion(req: CompletionRequest): Promise<string> {
+  const res = await fetch('/api/ai/complete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  });
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || '补全失败');
+  return json.data.completion;
+}
+
+export interface ContextSummary {
+  genre: string | null;
+  hasWorldview: boolean;
+  plantedForeshadowingCount: number;
+  charactersWithoutVoice: number;
+  outlineNodeCount: number;
+}
+
+export async function fetchContextSummary(projectId: string): Promise<ContextSummary> {
+  const res = await fetch(`/api/ai/context-summary/${projectId}`);
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || '获取上下文摘要失败');
+  return json.data;
+}
+
 export async function* streamAi(req: StreamRequest, signal?: AbortSignal): AsyncGenerator<{ type: 'chunk' | 'done'; content: string }> {
   const response = await fetch('/api/ai/stream', {
     method: 'POST',

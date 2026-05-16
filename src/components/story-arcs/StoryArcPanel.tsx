@@ -5,18 +5,22 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { InlineForm } from '@/components/ui/InlineForm';
 import { DeleteButton } from '@/components/ui/DeleteButton';
 
-const ARC_STATUS_ORDER = ['planned', 'active', 'completed', 'abandoned'] as const;
+type ArcStatus = 'planned' | 'active' | 'completed' | 'abandoned';
+type ThreadStatus = 'open' | 'resolved' | 'dormant' | 'abandoned';
+type Priority = 'critical' | 'high' | 'normal' | 'low';
+
+const ARC_STATUS_ORDER: readonly ArcStatus[] = ['planned', 'active', 'completed', 'abandoned'] as const;
 const ARC_STATUS_LABELS: Record<string, string> = { planned: '计划中', active: '进行中', completed: '已完成', abandoned: '已废弃' };
 const DEFAULT_LABEL = '';
 const ARC_STATUS_COLORS: Record<string, "blue" | "green" | "gray" | "red"> = { planned: 'blue', active: 'green', completed: 'gray', abandoned: 'red' };
 const DEFAULT_ARC_COLOR: "blue" | "green" | "gray" | "red" = 'blue';
 
-const THREAD_STATUS_ORDER = ['open', 'resolved', 'dormant', 'abandoned'] as const;
+const THREAD_STATUS_ORDER: readonly ThreadStatus[] = ['open', 'resolved', 'dormant', 'abandoned'] as const;
 const THREAD_STATUS_LABELS: Record<string, string> = { open: '开放', resolved: '已解决', dormant: '休眠', abandoned: '废弃' };
 const THREAD_STATUS_COLORS: Record<string, "blue" | "green" | "gray" | "red"> = { open: 'blue', resolved: 'green', dormant: 'gray', abandoned: 'red' };
 const DEFAULT_THREAD_COLOR: "blue" | "green" | "gray" | "red" = 'blue';
 
-const PRIORITY_ORDER = ['critical', 'high', 'normal', 'low'] as const;
+const PRIORITY_ORDER: readonly Priority[] = ['critical', 'high', 'normal', 'low'] as const;
 const PRIORITY_LABELS: Record<string, string> = { critical: '关键', high: '高', normal: '普通', low: '低' };
 const PRIORITY_COLORS: Record<string, "red" | "orange" | "gray" | "emerald"> = { critical: 'red', high: 'orange', normal: 'gray', low: 'emerald' };
 const DEFAULT_PRIORITY_COLOR: "red" | "orange" | "gray" | "emerald" = 'gray';
@@ -61,17 +65,17 @@ export function StoryArcPanel() {
   }, [pid, newThreadName, store]);
 
   const cycleArcStatus = useCallback(async (arcId: string, current: string) => {
-    const idx = ARC_STATUS_ORDER.indexOf(current as any);
+    const idx = ARC_STATUS_ORDER.indexOf(current as ArcStatus);
     await store.updateArc(pid, arcId, { status: ARC_STATUS_ORDER[(idx + 1) % ARC_STATUS_ORDER.length] });
   }, [pid, store]);
 
   const cycleThreadStatus = useCallback(async (threadId: string, current: string) => {
-    const idx = THREAD_STATUS_ORDER.indexOf(current as any);
+    const idx = THREAD_STATUS_ORDER.indexOf(current as ThreadStatus);
     await store.updateThread(pid, threadId, { status: THREAD_STATUS_ORDER[(idx + 1) % THREAD_STATUS_ORDER.length] });
   }, [pid, store]);
 
   const cyclePriority = useCallback(async (threadId: string, current: string) => {
-    const idx = PRIORITY_ORDER.indexOf(current as any);
+    const idx = PRIORITY_ORDER.indexOf(current as Priority);
     await store.updateThread(pid, threadId, { priority: PRIORITY_ORDER[(idx + 1) % PRIORITY_ORDER.length] });
   }, [pid, store]);
 
