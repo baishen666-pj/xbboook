@@ -43,7 +43,9 @@ export function AiSettingsPanel() {
 
   useEffect(() => {
     if (open) {
-      fetchProviders().then(setProviders).catch(() => {});
+      fetchProviders().then(setProviders).catch((err) => {
+        console.warn("[AiSettings] Failed to fetch providers:", err);
+      });
       loadStatus();
       setTestResult(null);
     }

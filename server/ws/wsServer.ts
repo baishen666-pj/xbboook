@@ -19,6 +19,21 @@ function buildOnlinePayload(projectId: string) {
 export function createWsServer(server: Server): WebSocketServer {
   const wss = new WebSocketServer({ server, path: '/ws' });
 
+  const heartbeatInterval = setInterval(() => {
+    const now = Date.now();
+    for (const entries of presenceManager['presence'].values()) {
+      for (const entry of entries) {
+        if (now - entry.lastActive.getTime() > 60_000 && entry.ws.readyState === 1) {
+          entry.ws.terminate();
+        }
+      }
+    }
+  }, 30_000).unref?.();
+
+  wss.on('close', () => {
+    clearInterval(heartbeatInterval);
+  });
+
   wss.on('connection', (ws: WebSocket) => {
     let userId: string | null = null;
     let projectId: string | null = null;
@@ -62,6 +77,11 @@ export function createWsServer(server: Server): WebSocketServer {
         }
         case 'ping': {
           ws.send(JSON.stringify({ type: 'pong', payload: {} }));
+          if (userId && projectId) {
+            const entries = presenceManager['presence']?.get(userId);
+            const entry = entries?.find((e) => e.ws === ws);
+            if (entry) entry.lastActive = new Date();
+          }
           break;
         }
         default:

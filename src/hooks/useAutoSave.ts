@@ -53,7 +53,7 @@ export function useAutoSave(): void {
 
     timerRef.current = setTimeout(() => {
       const state = useEditorStore.getState();
-      if (state.activeChapterId && state.isDirty) {
+      if (state.activeChapterId && state.isDirty && !state.isSaving) {
         void saveContent(state.activeChapterId, state.content);
       }
     }, DEBOUNCE_MS);
@@ -74,7 +74,9 @@ export function useAutoSave(): void {
       const now = Date.now();
       if (now - lastVersionTimeRef.current >= MIN_VERSION_INTERVAL_MS) {
         lastVersionTimeRef.current = now;
-        void versionService.create(projectId, chapterId).catch(() => {});
+        void versionService.create(projectId, chapterId).catch((err) => {
+          console.warn("[AutoSave] Version creation failed:", err);
+        });
       }
     } else {
       useEditorStore.setState({ isSaving: false, isDirty: true });

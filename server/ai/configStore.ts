@@ -27,8 +27,8 @@ function readFile(): Partial<StoredAiConfig> {
       const raw = readFileSync(CONFIG_PATH, 'utf-8');
       return JSON.parse(raw);
     }
-  } catch {
-    // ignore read errors
+  } catch (err) {
+    console.warn('[configStore] Failed to read config file:', err instanceof Error ? err.message : err);
   }
   return {};
 }

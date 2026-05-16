@@ -114,7 +114,13 @@ export function listBackups(): BackupInfo[] {
 }
 
 export function deleteBackup(id: string): boolean {
-  const backupDir = path.join(BACKUPS_DIR, id);
+  if (!/^\d{4}-\d{2}-\d{2}T/.test(id) && !/^\d{4}-\d{2}-\d{2}/.test(id)) {
+    return false;
+  }
+  const backupDir = path.resolve(BACKUPS_DIR, id);
+  if (!backupDir.startsWith(BACKUPS_DIR + path.sep)) {
+    return false;
+  }
   if (!fs.existsSync(backupDir)) {
     return false;
   }

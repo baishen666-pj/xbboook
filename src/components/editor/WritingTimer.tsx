@@ -37,14 +37,14 @@ export function WritingTimer() {
           setTodayWords(res.data.words);
           setDailyTarget(res.data.dailyTarget);
         }
-      }).catch(() => {});
+      }).catch((err) => { console.warn("[Timer] Stats fetch failed:", err); });
     }, 30000);
     analyticsService.getTodayStats(currentProject.id).then((res) => {
       if (res.success && res.data) {
         setTodayWords(res.data.words);
         setDailyTarget(res.data.dailyTarget);
       }
-    }).catch(() => {});
+    }).catch((err) => { console.warn("[Timer] Initial stats fetch failed:", err); });
     return () => clearInterval(id);
   }, [currentProject]);
 

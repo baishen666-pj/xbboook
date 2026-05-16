@@ -3,12 +3,12 @@ import { z } from 'zod';
 import * as commentRepo from '../db/repositories/commentRepo.js';
 import * as userRepo from '../db/repositories/userRepo.js';
 import { validate } from '../middleware/validate.js';
+import { validateToken } from '../ws/presenceManager.js';
 
 const router = Router({ mergeParams: true });
 
 const createSchema = z.object({
   content: z.string().min(1).max(2000),
-  userId: z.string().min(1),
   selectionFrom: z.number().int().optional(),
   selectionTo: z.number().int().optional(),
   selectionText: z.string().max(500).optional(),
@@ -30,9 +30,13 @@ router.get('/', (req, res) => {
 
 router.post('/', validate(createSchema), (req, res) => {
   const { projectId, chapterId } = req.params as { projectId: string; chapterId: string };
-  const userId = req.body.userId as string | undefined;
+  const authHeader = req.headers.authorization;
+  let userId: string | null = null;
+  if (authHeader?.startsWith('Bearer ')) {
+    userId = validateToken(authHeader.slice(7));
+  }
   if (!userId) {
-    res.status(400).json({ success: false, error: 'userId 必填' });
+    res.status(401).json({ success: false, error: '未认证' });
     return;
   }
   const comment = commentRepo.create({

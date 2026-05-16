@@ -206,6 +206,11 @@ router.post('/batch-polish', async (req, res) => {
     return;
   }
 
+  if (chapterIds.length > 10) {
+    res.status(400).json({ success: false, error: '单次批量润色最多 10 个章节' });
+    return;
+  }
+
   const skill = getSkill('polish');
   if (!skill) {
     res.status(500).json({ success: false, error: 'Polish skill not found' });
@@ -276,6 +281,11 @@ router.post('/batch-generate', async (req, res) => {
 
   if (!projectId || !Array.isArray(chapterIds) || chapterIds.length === 0) {
     res.status(400).json({ success: false, error: 'projectId and chapterIds are required' });
+    return;
+  }
+
+  if (chapterIds.length > 10) {
+    res.status(400).json({ success: false, error: '单次批量生成最多 10 个章节' });
     return;
   }
 

@@ -11,7 +11,7 @@ export function WritingGoalPanel() {
     if (!currentProject) return;
     analyticsService.getTodayStats(currentProject.id).then((res) => {
       if (res.success && res.data) setDailyTarget(res.data.dailyTarget);
-    }).catch(() => {});
+    }).catch((err) => { console.warn("[WritingGoal] Load failed:", err); });
   }, [currentProject]);
 
   const handleSave = async () => {

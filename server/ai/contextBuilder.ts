@@ -219,8 +219,8 @@ export async function buildContext(options: BuildContextOptions): Promise<Contex
   try {
     arcs = findArcs(projectId);
     threads = findThreads(projectId);
-  } catch {
-    // Tables may not exist in test environments
+  } catch (err) {
+    console.warn('[contextBuilder] Failed to load arcs/threads:', err instanceof Error ? err.message : err);
   }
   if (arcs.length > 0 || threads.length > 0) {
     const arcText = arcs.map(a => `【${a.name}】(${a.status}) ${a.description || ''}`).join('\n');

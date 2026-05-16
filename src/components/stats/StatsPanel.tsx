@@ -16,7 +16,7 @@ export function StatsPanel() {
         setSummary(res.data.summary);
         setRecent(res.data.recent);
       }
-    }).catch(() => {});
+    }).catch((err) => { console.warn("[Stats] Load failed:", err); });
     return () => controller.abort();
   }, [currentProject]);
 

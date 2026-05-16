@@ -13,7 +13,7 @@ import {
 } from './services/backupService.js';
 import { logger } from './middleware/logger.js';
 
-const PORT = 3210;
+const PORT = parseInt(process.env.PORT || '3210', 10);
 
 const dataDir = path.join(process.cwd(), 'data');
 if (!fs.existsSync(dataDir)) {

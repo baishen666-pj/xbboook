@@ -39,6 +39,8 @@ export interface Chapter {
   file_path: string;
   status: string;
   sort_order: number;
+  publish_status: string | null;
+  scheduled_at: string | null;
   created_at: string;
   updated_at: string;
 }

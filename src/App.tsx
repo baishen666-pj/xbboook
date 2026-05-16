@@ -66,7 +66,9 @@ function Workspace() {
   }, [projectId, loadProjectData]);
 
   useEffect(() => {
-    fetchSkills().then(setSkills).catch(() => {});
+    fetchSkills().then(setSkills).catch((err) => {
+      console.warn("[App] Failed to fetch AI skills:", err);
+    });
   }, [setSkills]);
 
   return (

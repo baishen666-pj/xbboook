@@ -120,7 +120,7 @@ export function OutlinePanel() {
     const controller = new AbortController();
     outlineService.list(currentProject.id).then((res) => {
       if (!controller.signal.aborted && res.success && res.data) setItems(res.data);
-    }).catch(() => {});
+    }).catch((err) => { console.warn("[Outline] Load failed:", err); });
     return () => controller.abort();
   }, [currentProject]);
 

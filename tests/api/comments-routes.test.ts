@@ -264,7 +264,8 @@ describe('Comments Routes', () => {
     it('creates a comment successfully', async () => {
       const res = await request(app)
         .post(`/api/projects/${projectId}/chapters/${chapterId}/comments`)
-        .send({ content: 'This needs revision', userId });
+        .set('Authorization', `Bearer test-token-${userId}`)
+        .send({ content: 'This needs revision' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -275,9 +276,9 @@ describe('Comments Routes', () => {
     it('creates a comment with selection', async () => {
       const res = await request(app)
         .post(`/api/projects/${projectId}/chapters/${chapterId}/comments`)
+        .set('Authorization', `Bearer test-token-${userId}`)
         .send({
           content: 'Check this',
-          userId,
           selectionFrom: 10,
           selectionTo: 50,
           selectionText: 'selected text here',
@@ -293,20 +294,20 @@ describe('Comments Routes', () => {
     it('rejects empty content', async () => {
       const res = await request(app)
         .post(`/api/projects/${projectId}/chapters/${chapterId}/comments`)
-        .send({ content: '', userId });
+        .set('Authorization', `Bearer test-token-${userId}`)
+        .send({ content: '' });
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
     });
 
-    it('rejects missing userId', async () => {
+    it('rejects without authentication', async () => {
       const res = await request(app)
         .post(`/api/projects/${projectId}/chapters/${chapterId}/comments`)
-        .send({ content: 'No user' });
+        .send({ content: 'No auth' });
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(401);
       expect(res.body.success).toBe(false);
-      expect(res.body.error).toContain('userId');
     });
   });
 

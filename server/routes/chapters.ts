@@ -51,8 +51,8 @@ router.get('/schedule', (req: Request<ChapterParams>, res) => {
     id: ch.id,
     title: ch.title,
     word_count: ch.word_count,
-    publish_status: (ch as any).publish_status ?? 'draft',
-    scheduled_at: (ch as any).scheduled_at ?? null,
+    publish_status: ch.publish_status ?? 'draft',
+    scheduled_at: ch.scheduled_at ?? null,
     sort_order: ch.sort_order,
   }));
   res.json({ success: true, data: schedule });

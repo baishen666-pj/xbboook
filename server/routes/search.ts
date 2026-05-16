@@ -16,6 +16,11 @@ router.post('/', async (req: Request<SearchParams>, res) => {
   }
 
   const chapters = chapterRepo.findByProject(projectId);
+  if (chapters.length > 200) {
+    res.status(400).json({ success: false, error: '章节数量过多（超过 200），请缩小项目范围' });
+    return;
+  }
+
   const results: Array<{
     chapterId: string;
     chapterTitle: string;
@@ -54,7 +59,7 @@ router.post('/', async (req: Request<SearchParams>, res) => {
       results.push({
         chapterId: ch.id,
         chapterTitle: ch.title,
-        snippet,
+        snippet: snippet.replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c] ?? c)),
         matchStart: idx,
       });
 

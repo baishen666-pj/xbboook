@@ -8,9 +8,20 @@ interface PresenceEntry {
   userId: string;
   projectId: string;
   connectedAt: Date;
+  lastActive: Date;
 }
 
 const presence = new Map<string, PresenceEntry[]>();
+export { presence };
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [token, entry] of tokenStore) {
+    if (now - entry.createdAt.getTime() > 24 * 60 * 60 * 1000) {
+      tokenStore.delete(token);
+    }
+  }
+}, 10 * 60 * 1000).unref?.();
 
 export function generateToken(userId: string): string {
   const token = randomBytes(24).toString('hex');
@@ -30,7 +41,7 @@ export function validateToken(token: string): string | null {
 
 export function addConnection(ws: WebSocket, userId: string, projectId: string): void {
   const existing = presence.get(userId) ?? [];
-  existing.push({ ws, userId, projectId, connectedAt: new Date() });
+  existing.push({ ws, userId, projectId, connectedAt: new Date(), lastActive: new Date() });
   presence.set(userId, existing);
 }
 

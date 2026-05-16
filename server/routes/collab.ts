@@ -3,7 +3,6 @@ import { z } from 'zod';
 import * as memberRepo from '../db/repositories/memberRepo.js';
 import * as lockManager from '../ws/lockManager.js';
 import * as presenceManager from '../ws/presenceManager.js';
-import * as presence from '../ws/presenceManager.js';
 import * as userRepo from '../db/repositories/userRepo.js';
 import * as projectRepo from '../db/repositories/projectRepo.js';
 import { validate } from '../middleware/validate.js';
@@ -22,7 +21,7 @@ const lockBodySchema = z.object({
 function verifyToken(req: { headers: { authorization?: string } }): string | null {
   const auth = req.headers.authorization;
   if (!auth?.startsWith('Bearer ')) return null;
-  return presence.validateToken(auth.slice(7));
+  return presenceManager.validateToken(auth.slice(7));
 }
 
 router.get('/members', (req, res) => {
