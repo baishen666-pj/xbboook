@@ -83,6 +83,39 @@ const MIGRATIONS: Migration[] = [
   },
 ];
 
+// Check if a migration's effects already exist in the database
+function isMigrationApplied(db: ReturnType<typeof getDb>, migration: Migration): boolean {
+  // Migration 1 is the base schema — check for projects table
+  if (migration.version === 1) {
+    return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='projects'").get();
+  }
+  // Version 2: daily_target column on projects
+  if (migration.version === 2) {
+    const cols = (db.prepare('PRAGMA table_info(projects)').all() as { name: string }[]).map(c => c.name);
+    return cols.includes('daily_target');
+  }
+  // Version 3: publish_status + scheduled_at on chapters
+  if (migration.version === 3) {
+    const cols = (db.prepare('PRAGMA table_info(chapters)').all() as { name: string }[]).map(c => c.name);
+    return cols.includes('publish_status');
+  }
+  // Version 4: speech_style on characters
+  if (migration.version === 4) {
+    const cols = (db.prepare('PRAGMA table_info(characters)').all() as { name: string }[]).map(c => c.name);
+    return cols.includes('speech_style');
+  }
+  // Version 5: story_arcs table
+  if (migration.version === 5) {
+    return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='story_arcs'").get();
+  }
+  // Version 6: ai_summary on chapters
+  if (migration.version === 6) {
+    const cols = (db.prepare('PRAGMA table_info(chapters)').all() as { name: string }[]).map(c => c.name);
+    return cols.includes('ai_summary');
+  }
+  return false;
+}
+
 export function runMigrations(): void {
   const db = getDb();
 
@@ -95,6 +128,16 @@ export function runMigrations(): void {
   const applied = db.prepare('SELECT version FROM schema_migrations').all() as { version: number }[];
   const appliedVersions = new Set(applied.map(r => r.version));
 
+  // Reconcile: detect migrations whose effects already exist but aren't tracked
+  const insertStmt = db.prepare('INSERT OR IGNORE INTO schema_migrations (version, name) VALUES (?, ?)');
+  for (const migration of MIGRATIONS) {
+    if (!appliedVersions.has(migration.version) && isMigrationApplied(db, migration)) {
+      insertStmt.run(migration.version, migration.name);
+      appliedVersions.add(migration.version);
+    }
+  }
+
+  // Run unapplied migrations
   for (const migration of MIGRATIONS) {
     if (appliedVersions.has(migration.version)) continue;
 

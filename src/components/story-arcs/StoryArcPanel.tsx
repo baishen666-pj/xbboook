@@ -38,7 +38,7 @@ const THREAD_STATUS_LABELS: Record<string, string> = {
 };
 
 export function StoryArcPanel() {
-  const { currentProjectId } = useProjectStore();
+  const currentProjectId = useProjectStore((s) => s.currentProject?.id);
   const { arcs, threads, isLoading, fetchArcs, fetchThreads, createArc, createThread, updateArc, updateThread, deleteArc, deleteThread } = useStoryArcStore();
   const [showNewArc, setShowNewArc] = useState(false);
   const [newArcName, setNewArcName] = useState('');

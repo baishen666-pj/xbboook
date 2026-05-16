@@ -1,4 +1,4 @@
-import * as repo from '../repositories/snippetRepo.js';
+import * as repo from './repositories/snippetRepo.js';
 
 export interface BuiltinSnippet {
   name: string;

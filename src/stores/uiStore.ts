@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-type LeftTab = "chapters" | "characters" | "worldview" | "outline" | "versions" | "schedule" | "foreshadowing" | "snippets";
+type LeftTab = "chapters" | "characters" | "worldview" | "outline" | "versions" | "schedule" | "foreshadowing" | "snippets" | "arcs";
 type Theme = "dark" | "light" | "sepia";
 
 interface UiState {
