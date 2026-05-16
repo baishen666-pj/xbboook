@@ -19,6 +19,7 @@ export function findById(id: string): Chapter | undefined {
 
 const CHAPTER_UPDATE_FIELDS = new Set([
   'title', 'volume_id', 'summary', 'status', 'sort_order',
+  'publish_status', 'scheduled_at',
 ]);
 
 export async function create(data: {
@@ -68,6 +69,8 @@ export function update(
     summary: string;
     status: string;
     sort_order: number;
+    publish_status: string;
+    scheduled_at: string | null;
   }>,
 ): Chapter | undefined {
   const db = getDb();
@@ -133,4 +136,22 @@ export function reorder(items: { id: string; volumeId?: string | null; sortOrder
   });
 
   transaction();
+}
+
+export function findScheduled(projectId: string): Chapter[] {
+  const db = getDb();
+  return db
+    .prepare(
+      "SELECT * FROM chapters WHERE project_id = ? AND publish_status = 'scheduled' ORDER BY scheduled_at ASC, sort_order ASC",
+    )
+    .all(projectId) as Chapter[];
+}
+
+export function findByPublishStatus(projectId: string, status: string): Chapter[] {
+  const db = getDb();
+  return db
+    .prepare(
+      'SELECT * FROM chapters WHERE project_id = ? AND publish_status = ? ORDER BY sort_order ASC, created_at ASC',
+    )
+    .all(projectId, status) as Chapter[];
 }

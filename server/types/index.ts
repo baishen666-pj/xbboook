@@ -59,6 +59,12 @@ export interface Character {
   sort_order: number;
   created_at: string;
   updated_at: string;
+  speech_style: string | null;
+  verbal_tics: string | null;
+  vocabulary_level: string;
+  sentence_length_pref: string;
+  emotional_expressiveness: string;
+  voice_examples: string | null;
 }
 
 export interface CharacterRelation {
@@ -131,6 +137,57 @@ export interface OutlineTemplate {
   is_builtin: number;
   source_project_id: string | null;
   structure: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Foreshadowing {
+  id: string;
+  project_id: string;
+  title: string;
+  description: string | null;
+  plant_chapter_id: string | null;
+  expected_harvest_chapter_id: string | null;
+  actual_harvest_chapter_id: string | null;
+  status: 'planted' | 'harvested' | 'forgotten';
+  importance: 'critical' | 'important' | 'normal' | 'minor';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SnippetTemplate {
+  id: number;
+  project_id: string | null;
+  name: string;
+  category: string;
+  content: string;
+  is_builtin: number;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface StoryArc {
+  id: string;
+  project_id: string;
+  name: string;
+  description: string | null;
+  start_chapter: number | null;
+  end_chapter: number | null;
+  status: 'planned' | 'active' | 'completed' | 'abandoned';
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PlotThread {
+  id: string;
+  project_id: string;
+  arc_id: string | null;
+  name: string;
+  description: string | null;
+  status: 'open' | 'resolved' | 'dormant' | 'abandoned';
+  priority: 'critical' | 'high' | 'normal' | 'low';
+  sort_order: number;
   created_at: string;
   updated_at: string;
 }

@@ -1,104 +1,149 @@
-# xbboook (网文笔阁)
+# Xbboook — AI 网文写作工作台
 
-AI 网文写作工作台 — 暗色主题、三栏布局、AI 辅助创作。
+## 项目概述
+
+Xbboook 是一个 AI 辅助的中文网文写作工作台，提供项目管理、章节编辑、AI 写作辅助、角色管理、世界观构建、大纲管理、伏笔追踪、片段管理、故事弧线等功能。
 
 ## 技术栈
 
-- **前端**: React 19 + Vite + Tiptap 3.x + Zustand 5 + Tailwind CSS 4
-- **后端**: Express + better-sqlite3 (WAL mode) + tsx
-- **AI**: OpenAI 兼容 API（SSE 流式），环境变量配置
-- **端口**: 后端 3210，前端 Vite dev 5210
-
-## 开发命令
-
-```bash
-npm run dev        # 前端开发服务器
-npm run server     # 后端 API 服务器
-npm run dev:all    # 前后端同时启动
-npm run build      # 生产构建
-```
-
-## AI 配置
-
-```bash
-AI_API_KEY=sk-xxx          # 必填
-AI_BASE_URL=https://...    # 可选，默认 OpenAI
-AI_MODEL=gpt-4o-mini       # 可选
-```
+- **前端**: React 19 + Vite 6 + Tiptap 2.x + Zustand 5 + Tailwind CSS 4
+- **后端**: Express 5 + better-sqlite3 + ws (WebSocket)
+- **AI**: 多供应商支持 (OpenAI 兼容 API) + SSE 流式输出
+- **测试**: Vitest + supertest + jsdom
 
 ## 项目结构
 
 ```
-server/
-  index.ts              # 入口 PORT 3210
-  app.ts                # Express 路由挂载
-  db/
-    database.ts         # better-sqlite3 WAL
-    migrations.ts       # 8 张表定义
-    repositories/       # CRUD 数据访问层
-  ai/
-    agentFactory.ts     # OpenAI 兼容客户端 + SSE 流式
-    writingSkills.ts    # 9 个写作技能定义
-    contextBuilder.ts   # 上下文编译器（优先级+Token预算+Lost-in-Middle）
-    promptBuilder.ts    # Prompt 组装
-  services/
-    aiService.ts        # AI 写作服务
-    fileService.ts      # Markdown 文件读写
-  routes/               # 8 个路由模块
-  middleware/            # errorHandler + validate + sse
-
-src/
-  components/
-    editor/             # NovelEditor (Tiptap) + EditorToolbar + GhostMark + ContextMenu
-    ai-panel/           # AiPanel + ChatList + ChatInput + MessageBubble + SkillPicker + Settings
-    sidebar/            # ChapterSidebar + VolumeTree + ChapterItem（可拖拽）
-    character/          # CharacterList + Card + Form
-    worldview/          # WorldviewList + Card + Form
-    outline/            # OutlinePanel（树形大纲）
-    stats/              # StatsPanel（统计图表）
-    project/            # ProjectList + Card + CreateProjectModal
-    layout/             # AppLayout + TitleBar + StatusBar + ResizablePanel
-    ui/                 # Button + Input + Modal + ScrollArea
-  stores/               # Zustand: projectStore + editorStore + uiStore + aiStore
-  hooks/                # useAutoSave + useChapterContent + useAiChat + useKeyboardShortcuts
-  services/             # API 客户端 + 各模块服务
-  styles/               # tokens.css (oklch) + global.css + editor.css
-  types/                # TypeScript 类型定义
+xbboook/
+├── src/                          # 前端
+│   ├── components/               # React 组件
+│   │   ├── ai-panel/             # AI 写作面板
+│   │   ├── characters/           # 角色管理
+│   │   ├── editor/               # Tiptap 编辑器
+│   │   ├── foreshadowing/        # 伏笔管理
+│   │   ├── outline/              # 大纲管理
+│   │   ├── search/               # 搜索面板
+│   │   ├── settings/             # 设置面板
+│   │   ├── sidebar/              # 侧边栏
+│   │   ├── snippets/             # 片段管理
+│   │   ├── story-arcs/           # 故事弧线
+│   │   └── worldview/            # 世界观管理
+│   ├── stores/                   # Zustand stores
+│   ├── services/                 # API 服务
+│   ├── hooks/                    # 自定义 hooks
+│   └── lib/                      # 工具函数
+├── server/                       # 后端
+│   ├── ai/                       # AI 模块
+│   │   ├── agentFactory.ts       # SSE 流式客户端
+│   │   ├── chapterPipeline.ts    # 多章节批量生成
+│   │   ├── configStore.ts        # 供应商配置
+│   │   ├── contextBuilder.ts     # 上下文编译 (CJK-aware token 估算)
+│   │   ├── promptBuilder.ts      # 提示词组装
+│   │   ├── providers.ts          # 供应商适配器
+│   │   └── writingSkills.ts      # 18 个写作技能
+│   ├── db/                       # 数据库
+│   │   ├── database.ts           # 连接管理
+│   │   ├── migrations.ts         # 版本化迁移系统
+│   │   ├── schemaDefinitions.ts  # Schema 定义
+│   │   └── repositories/         # 仓储层 (16 个 repo)
+│   ├── middleware/                # 中间件
+│   │   ├── errors.ts             # 自定义错误类
+│   │   ├── errorHandler.ts       # 全局错误处理
+│   │   ├── logger.ts             # pino 结构化日志
+│   │   ├── rateLimit.ts          # 速率限制
+│   │   └── validate.ts           # Zod 验证
+│   ├── routes/                   # 20 个 API 路由
+│   ├── services/                 # 业务逻辑
+│   ├── types/                    # TypeScript 类型
+│   └── ws/                       # WebSocket 协作
+└── tests/                        # 测试
+    ├── api/                      # API 集成测试
+    ├── unit/                     # 单元测试
+    ├── repo/                     # 仓储层测试
+    └── helpers/                  # 测试辅助
 ```
 
-## API 端点
+## API 路由 (20 个)
 
-| 路径 | 说明 |
+| 路由 | 端点 | 说明 |
+|------|------|------|
+| projects | /api/projects | 项目 CRUD |
+| volumes | /api/projects/:id/volumes | 卷管理 |
+| chapters | /api/projects/:id/chapters | 章节 CRUD |
+| versions | /api/projects/:id/chapters/:cid/versions | 版本历史 |
+| characters | /api/projects/:id/characters | 角色管理 (含语音字段) |
+| worldviews | /api/projects/:id/worldview | 世界观 |
+| outlines | /api/projects/:id/outlines | 大纲管理 |
+| stats | /api/projects/:id/stats | 写作统计 |
+| export | /api/projects/:id/export | 导出 |
+| search | /api/projects/:id/search | 全文搜索 |
+| storyArcs | /api/projects/:id/story | 故事弧线与情节线 |
+| ai | /api/ai | AI 写作 (含批量生成) |
+| templates | /api/templates | 模板管理 |
+| users | /api/users | 用户设置 |
+| collab | /api/projects/:id/collab | WebSocket 协作 |
+| comments | /api/projects/:id/chapters/:cid/comments | 批注 |
+| backups | /api/backups | 备份管理 |
+| import | /api/projects | 项目导入 |
+| foreshadowing | /api/foreshadowing/:id | 伏笔管理 |
+| snippets | /api/snippets/:id | 片段管理 |
+| health | /api/health | 健康检查 |
+
+## AI 写作技能 (18 个)
+
+| 技能 | 说明 |
 |------|------|
-| `GET/POST /api/projects` | 项目列表/创建 |
-| `GET/PUT/DELETE /api/projects/:id` | 项目 CRUD |
-| `GET/POST /api/projects/:projectId/volumes` | 卷管理 |
-| `GET/POST /api/projects/:projectId/chapters` | 章节管理 |
-| `PUT /api/projects/:projectId/chapters/reorder` | 章节排序 |
-| `GET/POST /api/projects/:projectId/characters` | 角色管理 |
-| `POST/DELETE .../characters/relations` | 角色关系 |
-| `GET/POST /api/projects/:projectId/worldviews` | 世界观管理 |
-| `GET/POST /api/projects/:projectId/outlines` | 大纲管理 |
-| `GET/POST /api/projects/:projectId/stats` | 写作统计 |
-| `GET /api/projects/:projectId/export/txt` | 导出 TXT |
-| `GET /api/projects/:projectId/export/md` | 导出 Markdown |
-| `GET /api/ai/skills` | AI 技能列表 |
-| `GET /api/ai/status` | AI 配置状态 |
-| `POST /api/ai/stream` | AI SSE 流式请求 |
+| continue-writing | 续写 |
+| polish | 润色 |
+| expand | 扩写 |
+| condense | 缩写 |
+| rewrite | 改写 |
+| character-dialogue | 角色对话 |
+| scene-description | 场景描写 |
+| plot-twist | 情节转折 |
+| chapter-generate | 大纲生章 |
+| chapter-summarize | 章节摘要 |
+| plot-planning | 情节规划 |
+| worldbuilding | 世界观构建 |
+| character-design | 角色设计 |
+| opening-hook | 开头钩子 |
+| ending-cliffhanger | 结尾悬念 |
+| foreshadowing-setup | 伏笔埋设 |
+| foreshadowing-payoff | 伏笔回收 |
+| style-imitation | 风格模仿 |
 
-## 快捷键
+## 数据库表 (18 个)
 
-- `Ctrl+S` — 手动保存
-- `Ctrl+Shift+F` — 全屏模式
-- `Ctrl+B` — 切换侧边栏
-- `Ctrl+Shift+A` — 切换 AI 面板
-- `Esc` — 退出全屏
+projects, volumes, chapters, chapter_versions, characters, character_relations, worldviews, outlines, outline_nodes, writing_stats, templates, users, comments, foreshadowing_items, foreshadowing_links, snippet_templates, story_arcs, plot_threads
 
-## 数据存储
+## 关键约定
 
-- `data/xbboook.db` — SQLite 数据库（WAL 模式）
-- `data/projects/{id}/chapters/{chapterId}.md` — 章节 Markdown 文件
+- **数据库**: better-sqlite3 WAL 模式，仓储模式封装
+- **迁移**: 版本化迁移系统 (schema_migrations 表)
+- **错误处理**: AppError/NotFoundError/ValidationError/AuthError/ForbiddenError
+- **日志**: pino 结构化日志，请求 ID 追踪
+- **Token 估算**: CJK-aware 双比率估算 (中文 ~1.5 chars/token, ASCII ~4.0)
+- **上下文编译**: Lost-in-Middle 排序，优先级 1-10
+- **AI 流式**: SSE (Server-Sent Events)
+- **前端状态**: Zustand stores，按功能拆分
+- **测试**: vitest --pool=forks，870+ 测试
 
-## AI 技能（9 个）
+## 开发命令
 
-续写 / 改写 / 润色 / 风格转换 / 对话生成 / 一致性检查 / 灵感激发 / 写作问答 / 去AI味
+```bash
+npm run dev          # 启动开发服务器
+npm run build        # 构建生产版本
+npx vitest run       # 运行测试
+npx vitest run --pool=forks  # 稳定运行测试
+```
+
+## 环境变量
+
+```bash
+AI_API_KEY=          # AI API 密钥
+AI_BASE_URL=         # AI API 基础 URL
+AI_MODEL=            # 默认模型名称
+PORT=3001            # 服务端口
+LOG_LEVEL=info       # 日志级别
+NODE_ENV=development # 环境
+```

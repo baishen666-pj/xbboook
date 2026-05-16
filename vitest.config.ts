@@ -10,10 +10,20 @@ export default defineConfig({
   test: {
     globals: true,
     include: ['tests/**/*.test.ts'],
+    pool: 'forks',
+    maxForks: 4,
+    minForks: 1,
     coverage: {
       provider: 'v8',
-      include: ['server/**/*.ts', 'src/lib/**/*.ts', 'src/stores/**/*.ts'],
-      exclude: ['**/node_modules/**', '**/dist/**', '**/*.d.ts'],
+      reporter: ['text', 'html', 'lcov'],
+      include: ['server/**/*.ts', 'src/lib/**/*.ts', 'src/stores/**/*.ts', 'src/services/**/*.ts', 'src/hooks/**/*.ts'],
+      exclude: ['**/node_modules/**', '**/dist/**', '**/*.d.ts', '**/*.config.*'],
+      thresholds: {
+        statements: 80,
+        branches: 75,
+        functions: 80,
+        lines: 80,
+      },
     },
   },
 });

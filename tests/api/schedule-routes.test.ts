@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import request from 'supertest';
 import Database from 'better-sqlite3';
 
@@ -24,7 +24,10 @@ function createTestDb(): Database.Database {
     CREATE TABLE chapters (
       id TEXT PRIMARY KEY, project_id TEXT NOT NULL, volume_id TEXT, title TEXT NOT NULL,
       summary TEXT, word_count INTEGER DEFAULT 0, file_path TEXT NOT NULL,
-      status TEXT DEFAULT 'draft', sort_order INTEGER DEFAULT 0,
+      status TEXT DEFAULT 'draft',
+      publish_status TEXT DEFAULT 'draft' CHECK(publish_status IN ('draft','scheduled','published','archived')),
+      scheduled_at TEXT,
+      sort_order INTEGER DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
       FOREIGN KEY (volume_id) REFERENCES volumes(id) ON DELETE SET NULL
@@ -66,12 +69,25 @@ function createTestDb(): Database.Database {
       UNIQUE(project_id, date),
       FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
     );
+    CREATE TABLE chapter_versions (
+      id TEXT PRIMARY KEY, chapter_id TEXT NOT NULL, project_id TEXT NOT NULL,
+      version_number INTEGER NOT NULL, content_hash TEXT NOT NULL,
+      word_count INTEGER DEFAULT 0, snapshot_type TEXT DEFAULT 'auto', label TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+      FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
+    );
     CREATE TABLE writing_sessions (
       id TEXT PRIMARY KEY, project_id TEXT NOT NULL, chapter_id TEXT NOT NULL,
       started_at TEXT NOT NULL, ended_at TEXT,
       words_start INTEGER DEFAULT 0, words_end INTEGER DEFAULT 0, duration_ms INTEGER DEFAULT 0,
       FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
       FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
+    );
+    CREATE TABLE outline_templates (
+      id TEXT PRIMARY KEY, name TEXT NOT NULL, genre TEXT NOT NULL, description TEXT,
+      is_builtin INTEGER DEFAULT 0, source_project_id TEXT, structure TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now'))
     );
     CREATE TABLE users (
       id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE,
@@ -91,19 +107,6 @@ function createTestDb(): Database.Database {
       FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
-    CREATE TABLE chapter_versions (
-      id TEXT PRIMARY KEY, chapter_id TEXT NOT NULL, project_id TEXT NOT NULL,
-      version_number INTEGER NOT NULL, content_hash TEXT NOT NULL,
-      word_count INTEGER DEFAULT 0, snapshot_type TEXT DEFAULT 'auto', label TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
-      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-      FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
-    );
-    CREATE TABLE outline_templates (
-      id TEXT PRIMARY KEY, name TEXT NOT NULL, genre TEXT NOT NULL, description TEXT,
-      is_builtin INTEGER DEFAULT 0, source_project_id TEXT, structure TEXT NOT NULL,
-      created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now'))
-    );
     CREATE TABLE chapter_comments (
       id TEXT PRIMARY KEY, chapter_id TEXT NOT NULL, project_id TEXT NOT NULL,
       user_id TEXT NOT NULL, content TEXT NOT NULL,
@@ -114,11 +117,27 @@ function createTestDb(): Database.Database {
       FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
+    CREATE TABLE foreshadowing (
+      id TEXT PRIMARY KEY, project_id TEXT NOT NULL, title TEXT NOT NULL,
+      description TEXT, plant_chapter_id TEXT,
+      expected_harvest_chapter_id TEXT, actual_harvest_chapter_id TEXT,
+      status TEXT NOT NULL DEFAULT 'planted' CHECK(status IN ('planted','harvested','forgotten')),
+      importance TEXT DEFAULT 'normal' CHECK(importance IN ('critical','important','normal','minor')),
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+      FOREIGN KEY (plant_chapter_id) REFERENCES chapters(id) ON DELETE SET NULL,
+      FOREIGN KEY (expected_harvest_chapter_id) REFERENCES chapters(id) ON DELETE SET NULL,
+      FOREIGN KEY (actual_harvest_chapter_id) REFERENCES chapters(id) ON DELETE SET NULL
+    );
+    CREATE INDEX foreshadowing_project_status_idx ON foreshadowing(project_id, status);
   `);
   return db;
 }
 
-describe('Projects API', () => {
+describe('Schedule Routes', () => {
+  let projectId: string;
+
   beforeEach(async () => {
     testDb = createTestDb();
     vi.doMock('../../server/db/database.js', () => ({
@@ -128,8 +147,8 @@ describe('Projects API', () => {
     vi.doMock('../../server/ws/presenceManager.js', () => ({
       generateToken: (uid: string) => `test-token-${uid}`,
       validateToken: (token: string) => {
-        const match = token.match(/^test-token-(.+)$/);
-        return match ? match[1] : null;
+        const m = token.match(/^test-token-(.+)$/);
+        return m ? m[1] : null;
       },
       addConnection: vi.fn(),
       removeConnection: vi.fn(),
@@ -147,20 +166,27 @@ describe('Projects API', () => {
       }),
       getCharacterAppearances: async () => [],
     }));
-    const chapterContentStore = new Map<string, string>();
     vi.doMock('../../server/services/fileService.js', () => ({
-      readChapter: vi.fn(async (pid: string, cid: string) => chapterContentStore.get(`${pid}/${cid}`) ?? ''),
-      writeChapter: vi.fn(async (pid: string, cid: string, content: string) => { chapterContentStore.set(`${pid}/${cid}`, content); }),
+      readChapter: vi.fn().mockResolvedValue(''),
+      writeChapter: vi.fn(),
       writeVersion: vi.fn(),
       readVersion: vi.fn().mockResolvedValue(''),
       deleteVersionFile: vi.fn(),
       deleteVersionDir: vi.fn(),
       ensureProjectDir: vi.fn(),
       deleteProjectDir: vi.fn(),
-      deleteChapter: vi.fn(async (pid: string, cid: string) => { chapterContentStore.delete(`${pid}/${cid}`); }),
+      deleteChapter: vi.fn(),
+    }));
+    vi.doMock('../../server/services/foreshadowingService.js', () => ({
+      foreshadowingService: {},
     }));
     const mod = await import('../../server/app.js');
     app = mod.default;
+
+    const res = await request(app)
+      .post('/api/projects')
+      .send({ name: 'Schedule Test Project', genre: 'fantasy' });
+    projectId = res.body.data.id;
   });
 
   afterEach(() => {
@@ -168,83 +194,135 @@ describe('Projects API', () => {
     vi.doUnmock('../../server/ws/presenceManager.js');
     vi.doUnmock('../../server/services/analyticsService.js');
     vi.doUnmock('../../server/services/fileService.js');
+    vi.doUnmock('../../server/services/foreshadowingService.js');
     vi.restoreAllMocks();
     if (testDb) testDb.close();
   });
 
-  describe('POST /api/projects', () => {
-    it('should create a project', async () => {
-      const res = await request(app)
-        .post('/api/projects')
-        .send({ name: 'My Novel', genre: 'fantasy', writing_mode: 'webnovel' });
+  describe('GET /api/projects/:projectId/chapters/schedule', () => {
+    it('returns schedule items for a project', async () => {
+      await request(app)
+        .post(`/api/projects/${projectId}/chapters`)
+        .send({ title: 'Chapter One' });
+      await request(app)
+        .post(`/api/projects/${projectId}/chapters`)
+        .send({ title: 'Chapter Two' });
 
-      expect(res.status).toBe(201);
+      const res = await request(app)
+        .get(`/api/projects/${projectId}/chapters/schedule`);
+
+      expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data.name).toBe('My Novel');
-      expect(res.body.data.id).toBeDefined();
+      expect(res.body.data).toHaveLength(2);
+      expect(res.body.data[0]).toHaveProperty('id');
+      expect(res.body.data[0]).toHaveProperty('title');
+      expect(res.body.data[0]).toHaveProperty('word_count');
+      expect(res.body.data[0]).toHaveProperty('publish_status');
+      expect(res.body.data[0]).toHaveProperty('scheduled_at');
+      expect(res.body.data[0]).toHaveProperty('sort_order');
     });
 
-    it('should reject empty name', async () => {
+    it('returns default publish_status as draft', async () => {
+      await request(app)
+        .post(`/api/projects/${projectId}/chapters`)
+        .send({ title: 'Draft Chapter' });
+
       const res = await request(app)
-        .post('/api/projects')
-        .send({ name: '' });
+        .get(`/api/projects/${projectId}/chapters/schedule`);
+
+      expect(res.body.data[0].publish_status).toBe('draft');
+      expect(res.body.data[0].scheduled_at).toBeNull();
+    });
+  });
+
+  describe('PATCH /api/projects/:projectId/chapters/:id/publish-status', () => {
+    it('updates publish_status to scheduled', async () => {
+      const createRes = await request(app)
+        .post(`/api/projects/${projectId}/chapters`)
+        .send({ title: 'Schedule Ch' });
+      const chapterId = createRes.body.data.id;
+
+      const res = await request(app)
+        .patch(`/api/projects/${projectId}/chapters/${chapterId}/publish-status`)
+        .send({ publish_status: 'scheduled', scheduled_at: '2026-06-01T10:00:00Z' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.publish_status).toBe('scheduled');
+      expect(res.body.data.scheduled_at).toBe('2026-06-01T10:00:00Z');
+    });
+
+    it('updates publish_status to published', async () => {
+      const createRes = await request(app)
+        .post(`/api/projects/${projectId}/chapters`)
+        .send({ title: 'Publish Ch' });
+      const chapterId = createRes.body.data.id;
+
+      const res = await request(app)
+        .patch(`/api/projects/${projectId}/chapters/${chapterId}/publish-status`)
+        .send({ publish_status: 'published' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.publish_status).toBe('published');
+    });
+
+    it('updates publish_status to archived', async () => {
+      const createRes = await request(app)
+        .post(`/api/projects/${projectId}/chapters`)
+        .send({ title: 'Archive Ch' });
+      const chapterId = createRes.body.data.id;
+
+      const res = await request(app)
+        .patch(`/api/projects/${projectId}/chapters/${chapterId}/publish-status`)
+        .send({ publish_status: 'archived' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.publish_status).toBe('archived');
+    });
+
+    it('rejects invalid publish_status', async () => {
+      const createRes = await request(app)
+        .post(`/api/projects/${projectId}/chapters`)
+        .send({ title: 'Invalid Ch' });
+      const chapterId = createRes.body.data.id;
+
+      const res = await request(app)
+        .patch(`/api/projects/${projectId}/chapters/${chapterId}/publish-status`)
+        .send({ publish_status: 'invalid' });
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
     });
-  });
 
-  describe('GET /api/projects', () => {
-    it('should list projects', async () => {
-      await request(app).post('/api/projects').send({ name: 'Novel A' });
-      await request(app).post('/api/projects').send({ name: 'Novel B' });
-
-      const res = await request(app).get('/api/projects');
-
-      expect(res.status).toBe(200);
-      expect(res.body.success).toBe(true);
-      expect(res.body.data.length).toBeGreaterThanOrEqual(2);
-    });
-  });
-
-  describe('GET /api/projects/:id', () => {
-    it('should get a single project', async () => {
-      const create = await request(app).post('/api/projects').send({ name: 'Single' });
-      const id = create.body.data.id;
-
-      const res = await request(app).get(`/api/projects/${id}`);
-
-      expect(res.status).toBe(200);
-      expect(res.body.data.name).toBe('Single');
-    });
-
-    it('should return 404 for missing project', async () => {
-      const res = await request(app).get('/api/projects/nonexistent');
+    it('returns 404 for non-existent chapter', async () => {
+      const res = await request(app)
+        .patch(`/api/projects/${projectId}/chapters/nonexistent-id/publish-status`)
+        .send({ publish_status: 'published' });
 
       expect(res.status).toBe(404);
+      expect(res.body.success).toBe(false);
     });
-  });
 
-  describe('PUT /api/projects/:id', () => {
-    it('should update a project', async () => {
-      const create = await request(app).post('/api/projects').send({ name: 'Before' });
-      const id = create.body.data.id;
+    it('clears scheduled_at when setting publish_status to draft', async () => {
+      const createRes = await request(app)
+        .post(`/api/projects/${projectId}/chapters`)
+        .send({ title: 'Reset Ch' });
+      const chapterId = createRes.body.data.id;
 
-      const res = await request(app).put(`/api/projects/${id}`).send({ name: 'After' });
+      // First set to scheduled
+      await request(app)
+        .patch(`/api/projects/${projectId}/chapters/${chapterId}/publish-status`)
+        .send({ publish_status: 'scheduled', scheduled_at: '2026-06-01T10:00:00Z' });
+
+      // Then set back to draft with null scheduled_at
+      const res = await request(app)
+        .patch(`/api/projects/${projectId}/chapters/${chapterId}/publish-status`)
+        .send({ publish_status: 'draft', scheduled_at: null });
 
       expect(res.status).toBe(200);
-      expect(res.body.data.name).toBe('After');
-    });
-  });
-
-  describe('DELETE /api/projects/:id', () => {
-    it('should delete a project', async () => {
-      const create = await request(app).post('/api/projects').send({ name: 'Delete Me' });
-      const id = create.body.data.id;
-
-      const res = await request(app).delete(`/api/projects/${id}`);
-
-      expect(res.status).toBe(200);
+      expect(res.body.data.publish_status).toBe('draft');
+      expect(res.body.data.scheduled_at).toBeNull();
     });
   });
 });

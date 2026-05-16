@@ -4,12 +4,14 @@ import http from 'http';
 import app from './app.js';
 import { runMigrations } from './db/migrations.js';
 import { seedBuiltins } from './db/repositories/templateRepo.js';
+import { seedBuiltinSnippets } from './db/seedSnippets.js';
 import { createWsServer } from './ws/wsServer.js';
 import {
   getBackupConfig,
   createBackup,
   cleanupOldBackups,
 } from './services/backupService.js';
+import { logger } from './middleware/logger.js';
 
 const PORT = 3210;
 
@@ -25,14 +27,15 @@ if (!fs.existsSync(logsDir)) {
 
 runMigrations();
 seedBuiltins();
+seedBuiltinSnippets();
 
 const server = http.createServer(app);
 createWsServer(server);
 
 server.listen(PORT, () => {
-  console.log(`[Xbboook] Server running at http://localhost:${PORT}`);
-  console.log(`[Xbboook] API available at http://localhost:${PORT}/api`);
-  console.log(`[Xbboook] WebSocket available at ws://localhost:${PORT}/ws`);
+  logger.info(`Server running at http://localhost:${PORT}`);
+  logger.info(`API available at http://localhost:${PORT}/api`);
+  logger.info(`WebSocket available at ws://localhost:${PORT}/ws`);
 
   // Start auto-backup scheduler
   const backupConfig = getBackupConfig();
@@ -42,9 +45,9 @@ server.listen(PORT, () => {
     try {
       createBackup();
       cleanupOldBackups(backupConfig.keepCount);
-      console.log('[Xbboook] Auto-backup completed');
+      logger.info('Auto-backup completed');
     } catch (err) {
-      console.error('[Xbboook] Auto-backup failed:', err);
+      logger.error({ err }, 'Auto-backup failed');
     }
   }
 
@@ -55,7 +58,7 @@ server.listen(PORT, () => {
     if (backupConfig.enabled) {
       const intervalMs = backupConfig.intervalHours * 60 * 60 * 1000;
       backupIntervalRef = setInterval(runAutoBackup, intervalMs);
-      console.log(`[Xbboook] Auto-backup enabled: every ${backupConfig.intervalHours}h, keeping ${backupConfig.keepCount} backups`);
+      logger.info(`Auto-backup enabled: every ${backupConfig.intervalHours}h, keeping ${backupConfig.keepCount} backups`);
     }
   }
 

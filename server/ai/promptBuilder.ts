@@ -1,11 +1,13 @@
 import { getSkill } from './writingSkills.js';
-import { contextToString, type ContextSource } from './contextBuilder.js';
+import { contextToString, estimateTokens, truncateToTokens, truncateHistory, type ContextSource, type HistoryMessage } from './contextBuilder.js';
 
 export interface BuildPromptOptions {
   skillId: string;
   sources: ContextSource[];
   userMessage: string;
   customInstruction?: string;
+  historyMessages?: HistoryMessage[];
+  maxContextTokens?: number;
 }
 
 export interface ChatMessages {
@@ -21,8 +23,13 @@ const GLOBAL_SYSTEM_SUFFIX = `
 - 直接输出正文内容，像真正的小说段落一样
 - 如果需要分析或建议，使用清晰的中文说明`;
 
+const DEFAULT_MAX_CONTEXT_TOKENS = 8000;
+const HISTORY_BUDGET_RATIO = 0.3;
+const CONTEXT_BUDGET_RATIO = 0.5;
+const USER_BUDGET_RATIO = 0.2;
+
 export function buildPrompt(options: BuildPromptOptions): ChatMessages {
-  const { skillId, sources, userMessage, customInstruction } = options;
+  const { skillId, sources, userMessage, customInstruction, historyMessages, maxContextTokens = DEFAULT_MAX_CONTEXT_TOKENS } = options;
 
   const skill = getSkill(skillId);
   if (!skill) throw new Error(`Unknown skill: ${skillId}`);
@@ -34,8 +41,15 @@ export function buildPrompt(options: BuildPromptOptions): ChatMessages {
   }
 
   if (sources.length > 0) {
+    const contextBudget = Math.floor(maxContextTokens * CONTEXT_BUDGET_RATIO);
     const contextText = contextToString(sources);
-    systemParts.push(`\n参考资料：\n${contextText}`);
+    const contextTokens = estimateTokens(contextText);
+
+    if (contextTokens > contextBudget) {
+      systemParts.push(`\n参考资料：\n${truncateToTokens(contextText, contextBudget)}`);
+    } else {
+      systemParts.push(`\n参考资料：\n${contextText}`);
+    }
   }
 
   systemParts.push(GLOBAL_SYSTEM_SUFFIX);
@@ -46,11 +60,26 @@ export function buildPrompt(options: BuildPromptOptions): ChatMessages {
   };
 }
 
-export function toMessages(prompt: ChatMessages): Array<{ role: 'system' | 'user' | 'assistant'; content: string }> {
-  return [
+export function toMessages(
+  prompt: ChatMessages,
+  historyMessages?: HistoryMessage[],
+  maxContextTokens?: number,
+): Array<{ role: 'system' | 'user' | 'assistant'; content: string }> {
+  const result: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
     { role: 'system', content: prompt.system },
-    { role: 'user', content: prompt.user },
   ];
+
+  if (historyMessages && historyMessages.length > 0) {
+    const budget = Math.floor((maxContextTokens ?? DEFAULT_MAX_CONTEXT_TOKENS) * HISTORY_BUDGET_RATIO);
+    const truncated = truncateHistory(historyMessages, budget);
+    for (const msg of truncated) {
+      result.push({ role: msg.role, content: msg.content });
+    }
+  }
+
+  result.push({ role: 'user', content: prompt.user });
+
+  return result;
 }
 
 export function buildUserPrompt(skillId: string, params: {
@@ -92,6 +121,9 @@ export function buildUserPrompt(skillId: string, params: {
 
     case 'chapter-generate':
       return `请根据大纲内容生成完整章节草稿`;
+
+    case 'character-dialogue':
+      return `请根据角色设定和关系，模拟这两个角色之间的对话场景`;
 
     default:
       return params.question || '请协助创作';

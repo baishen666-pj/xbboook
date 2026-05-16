@@ -21,6 +21,8 @@ export interface Volume {
   createdAt: string;
 }
 
+export type PublishStatus = "draft" | "scheduled" | "published" | "archived";
+
 export interface Chapter {
   id: string;
   volumeId: string;
@@ -30,6 +32,8 @@ export interface Chapter {
   wordCount: number;
   sortOrder: number;
   status: "draft" | "writing" | "revised" | "done";
+  publishStatus: PublishStatus;
+  scheduledAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -193,4 +197,43 @@ export interface ChapterComment {
   updatedAt: string;
   displayName: string;
   avatarColor: string;
+}
+
+export interface ScheduleItem {
+  id: string;
+  title: string;
+  wordCount: number;
+  publishStatus: PublishStatus;
+  scheduledAt: string | null;
+  sortOrder: number;
+}
+
+export type ForeshadowingStatus = "planted" | "harvested" | "forgotten";
+export type ForeshadowingImportance = "critical" | "important" | "normal" | "minor";
+
+export interface Foreshadowing {
+  id: string;
+  projectId: string;
+  title: string;
+  description: string | null;
+  plantChapterId: string | null;
+  expectedHarvestChapterId: string | null;
+  actualHarvestChapterId: string | null;
+  status: ForeshadowingStatus;
+  importance: ForeshadowingImportance;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type SnippetCategory = 'fight' | 'environment' | 'emotion' | 'dialogue' | 'transition' | 'custom';
+
+export interface SnippetTemplate {
+  id: number;
+  projectId: string | null;
+  name: string;
+  category: SnippetCategory;
+  content: string;
+  isBuiltin: number;
+  sortOrder: number;
+  createdAt: string;
 }

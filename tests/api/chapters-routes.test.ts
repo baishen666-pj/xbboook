@@ -639,6 +639,130 @@ describe('Chapters Routes', () => {
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
     });
+
+    it('moves a chapter from one volume to another', async () => {
+      const vol1Res = await request(app)
+        .post(`/api/projects/${projectId}/volumes`)
+        .send({ title: 'Volume 1' });
+      const vol1Id = vol1Res.body.data.id;
+
+      const vol2Res = await request(app)
+        .post(`/api/projects/${projectId}/volumes`)
+        .send({ title: 'Volume 2' });
+      const vol2Id = vol2Res.body.data.id;
+
+      const ch1 = await request(app)
+        .post(`/api/projects/${projectId}/chapters`)
+        .send({ title: 'Ch in Vol1', volumeId: vol1Id });
+      const ch2 = await request(app)
+        .post(`/api/projects/${projectId}/chapters`)
+        .send({ title: 'Ch in Vol2', volumeId: vol2Id });
+      const ch3 = await request(app)
+        .post(`/api/projects/${projectId}/chapters`)
+        .send({ title: 'Another in Vol1', volumeId: vol1Id });
+
+      const id1 = ch1.body.data.id;
+      const id2 = ch2.body.data.id;
+      const id3 = ch3.body.data.id;
+
+      const res = await request(app)
+        .put(`/api/projects/${projectId}/chapters/reorder`)
+        .send({
+          items: [
+            { id: id1, sortOrder: 0, volumeId: vol1Id },
+            { id: id2, sortOrder: 1, volumeId: vol1Id },
+            { id: id3, sortOrder: 0, volumeId: vol2Id },
+          ],
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+
+      const listRes = await request(app)
+        .get(`/api/projects/${projectId}/chapters`);
+      const chapters = listRes.body.data;
+
+      const moved = chapters.find((c: any) => c.id === id2);
+      expect(moved.volume_id).toBe(vol1Id);
+
+      const movedToVol2 = chapters.find((c: any) => c.id === id3);
+      expect(movedToVol2.volume_id).toBe(vol2Id);
+    });
+
+    it('moves a chapter from a volume to no volume', async () => {
+      const volRes = await request(app)
+        .post(`/api/projects/${projectId}/volumes`)
+        .send({ title: 'Volume' });
+      const volumeId = volRes.body.data.id;
+
+      const ch1 = await request(app)
+        .post(`/api/projects/${projectId}/chapters`)
+        .send({ title: 'In Volume', volumeId });
+      const ch2 = await request(app)
+        .post(`/api/projects/${projectId}/chapters`)
+        .send({ title: 'No Volume' });
+
+      const res = await request(app)
+        .put(`/api/projects/${projectId}/chapters/reorder`)
+        .send({
+          items: [
+            { id: ch1.body.data.id, sortOrder: 0, volumeId: null },
+            { id: ch2.body.data.id, sortOrder: 1, volumeId: null },
+          ],
+        });
+
+      expect(res.status).toBe(200);
+
+      const listRes = await request(app)
+        .get(`/api/projects/${projectId}/chapters`);
+      const moved = listRes.body.data.find((c: any) => c.id === ch1.body.data.id);
+      expect(moved.volume_id).toBeNull();
+    });
+
+    it('reorders within a volume without affecting other volumes', async () => {
+      const vol1Res = await request(app)
+        .post(`/api/projects/${projectId}/volumes`)
+        .send({ title: 'Volume 1' });
+      const vol1Id = vol1Res.body.data.id;
+
+      const vol2Res = await request(app)
+        .post(`/api/projects/${projectId}/volumes`)
+        .send({ title: 'Volume 2' });
+      const vol2Id = vol2Res.body.data.id;
+
+      const ch1 = await request(app)
+        .post(`/api/projects/${projectId}/chapters`)
+        .send({ title: 'V1-Ch1', volumeId: vol1Id });
+      const ch2 = await request(app)
+        .post(`/api/projects/${projectId}/chapters`)
+        .send({ title: 'V1-Ch2', volumeId: vol1Id });
+      const ch3 = await request(app)
+        .post(`/api/projects/${projectId}/chapters`)
+        .send({ title: 'V2-Ch1', volumeId: vol2Id });
+
+      const res = await request(app)
+        .put(`/api/projects/${projectId}/chapters/reorder`)
+        .send({
+          items: [
+            { id: ch2.body.data.id, sortOrder: 0, volumeId: vol1Id },
+            { id: ch1.body.data.id, sortOrder: 1, volumeId: vol1Id },
+            { id: ch3.body.data.id, sortOrder: 0, volumeId: vol2Id },
+          ],
+        });
+
+      expect(res.status).toBe(200);
+
+      const listRes = await request(app)
+        .get(`/api/projects/${projectId}/chapters`);
+      const chapters = listRes.body.data;
+
+      const vol1Chapters = chapters.filter((c: any) => c.volume_id === vol1Id);
+      expect(vol1Chapters[0].id).toBe(ch2.body.data.id);
+      expect(vol1Chapters[1].id).toBe(ch1.body.data.id);
+
+      const vol2Chapters = chapters.filter((c: any) => c.volume_id === vol2Id);
+      expect(vol2Chapters[0].id).toBe(ch3.body.data.id);
+    });
   });
 
   describe('DELETE /api/projects/:projectId/chapters/:id', () => {
