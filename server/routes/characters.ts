@@ -32,6 +32,11 @@ const updateCharacterSchema = z.object({
   sort_order: z.number().int().min(0).optional(),
 });
 
+const updateRelationSchema = z.object({
+  relationType: z.string().min(1).max(200).optional(),
+  description: z.string().max(2000).optional(),
+});
+
 const createRelationSchema = z.object({
   characterAId: z.string().uuid(),
   characterBId: z.string().uuid(),
@@ -67,7 +72,7 @@ router.post('/', validate(createCharacterSchema), (req, res) => {
 
 // Update character
 router.put('/:id', validate(updateCharacterSchema), (req, res) => {
-  const character = charRepo.update(req.params.id, req.body);
+  const character = charRepo.update(req.params.id as string, req.body);
   if (!character) {
     res.status(404).json({ success: false, error: '角色不存在' });
     return;
@@ -90,6 +95,16 @@ router.post('/relations', validate(createRelationSchema), (req, res) => {
   const { projectId } = req.params as { projectId: string };
   const relation = charRepo.createRelation({ projectId, ...req.body });
   res.status(201).json({ success: true, data: relation });
+});
+
+// Update relation
+router.put('/relations/:relationId', validate(updateRelationSchema), (req, res) => {
+  const relation = charRepo.updateRelation(req.params.relationId, req.body);
+  if (!relation) {
+    res.status(404).json({ success: false, error: '关系不存在' });
+    return;
+  }
+  res.json({ success: true, data: relation });
 });
 
 // Delete relation

@@ -77,9 +77,9 @@ export async function* streamChat(
           if (delta) {
             yield { content: delta, done: false };
           }
-        } catch (e) {
-          console.warn('[AI SSE] Malformed line:', trimmed, e);
-        }
+        } catch {
+            // skip malformed SSE lines
+          }
       }
     }
   } finally {

@@ -3,6 +3,7 @@ import { AiChatList } from "./AiChatList";
 import { AiChatInput } from "./AiChatInput";
 import { AiSkillPicker } from "./AiSkillPicker";
 import { AiSettingsPanel } from "./AiSettingsPanel";
+import { CharacterDialoguePicker } from "./CharacterDialoguePicker";
 
 export function AiPanel() {
   const activeSkillId = useAiStore((s) => s.activeSkillId);
@@ -28,6 +29,9 @@ export function AiPanel() {
 
       {/* Skill picker */}
       <AiSkillPicker />
+
+      {/* Character dialogue picker (only for character-dialogue skill) */}
+      {activeSkillId === "character-dialogue" && <CharacterDialoguePicker />}
 
       {/* Chat area */}
       <AiChatList />

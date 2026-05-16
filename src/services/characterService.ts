@@ -51,4 +51,11 @@ export const characterService = {
   async deleteRelation(projectId: string, relationId: string): Promise<ApiResponse<void>> {
     return apiClient.delete<void>(`/projects/${projectId}/characters/relations/${relationId}`);
   },
+
+  async updateRelation(projectId: string, relationId: string, data: {
+    relationType?: string;
+    description?: string;
+  }): Promise<ApiResponse<CharacterRelation>> {
+    return apiClient.put<CharacterRelation>(`/projects/${projectId}/characters/relations/${relationId}`, data);
+  },
 };

@@ -17,6 +17,7 @@ export function findById(id: string): Character | undefined {
 const CHARACTER_UPDATE_FIELDS = new Set([
   'name', 'nickname', 'role_type', 'gender', 'age',
   'appearance', 'personality', 'background', 'abilities', 'notes', 'sort_order',
+  'speech_style', 'verbal_tics', 'vocabulary_level', 'sentence_length_pref', 'emotional_expressiveness', 'voice_examples',
 ]);
 
 export function create(data: {
@@ -80,6 +81,12 @@ export function update(
     abilities: string;
     notes: string;
     sort_order: number;
+    speech_style: string;
+    verbal_tics: string;
+    vocabulary_level: string;
+    sentence_length_pref: string;
+    emotional_expressiveness: string;
+    voice_examples: string;
   }>,
 ): Character | undefined {
   const db = getDb();
@@ -161,4 +168,34 @@ export function deleteRelation(id: string): boolean {
   const db = getDb();
   const result = db.prepare('DELETE FROM character_relations WHERE id = ?').run(id);
   return result.changes > 0;
+}
+
+const RELATION_UPDATE_FIELDS = new Set(['relation_type', 'description']);
+
+export function updateRelation(
+  id: string,
+  data: Partial<{ relationType: string; description: string }>,
+): CharacterRelation | undefined {
+  const db = getDb();
+  const existing = db.prepare('SELECT * FROM character_relations WHERE id = ?').get(id) as CharacterRelation | undefined;
+  if (!existing) return undefined;
+
+  const fields: string[] = [];
+  const values: unknown[] = [];
+
+  const mapping: Record<string, string> = { relationType: 'relation_type' };
+  for (const [key, value] of Object.entries(data)) {
+    const col = mapping[key] ?? key;
+    if (value !== undefined && RELATION_UPDATE_FIELDS.has(col)) {
+      fields.push(`${col} = ?`);
+      values.push(value);
+    }
+  }
+
+  if (fields.length === 0) return existing;
+
+  values.push(id);
+  db.prepare(`UPDATE character_relations SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+
+  return db.prepare('SELECT * FROM character_relations WHERE id = ?').get(id) as CharacterRelation;
 }

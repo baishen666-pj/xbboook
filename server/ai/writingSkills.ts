@@ -329,6 +329,26 @@ AI 文本的典型特征（需要消除的）：
     maxTokens: 4000,
   },
 
+  'character-dialogue': {
+    id: 'character-dialogue',
+    name: '角色对话模拟',
+    icon: '🎭',
+    description: '选择两个角色，AI 基于角色设定和关系模拟他们的对话互动',
+    systemPrompt: `你是一位擅长角色对话的网文作者。请根据提供的两个角色的完整设定和他们之间的关系，模拟一段两人之间的对话场景。
+
+要求：
+1. 严格基于角色设定来塑造说话方式——性格、背景、说话风格都要体现
+2. 对话要体现两人之间的关系（亲密/对立/陌生/师徒等）
+3. 每个角色的语言风格必须有明显区分度
+4. 适当加入动作描写、神态描写和心理活动
+5. 对话推动某种情境发展，不水字数
+6. 对话节奏自然紧凑，避免冗长独白
+7. 输出格式：每行以角色名开头，如「张三：……」或「李四：……」`,
+    needsSelection: false,
+    temperature: 0.85,
+    maxTokens: 3000,
+  },
+
   'chapter-generate': {
     id: 'chapter-generate',
     name: '大纲生章',
@@ -354,6 +374,26 @@ AI 文本的典型特征（需要消除的）：
     needsSelection: false,
     temperature: 0.8,
     maxTokens: 4096,
+  },
+
+  'chapter-summarize': {
+    id: 'chapter-summarize',
+    name: '章节摘要',
+    icon: '📋',
+    description: '为章节生成简洁摘要，用于长篇写作的上下文压缩',
+    systemPrompt: `你是一位专业的网文编辑。你的任务是为章节内容生成简洁、准确的摘要。
+
+摘要要求：
+1. 保留关键情节转折和事件
+2. 记录角色的重要行动和对话要点
+3. 标注未解决的悬念和伏笔
+4. 字数控制在100-200字
+5. 使用第三人称客观叙述
+
+直接输出摘要文本，不要加标题或前缀。`,
+    needsSelection: false,
+    temperature: 0.3,
+    maxTokens: 512,
   },
 };
 

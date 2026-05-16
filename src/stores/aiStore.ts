@@ -18,6 +18,8 @@ interface AiState {
   isStreaming: boolean;
   currentStreamContent: string;
   error: string | null;
+  dialogueCharacter1Id: string | null;
+  dialogueCharacter2Id: string | null;
 }
 
 interface AiActions {
@@ -35,6 +37,8 @@ interface AiActions {
   clearStreamContent: () => void;
   setError: (error: string | null) => void;
   clearMessages: () => void;
+  setDialogueCharacter1: (id: string | null) => void;
+  setDialogueCharacter2: (id: string | null) => void;
 }
 
 function nextMsgId(): string {
@@ -49,6 +53,8 @@ export const useAiStore = create<AiState & AiActions>((set) => ({
   isStreaming: false,
   currentStreamContent: "",
   error: null,
+  dialogueCharacter1Id: null,
+  dialogueCharacter2Id: null,
 
   togglePanel: () => set((s) => ({ isOpen: !s.isOpen })),
   openPanel: () => set({ isOpen: true }),
@@ -86,4 +92,6 @@ export const useAiStore = create<AiState & AiActions>((set) => ({
   clearStreamContent: () => set({ currentStreamContent: "" }),
   setError: (error) => set({ error }),
   clearMessages: () => set({ messages: [], currentStreamContent: "" }),
+  setDialogueCharacter1: (id) => set({ dialogueCharacter1Id: id }),
+  setDialogueCharacter2: (id) => set({ dialogueCharacter2Id: id }),
 }));
