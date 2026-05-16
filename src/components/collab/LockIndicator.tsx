@@ -5,8 +5,9 @@ interface Props {
 }
 
 export function LockIndicator({ chapterId }: Props) {
-  const locks = useCollabStore((s) => s.locks);
-  const lock = locks.find((l) => l.chapterId === chapterId);
+  const lock = useCollabStore(
+    (s) => s.locks.find((l) => l.chapterId === chapterId),
+  );
 
   if (!lock) return null;
 

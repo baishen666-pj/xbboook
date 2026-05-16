@@ -1,6 +1,7 @@
 import { Router, type Request } from 'express';
 import { z } from 'zod';
 import * as projectRepo from '../db/repositories/projectRepo.js';
+import * as chapterRepo from '../db/repositories/chapterRepo.js';
 import { validate } from '../middleware/validate.js';
 
 const router = Router();
@@ -25,9 +26,18 @@ const updateSchema = z.object({
   sort_order: z.number().optional(),
 });
 
+function enrichProject(project: any) {
+  const chapters = chapterRepo.findByProject(project.id);
+  return {
+    ...project,
+    word_count: chapters.reduce((sum: number, c: any) => sum + (c.word_count ?? 0), 0),
+    chapter_count: chapters.length,
+  };
+}
+
 router.get('/', (_req, res) => {
   const projects = projectRepo.findAll();
-  res.json({ success: true, data: projects });
+  res.json({ success: true, data: projects.map(enrichProject) });
 });
 
 router.get('/:id', (req, res) => {
@@ -36,12 +46,12 @@ router.get('/:id', (req, res) => {
     res.status(404).json({ success: false, error: '项目不存在' });
     return;
   }
-  res.json({ success: true, data: project });
+  res.json({ success: true, data: enrichProject(project) });
 });
 
 router.post('/', validate(createSchema), async (req, res) => {
   const project = await projectRepo.create(req.body);
-  res.status(201).json({ success: true, data: project });
+  res.status(201).json({ success: true, data: enrichProject(project) });
 });
 
 router.put('/:id', validate(updateSchema), (req: Request<{ id: string }>, res) => {
@@ -50,7 +60,7 @@ router.put('/:id', validate(updateSchema), (req: Request<{ id: string }>, res) =
     res.status(404).json({ success: false, error: '项目不存在' });
     return;
   }
-  res.json({ success: true, data: project });
+  res.json({ success: true, data: enrichProject(project) });
 });
 
 router.delete('/:id', async (req, res) => {

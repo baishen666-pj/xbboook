@@ -1,13 +1,5 @@
 import { BrowserRouter, Routes, Route, useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { ProjectList } from "@/components/project/ProjectList";
-import { AppLayout } from "@/components/layout/AppLayout";
-import { TitleBar } from "@/components/layout/TitleBar";
-import { StatusBar } from "@/components/layout/StatusBar";
-import { EditorArea } from "@/components/editor/EditorArea";
-import { EditorContextMenu } from "@/components/editor/EditorContextMenu";
-import { AiPanel } from "@/components/ai-panel/AiPanel";
-import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { useUiStore } from "@/stores/uiStore";
 import { useAiStore } from "@/stores/aiStore";
@@ -17,7 +9,40 @@ import { collabService } from "@/services/collabService";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useSessionTracker } from "@/hooks/useSessionTracker";
 import { useCollabPresence } from "@/hooks/useCollabPresence";
-import { UserPicker } from "@/components/collab/UserPicker";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+
+const ProjectList = lazy(() =>
+  import("@/components/project/ProjectList").then((m) => ({ default: m.ProjectList })),
+);
+const AppLayout = lazy(() =>
+  import("@/components/layout/AppLayout").then((m) => ({ default: m.AppLayout })),
+);
+const TitleBar = lazy(() =>
+  import("@/components/layout/TitleBar").then((m) => ({ default: m.TitleBar })),
+);
+const StatusBar = lazy(() =>
+  import("@/components/layout/StatusBar").then((m) => ({ default: m.StatusBar })),
+);
+const EditorArea = lazy(() =>
+  import("@/components/editor/EditorArea").then((m) => ({ default: m.EditorArea })),
+);
+const EditorContextMenu = lazy(() =>
+  import("@/components/editor/EditorContextMenu").then((m) => ({ default: m.EditorContextMenu })),
+);
+const AiPanel = lazy(() =>
+  import("@/components/ai-panel/AiPanel").then((m) => ({ default: m.AiPanel })),
+);
+const UserPicker = lazy(() =>
+  import("@/components/collab/UserPicker").then((m) => ({ default: m.UserPicker })),
+);
+
+function LoadingFallback() {
+  return (
+    <div className="flex h-full items-center justify-center bg-[var(--color-surface-0)]">
+      <div className="h-5 w-5 animate-[spin-slow_1s_linear_infinite] rounded-full border-2 border-[var(--color-border)] border-t-[var(--color-primary)]" />
+    </div>
+  );
+}
 
 function Workspace() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -45,14 +70,26 @@ function Workspace() {
 
   return (
     <div className="flex h-full flex-col">
-      {!isFullscreen && <TitleBar />}
+      {!isFullscreen && (
+        <Suspense fallback={null}>
+          <TitleBar />
+        </Suspense>
+      )}
 
-      <AppLayout rightPanel={<ErrorBoundary><AiPanel /></ErrorBoundary>}>
-        <ErrorBoundary><EditorArea /></ErrorBoundary>
-      </AppLayout>
+      <Suspense fallback={<LoadingFallback />}>
+        <AppLayout rightPanel={<ErrorBoundary><AiPanel /></ErrorBoundary>}>
+          <ErrorBoundary><EditorArea /></ErrorBoundary>
+        </AppLayout>
+      </Suspense>
 
-      {!isFullscreen && <StatusBar />}
-      <EditorContextMenu />
+      {!isFullscreen && (
+        <Suspense fallback={null}>
+          <StatusBar />
+        </Suspense>
+      )}
+      <Suspense fallback={null}>
+        <EditorContextMenu />
+      </Suspense>
 
       {/* Toggle buttons when panels are closed */}
       {!isLeftPanelOpen && (
@@ -105,11 +142,20 @@ export function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<ProjectList />} />
+        <Route
+          path="/"
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <ProjectList />
+            </Suspense>
+          }
+        />
         <Route path="/project/:projectId" element={<Workspace />} />
       </Routes>
       {showPicker && !currentUser && (
-        <UserPicker onComplete={() => setShowPicker(false)} />
+        <Suspense fallback={null}>
+          <UserPicker onComplete={() => setShowPicker(false)} />
+        </Suspense>
       )}
     </BrowserRouter>
   );

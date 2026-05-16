@@ -204,5 +204,14 @@ export function runMigrations(): void {
     );
 
     CREATE INDEX IF NOT EXISTS idx_comments_chapter ON chapter_comments(chapter_id, created_at ASC);
+
+    -- Performance indexes for frequently queried columns
+    CREATE INDEX IF NOT EXISTS idx_chapters_project ON chapters(project_id, sort_order);
+    CREATE INDEX IF NOT EXISTS idx_characters_project ON characters(project_id, sort_order);
+    CREATE INDEX IF NOT EXISTS idx_worldviews_project ON worldviews(project_id, category, sort_order);
+    CREATE INDEX IF NOT EXISTS idx_outlines_project ON outlines(project_id, level, sort_order);
+    CREATE INDEX IF NOT EXISTS idx_daily_stats_project ON daily_stats(project_id, date);
+    CREATE INDEX IF NOT EXISTS idx_comments_project ON chapter_comments(project_id);
+    CREATE INDEX IF NOT EXISTS idx_versions_project ON chapter_versions(project_id);
   `);
 }

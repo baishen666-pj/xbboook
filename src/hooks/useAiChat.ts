@@ -5,8 +5,9 @@ import { useProjectStore } from "@/stores/projectStore";
 import { streamAi, type StreamRequest } from "@/services/aiService";
 
 export function useAiChat() {
-  const { activeSkillId, addMessage, appendToMessage, finalizeMessage, setStreaming, appendStreamContent, clearStreamContent, setError } = useAiStore();
-  const { activeChapterId, selectedText } = useEditorStore();
+  const activeSkillId = useAiStore((s) => s.activeSkillId);
+  const activeChapterId = useEditorStore((s) => s.activeChapterId);
+  const selectedText = useEditorStore((s) => s.selectedText);
   const currentProject = useProjectStore((s) => s.currentProject);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -18,18 +19,19 @@ export function useAiChat() {
       const controller = new AbortController();
       abortRef.current = controller;
 
-      addMessage({ role: "user", content: userMessage, skillId: activeSkillId });
+      const ai = useAiStore.getState();
+      ai.addMessage({ role: "user", content: userMessage, skillId: activeSkillId });
 
-      const assistantId = addMessage({
+      const assistantId = ai.addMessage({
         role: "assistant",
         content: "",
         skillId: activeSkillId,
         isStreaming: true,
       });
 
-      setStreaming(true);
-      clearStreamContent();
-      setError(null);
+      ai.setStreaming(true);
+      ai.clearStreamContent();
+      ai.setError(null);
 
       const req: StreamRequest = {
         projectId: currentProject.id,
@@ -42,26 +44,29 @@ export function useAiChat() {
       try {
         for await (const event of streamAi(req, controller.signal)) {
           if (controller.signal.aborted) break;
+          const s = useAiStore.getState();
           if (event.type === "chunk") {
-            appendToMessage(assistantId, event.content);
-            appendStreamContent(event.content);
+            s.appendToMessage(assistantId, event.content);
+            s.appendStreamContent(event.content);
           } else if (event.type === "done") {
-            finalizeMessage(assistantId);
+            s.finalizeMessage(assistantId);
           }
         }
       } catch (err) {
         if (controller.signal.aborted) return;
         const message = err instanceof Error ? err.message : "AI 请求失败";
-        setError(message);
-        finalizeMessage(assistantId);
+        const s = useAiStore.getState();
+        s.setError(message);
+        s.finalizeMessage(assistantId);
       } finally {
         if (abortRef.current === controller) {
-          setStreaming(false);
-          clearStreamContent();
+          const s = useAiStore.getState();
+          s.setStreaming(false);
+          s.clearStreamContent();
         }
       }
     },
-    [currentProject, activeChapterId, selectedText, activeSkillId, addMessage, appendToMessage, finalizeMessage, setStreaming, appendStreamContent, clearStreamContent, setError]
+    [currentProject, activeChapterId, selectedText, activeSkillId],
   );
 
   const quickAction = useCallback(
@@ -85,7 +90,7 @@ export function useAiChat() {
       const label = skillLabels[skillId] || skillId;
       await send(label);
     },
-    [currentProject, send]
+    [currentProject, send],
   );
 
   return { send, quickAction };

@@ -5,3 +5,5 @@ data/
 *.db
 .env
 .vite/
+coverage/
+test-results/

@@ -31,7 +31,8 @@ export function EditorContextMenu() {
     selectedText: "",
   });
 
-  const { openPanel, setActiveSkill } = useAiStore();
+  const openPanel = useAiStore((s) => s.openPanel);
+  const setActiveSkill = useAiStore((s) => s.setActiveSkill);
 
   useEffect(() => {
     const handleContextMenu = (e: MouseEvent) => {

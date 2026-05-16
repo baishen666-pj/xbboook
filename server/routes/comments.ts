@@ -8,6 +8,7 @@ const router = Router({ mergeParams: true });
 
 const createSchema = z.object({
   content: z.string().min(1).max(2000),
+  userId: z.string().min(1),
   selectionFrom: z.number().int().optional(),
   selectionTo: z.number().int().optional(),
   selectionText: z.string().max(500).optional(),

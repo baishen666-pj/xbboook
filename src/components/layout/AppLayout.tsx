@@ -37,8 +37,8 @@ export function AppLayout({ children, rightPanel }: AppLayoutProps) {
           </div>
           {/* Mobile overlay */}
           <div className="md:hidden fixed inset-0 z-40">
-            <div className="absolute inset-0 bg-black/50" onClick={() => useUiStore.getState().toggleLeftPanel()} />
-            <div className="absolute left-0 top-0 bottom-0 w-72 bg-[var(--color-surface-1)] shadow-lg">
+            <div className="absolute inset-0 bg-black/50 animate-[fadeIn_150ms_var(--ease-out)]" onClick={() => useUiStore.getState().toggleLeftPanel()} />
+            <div className="absolute left-0 top-0 bottom-0 w-72 bg-[var(--color-surface-1)] shadow-lg animate-[slideInLeft_200ms_var(--ease-out)]">
               <ChapterSidebar />
             </div>
           </div>
@@ -65,8 +65,8 @@ export function AppLayout({ children, rightPanel }: AppLayoutProps) {
             </ResizablePanel>
           </div>
           <div className="md:hidden fixed inset-0 z-40">
-            <div className="absolute inset-0 bg-black/50" onClick={() => useUiStore.getState().toggleRightPanel()} />
-            <div className="absolute right-0 top-0 bottom-0 w-80 bg-[var(--color-surface-1)] shadow-lg">
+            <div className="absolute inset-0 bg-black/50 animate-[fadeIn_150ms_var(--ease-out)]" onClick={() => useUiStore.getState().toggleRightPanel()} />
+            <div className="absolute right-0 top-0 bottom-0 w-80 bg-[var(--color-surface-1)] shadow-lg animate-[slideInRight_200ms_var(--ease-out)]">
               {rightPanel}
             </div>
           </div>

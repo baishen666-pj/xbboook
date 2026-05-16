@@ -126,7 +126,7 @@ describe('AI API', () => {
     const res = await request(BASE).get('/api/ai/skills');
 
     expect(res.status).toBe(200);
-    expect(res.body.data).toHaveLength(9);
+    expect(res.body.data).toHaveLength(13);
     const ids = res.body.data.map((s: any) => s.id);
     expect(ids).toContain('continue');
     expect(ids).toContain('deai');

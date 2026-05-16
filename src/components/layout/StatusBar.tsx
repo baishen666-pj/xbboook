@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useEditorStore } from "@/stores/editorStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { countMixedText } from "@/lib/word-count";
@@ -13,8 +13,11 @@ export function StatusBar() {
   const [showStats, setShowStats] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
 
-  const stats = countMixedText(content);
-  const activeChapter = chapters.find((c) => c.id === activeChapterId);
+  const stats = useMemo(() => countMixedText(content), [content]);
+  const activeChapter = useMemo(
+    () => chapters.find((c) => c.id === activeChapterId),
+    [chapters, activeChapterId],
+  );
 
   return (
     <footer className="relative flex h-7 items-center justify-between border-t border-[var(--color-border)] bg-[var(--color-surface-1)] px-4 text-[var(--text-xs)] text-[var(--color-text-muted)]">
@@ -54,10 +57,10 @@ export function StatusBar() {
 
       {/* Stats popover */}
       {showStats && (
-        <div className="absolute bottom-7 right-4 z-30 w-72 rounded-xl border border-white/10 bg-[oklch(0.16_0_0)] shadow-2xl">
-          <div className="flex items-center justify-between border-b border-white/5 px-3 py-2">
-            <span className="text-xs font-medium text-white/60">写作统计</span>
-            <button onClick={() => setShowStats(false)} className="text-xs text-white/30 hover:text-white/60">×</button>
+        <div className="absolute bottom-7 right-4 z-30 w-72 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] shadow-[var(--shadow-lg)] animate-[slideUp_200ms_var(--ease-out)]">
+          <div className="flex items-center justify-between border-b border-[var(--color-border-subtle)] px-3 py-2">
+            <span className="text-[var(--text-xs)] font-medium text-[var(--color-text-secondary)]">写作统计</span>
+            <button onClick={() => setShowStats(false)} className="text-[var(--text-xs)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]">×</button>
           </div>
           <StatsPanel />
         </div>
@@ -65,7 +68,7 @@ export function StatusBar() {
 
       {/* Dashboard popover */}
       {showDashboard && (
-        <div className="absolute bottom-7 right-0 z-30 w-[640px] h-[480px] rounded-xl border border-white/10 bg-[oklch(0.14_0_0)] shadow-2xl">
+        <div className="absolute bottom-7 right-0 z-30 w-[640px] h-[480px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] shadow-[var(--shadow-lg)] animate-[slideUp_200ms_var(--ease-out)]">
           <DashboardPanel onClose={() => setShowDashboard(false)} />
         </div>
       )}
