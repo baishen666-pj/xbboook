@@ -1,0 +1,19 @@
+{
+  "name": "Xbboook - 网文笔阁",
+  "short_name": "笔阁",
+  "description": "AI 驱动的网文写作工作台",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f1a",
+  "theme_color": "#6366f1",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["productivity", "utilities"]
+}
