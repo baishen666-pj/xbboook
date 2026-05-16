@@ -48,7 +48,7 @@ router.post('/', validate(createSchema), (req, res) => {
 router.post('/:id/apply', validate(applySchema), (req, res) => {
   try {
     const outlines = templateService.applyTemplate(
-      req.params.id,
+      req.params.id as string,
       req.body.projectId,
       req.body.mode,
     );
@@ -62,7 +62,7 @@ router.post('/:id/apply', validate(applySchema), (req, res) => {
 router.post('/:id/save-from-project', validate(saveFromProjectSchema), (req, res) => {
   try {
     const template = templateService.createFromProject(
-      req.params.id,
+      req.params.id as string,
       req.body.name,
       req.body.genre,
       req.body.description,
@@ -76,7 +76,7 @@ router.post('/:id/save-from-project', validate(saveFromProjectSchema), (req, res
 
 router.put('/:id', validate(createSchema), (req, res) => {
   try {
-    const template = templateService.updateUserTemplate(req.params.id, req.body);
+    const template = templateService.updateUserTemplate(req.params.id as string, req.body);
     res.json({ success: true, data: template });
   } catch (err) {
     const message = err instanceof Error ? err.message : '更新模板失败';

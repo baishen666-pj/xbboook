@@ -20,9 +20,9 @@ const variantStyles: Record<ButtonVariant, string> = {
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
-  sm: "px-2 py-1 text-[var(--text-xs)] gap-1",
-  md: "px-3 py-1.5 text-[var(--text-sm)] gap-1.5",
-  lg: "px-5 py-2.5 text-[var(--text-base)] gap-2",
+  sm: "px-2 py-1 text-[var(--text-xs)] gap-1 min-h-[32px]",
+  md: "px-3 py-1.5 text-[var(--text-sm)] gap-1.5 min-h-[36px]",
+  lg: "px-5 py-2.5 text-[var(--text-base)] gap-2 min-h-[44px]",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -33,8 +33,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         className={[
           "inline-flex items-center justify-center rounded-[var(--radius-md)] font-medium",
           "transition-colors duration-[var(--duration-fast)]",
+          "btn-hover-scale",
           "focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] focus-visible:outline-offset-2",
-          "disabled:opacity-40 disabled:pointer-events-none",
+          "disabled:opacity-40 disabled:pointer-events-none disabled:transform-none",
           variantStyles[variant],
           sizeStyles[size],
           className,

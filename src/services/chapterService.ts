@@ -1,5 +1,5 @@
 import { apiClient } from "./apiClient";
-import type { Chapter } from "@/types/project";
+import type { Chapter, PublishStatus, ScheduleItem } from "@/types/project";
 import type { ApiResponse } from "@/types/api";
 
 export const chapterService = {
@@ -23,7 +23,7 @@ export const chapterService = {
   async update(
     projectId: string,
     id: string,
-    data: Partial<Pick<Chapter, "title" | "status" | "sortOrder" | "volumeId">>
+    data: Partial<Pick<Chapter, "title" | "status" | "sortOrder" | "volumeId" | "publishStatus" | "scheduledAt">>
   ): Promise<ApiResponse<Chapter>> {
     return apiClient.put<Chapter>(`/projects/${projectId}/chapters/${id}`, data);
   },
@@ -38,8 +38,20 @@ export const chapterService = {
 
   async reorder(
     projectId: string,
-    items: Array<{ id: string; sortOrder: number }>
+    items: Array<{ id: string; volumeId?: string | null; sortOrder: number }>
   ): Promise<ApiResponse<void>> {
     return apiClient.put<void>(`/projects/${projectId}/chapters/reorder`, { items });
+  },
+
+  async fetchSchedule(projectId: string): Promise<ApiResponse<ScheduleItem[]>> {
+    return apiClient.get<ScheduleItem[]>(`/projects/${projectId}/chapters/schedule`);
+  },
+
+  async updatePublishStatus(
+    projectId: string,
+    chapterId: string,
+    data: { publish_status: PublishStatus; scheduled_at?: string | null }
+  ): Promise<ApiResponse<Chapter>> {
+    return apiClient.patch<Chapter>(`/projects/${projectId}/chapters/${chapterId}/publish-status`, data);
   },
 };

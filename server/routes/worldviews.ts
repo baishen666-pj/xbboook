@@ -59,7 +59,7 @@ router.post('/', validate(createWorldviewSchema), (req, res) => {
 
 // Update worldview
 router.put('/:id', validate(updateWorldviewSchema), (req, res) => {
-  const item = wvRepo.update(req.params.id, req.body);
+  const item = wvRepo.update(req.params.id as string, req.body);
   if (!item) {
     res.status(404).json({ success: false, error: '设定不存在' });
     return;

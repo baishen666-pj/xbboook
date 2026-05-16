@@ -6,6 +6,7 @@ import { saveConfig, loadStoredConfig } from '../ai/configStore.js';
 import { PROVIDERS, getProvider } from '../ai/providers.js';
 import { findById as findChapterById } from '../db/repositories/chapterRepo.js';
 import { readChapter } from '../services/fileService.js';
+import { createJob, runPipeline, getJob, type PipelineJob } from '../ai/chapterPipeline.js';
 
 const router = Router();
 
@@ -134,7 +135,7 @@ router.post('/test', async (_req, res) => {
 
 // SSE streaming AI request
 router.post('/stream', async (req, res) => {
-  const { projectId, skillId, chapterId, selectedText, targetStyle, question, customInstruction, outlineContent } = req.body;
+  const { projectId, skillId, chapterId, selectedText, targetStyle, question, customInstruction, outlineContent, historyMessages, character1Id, character2Id } = req.body;
 
   if (!projectId || !skillId) {
     res.status(400).json({ success: false, error: 'projectId and skillId are required' });
@@ -152,6 +153,11 @@ router.post('/stream', async (req, res) => {
     return;
   }
 
+  if (skillId === 'character-dialogue' && (!character1Id || !character2Id)) {
+    res.status(400).json({ success: false, error: '角色对话模拟需要选择两个角色' });
+    return;
+  }
+
   setupSSE(req, res);
 
   try {
@@ -166,6 +172,9 @@ router.post('/stream', async (req, res) => {
       question,
       customInstruction,
       outlineContent,
+      historyMessages,
+      character1Id,
+      character2Id,
     })) {
       if (event.type === 'chunk') {
         fullContent += event.content;
@@ -255,6 +264,46 @@ router.post('/batch-polish', async (req, res) => {
 
   sendSSE(res, 'all_done', { results });
   res.end();
+});
+
+// SSE batch chapter generation endpoint
+router.post('/batch-generate', async (req, res) => {
+  const { projectId, chapterIds } = req.body as { projectId?: string; chapterIds?: string[] };
+
+  if (!projectId || !Array.isArray(chapterIds) || chapterIds.length === 0) {
+    res.status(400).json({ success: false, error: 'projectId and chapterIds are required' });
+    return;
+  }
+
+  if (!isConfigured()) {
+    res.status(400).json({ success: false, error: 'AI 未配置，请设置 AI_API_KEY 环境变量' });
+    return;
+  }
+
+  setupSSE(req, res);
+
+  const job = createJob(projectId, chapterIds);
+
+  try {
+    for await (const event of runPipeline(job)) {
+      sendSSE(res, event.type, event);
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    sendSSEError(res, message);
+  }
+
+  res.end();
+});
+
+// Get pipeline job status
+router.get('/pipeline/:jobId', (req, res) => {
+  const job = getJob(req.params.jobId);
+  if (!job) {
+    res.status(404).json({ success: false, error: '任务不存在' });
+    return;
+  }
+  res.json({ success: true, data: job });
 });
 
 export default router;

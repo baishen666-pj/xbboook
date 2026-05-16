@@ -20,16 +20,41 @@ import collabRouter from './routes/collab.js';
 import commentsRouter from './routes/comments.js';
 import backupRouter from './routes/backup.js';
 import importRouter from './routes/import.js';
+import foreshadowingRouter from './routes/foreshadowing.js';
+import snippetsRouter from './routes/snippets.js';
+import storyArcsRouter from './routes/storyArcs.js';
+import searchRouter from './routes/search.js';
+import healthRouter from './routes/health.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { requestIdMiddleware, requestLogger } from './middleware/logger.js';
 
 const app = express();
 
-app.use(helmet({ contentSecurityPolicy: false }));
+const isDev = process.env.NODE_ENV === 'development';
+
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:'],
+      fontSrc: ["'self'"],
+      connectSrc: ["'self'", isDev ? 'http://localhost:*' : "'self'"],
+    },
+  },
+}));
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*',
+  origin: process.env.CORS_ORIGIN || (isDev ? 'http://localhost:5210' : false),
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  message: { success: false, error: 'Too many requests, please try again later' },
+});
 
 const aiLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -37,6 +62,12 @@ const aiLimiter = rateLimit({
   message: { success: false, error: 'Too many AI requests, please try again later' },
 });
 
+app.use(requestIdMiddleware);
+app.use(requestLogger);
+
+app.use('/api', apiLimiter);
+
+app.use('/api/health', healthRouter);
 app.use('/api/projects', projectsRouter);
 app.use('/api/projects/:projectId/volumes', volumesRouter);
 app.use('/api/projects/:projectId/chapters', chaptersRouter);
@@ -46,6 +77,7 @@ app.use('/api/projects/:projectId/worldviews', worldviewsRouter);
 app.use('/api/projects/:projectId/outlines', outlinesRouter);
 app.use('/api/projects/:projectId/stats', statsRouter);
 app.use('/api/projects/:projectId/export', exportRouter);
+app.use('/api/projects/:projectId/search', searchRouter);
 app.use('/api/ai', aiLimiter, aiRouter);
 app.use('/api/templates', templatesRouter);
 app.use('/api/users', usersRouter);
@@ -53,13 +85,16 @@ app.use('/api/projects/:projectId/collab', collabRouter);
 app.use('/api/projects/:projectId/chapters/:chapterId/comments', commentsRouter);
 app.use('/api/backups', backupRouter);
 app.use('/api/projects', importRouter);
+app.use('/api/foreshadowing/:projectId', foreshadowingRouter);
+app.use('/api/snippets/:projectId', snippetsRouter);
+app.use('/api/projects/:projectId/story', storyArcsRouter);
 
 app.use(errorHandler);
 
 // Serve static frontend (production)
 const distPath = path.join(process.cwd(), 'dist');
 app.use(express.static(distPath));
-app.get('*', (_req, res) => {
+app.get('{*path}', (_req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));
 });
 

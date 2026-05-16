@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { useEditorStore } from "@/stores/editorStore";
 import { analyticsService } from "@/services/analyticsService";
+import { toast } from "@/stores/toastStore";
 
 function formatTime(ms: number): string {
   const totalSec = Math.floor(ms / 1000);
@@ -15,6 +16,7 @@ function formatTime(ms: number): string {
 export function WritingTimer() {
   const currentProject = useProjectStore((s) => s.currentProject);
   const activeChapterId = useEditorStore((s) => s.activeChapterId);
+  const content = useEditorStore((s) => s.content);
   const [elapsed, setElapsed] = useState(0);
   const [isWriting, setIsWriting] = useState(false);
   const [todayWords, setTodayWords] = useState(0);
@@ -23,8 +25,10 @@ export function WritingTimer() {
   const startRef = useRef<number>(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wordsAtStartRef = useRef<number>(0);
+  const sessionIdRef = useRef<string | null>(null);
+  const goalShownRef = useRef(false);
 
-  // Fetch today's stats
+  // Fetch today's stats periodically
   useEffect(() => {
     if (!currentProject) return;
     const id = setInterval(() => {
@@ -35,7 +39,6 @@ export function WritingTimer() {
         }
       }).catch(() => {});
     }, 30000);
-    // Initial fetch
     analyticsService.getTodayStats(currentProject.id).then((res) => {
       if (res.success && res.data) {
         setTodayWords(res.data.words);
@@ -45,18 +48,59 @@ export function WritingTimer() {
     return () => clearInterval(id);
   }, [currentProject]);
 
-  // Track word count for session
-  const content = useEditorStore((s) => s.content);
+  // Start a DB session when writing begins
+  const startDbSession = useCallback(async () => {
+    if (!currentProject || !activeChapterId || sessionIdRef.current) return;
+    const wordCount = useEditorStore.getState().content.length;
+    try {
+      const res = await analyticsService.startSession(currentProject.id, {
+        chapterId: activeChapterId,
+        wordsStart: wordCount,
+      });
+      if (res.success && res.data) {
+        sessionIdRef.current = res.data.id;
+      }
+    } catch {
+      // Non-critical — don't block writing
+    }
+  }, [currentProject, activeChapterId]);
+
+  // End the DB session when writing pauses
+  const endDbSession = useCallback(async (wordsEnd: number) => {
+    if (!currentProject || !sessionIdRef.current) return;
+    const sid = sessionIdRef.current;
+    sessionIdRef.current = null;
+    try {
+      await analyticsService.endSession(currentProject.id, sid, wordsEnd);
+      // Refresh today's stats after session ends
+      const statsRes = await analyticsService.getTodayStats(currentProject.id);
+      if (statsRes.success && statsRes.data) {
+        setTodayWords(statsRes.data.words);
+        setDailyTarget(statsRes.data.dailyTarget);
+        // Check goal
+        if (
+          statsRes.data.dailyTarget > 0 &&
+          statsRes.data.words >= statsRes.data.dailyTarget &&
+          !goalShownRef.current
+        ) {
+          goalShownRef.current = true;
+          toast("success", `今日目标达成！已写 ${statsRes.data.words} 字`, 5000);
+        }
+      }
+    } catch {
+      // Non-critical
+    }
+  }, [currentProject]);
 
   // Auto-start timer when typing
   const handleActivity = useCallback(() => {
     if (!activeChapterId) return;
-
     if (!isWriting) {
       setIsWriting(true);
       startRef.current = Date.now();
       const wordCount = content.length;
       wordsAtStartRef.current = wordCount;
+      void startDbSession();
 
       timerRef.current = setInterval(() => {
         setElapsed(Date.now() - startRef.current);
@@ -64,30 +108,40 @@ export function WritingTimer() {
         setSessionWords(Math.max(0, currentWords - wordsAtStartRef.current));
       }, 1000);
     }
-  }, [activeChapterId, isWriting, content]);
+  }, [activeChapterId, isWriting, content, startDbSession]);
 
-  // Listen for typing activity via editor store changes
   useEffect(() => {
     if (!activeChapterId) return;
     handleActivity();
   }, [content, activeChapterId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Pause after 30s of inactivity
+  // Pause after 30s of inactivity — end DB session
   useEffect(() => {
     if (!isWriting) return;
     const timeout = setTimeout(() => {
       setIsWriting(false);
       if (timerRef.current) clearInterval(timerRef.current);
+      const currentWords = useEditorStore.getState().content.length;
+      void endDbSession(currentWords);
     }, 30000);
     return () => clearTimeout(timeout);
-  }, [content, isWriting]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [content, isWriting, endDbSession]);
 
-  // Cleanup
+  // Cleanup on unmount or chapter change
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (sessionIdRef.current) {
+        const currentWords = useEditorStore.getState().content.length;
+        void endDbSession(currentWords);
+      }
     };
-  }, []);
+  }, [activeChapterId, endDbSession]);
+
+  // Reset goal notification on new day
+  useEffect(() => {
+    goalShownRef.current = false;
+  }, [dailyTarget]);
 
   if (!activeChapterId) return null;
 

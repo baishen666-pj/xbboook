@@ -39,6 +39,9 @@ interface ProjectActions {
     volumeId: string,
     title?: string
   ) => Promise<Chapter | null>;
+  reorderChapters: (
+    items: Array<{ id: string; volumeId?: string | null; sortOrder: number }>
+  ) => Promise<void>;
   setError: (error: string | null) => void;
   toggleChapterSelection: (id: string) => void;
   clearChapterSelection: () => void;
@@ -157,6 +160,30 @@ export const useProjectStore = create<ProjectState & ProjectActions>(
 
       set({ error: res.error ?? "创建章节失败" });
       return null;
+    },
+
+    reorderChapters: async (items) => {
+      const project = get().currentProject;
+      if (!project) return;
+
+      const prevChapters = get().chapters;
+
+      const updatedChapters = prevChapters.map((ch) => {
+        const move = items.find((m) => m.id === ch.id);
+        if (!move) return ch;
+        return {
+          ...ch,
+          sortOrder: move.sortOrder,
+          ...(move.volumeId !== undefined ? { volumeId: move.volumeId ?? "" } : {}),
+        };
+      });
+
+      set({ chapters: updatedChapters });
+
+      const res = await chapterService.reorder(project.id, items);
+      if (!res.success) {
+        set({ chapters: prevChapters, error: res.error ?? "排序失败" });
+      }
     },
 
     setError: (error) => set({ error }),

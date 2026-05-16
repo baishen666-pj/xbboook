@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useCallback, useRef } from "react";
+import { type ReactNode, useEffect, useCallback, useRef, useState } from "react";
 
 interface ModalProps {
   isOpen: boolean;
@@ -9,10 +9,21 @@ interface ModalProps {
 
 export function Modal({ isOpen, onClose, title, children }: ModalProps) {
   const contentRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+  const [isAnimatingOut, setIsAnimatingOut] = useState(false);
+
+  const handleClose = useCallback(() => {
+    setIsAnimatingOut(true);
+    setTimeout(() => {
+      setIsAnimatingOut(false);
+      setIsVisible(false);
+      onClose();
+    }, 150);
+  }, [onClose]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") handleClose();
       if (e.key === "Tab" && contentRef.current) {
         const focusable = contentRef.current.querySelectorAll<HTMLElement>(
           'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
@@ -29,11 +40,13 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
         }
       }
     },
-    [onClose],
+    [handleClose],
   );
 
   useEffect(() => {
     if (isOpen) {
+      setIsVisible(true);
+      setIsAnimatingOut(false);
       document.addEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "hidden";
       requestAnimationFrame(() => contentRef.current?.querySelector<HTMLElement>("input,button")?.focus());
@@ -44,20 +57,23 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
     };
   }, [isOpen, handleKeyDown]);
 
-  if (!isOpen) return null;
+  if (!isVisible && !isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title ?? "对话框"}
+    >
       <div
-        className="absolute inset-0 bg-black/60 animate-[fadeIn_150ms_var(--ease-out)]"
-        onClick={onClose}
+        className={`absolute inset-0 bg-black/60 ${isAnimatingOut ? "animate-[fadeOut_150ms_var(--ease-out)_forwards]" : "modal-backdrop-enter"}`}
+        onClick={handleClose}
+        aria-hidden="true"
       />
       <div
         ref={contentRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        className="relative z-10 w-full max-w-lg rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-1)] p-6 shadow-[var(--shadow-lg)] animate-[slideUp_200ms_var(--ease-out)]"
+        className={`relative z-10 w-full max-w-lg rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-1)] p-6 shadow-[var(--shadow-lg)] ${isAnimatingOut ? "animate-[modalScaleOut_150ms_var(--ease-out)_forwards]" : "modal-content-enter"}`}
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
@@ -66,11 +82,11 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
               {title}
             </h2>
             <button
-              onClick={onClose}
-              aria-label="关闭"
-              className="rounded-[var(--radius-sm)] p-1 text-[var(--color-text-muted)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)] transition-colors"
+              onClick={handleClose}
+              aria-label="关闭对话框"
+              className="rounded-[var(--radius-sm)] p-1 text-[var(--color-text-muted)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)] transition-colors focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] focus-visible:outline-offset-2"
             >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
                 <path d="M4 4l8 8M12 4l-8 8" />
               </svg>
             </button>

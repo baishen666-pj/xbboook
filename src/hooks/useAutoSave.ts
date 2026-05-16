@@ -3,6 +3,7 @@ import { useEditorStore } from "@/stores/editorStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { chapterService } from "@/services/chapterService";
 import { versionService } from "@/services/versionService";
+import { toast } from "@/stores/toastStore";
 
 const DEBOUNCE_MS = 1000;
 const PERIODIC_MS = 30_000;
@@ -77,6 +78,7 @@ export function useAutoSave(): void {
       }
     } else {
       useEditorStore.setState({ isSaving: false, isDirty: true });
+      toast("error", "保存失败，请重试");
     }
   }
 }

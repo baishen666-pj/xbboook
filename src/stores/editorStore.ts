@@ -71,7 +71,7 @@ export const useEditorStore = create<EditorState & EditorActions>(
     },
 
     markSaved: () => {
-      set({ isSaving: false, isDirty: false, lastSavedAt: new Date() });
+      set({ isSaving: false, isDirty: false, dirtyAt: null, lastSavedAt: new Date() });
     },
 
     setEditor: (editor) => {

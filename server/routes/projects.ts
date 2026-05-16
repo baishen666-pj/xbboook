@@ -3,8 +3,14 @@ import { z } from 'zod';
 import * as projectRepo from '../db/repositories/projectRepo.js';
 import * as chapterRepo from '../db/repositories/chapterRepo.js';
 import { validate } from '../middleware/validate.js';
+import type { Project, Chapter } from '../types/index.js';
 
 const router = Router();
+
+interface ProjectEnriched extends Project {
+  word_count: number;
+  chapter_count: number;
+}
 
 const createSchema = z.object({
   name: z.string().min(1, '项目名称不能为空'),
@@ -28,11 +34,11 @@ const updateSchema = z.object({
   sort_order: z.number().optional(),
 });
 
-function enrichProject(project: any) {
-  const chapters = chapterRepo.findByProject(project.id);
+function enrichProject(project: Project): ProjectEnriched {
+  const chapters: Chapter[] = chapterRepo.findByProject(project.id);
   return {
     ...project,
-    word_count: chapters.reduce((sum: number, c: any) => sum + (c.word_count ?? 0), 0),
+    word_count: chapters.reduce((sum, c) => sum + (c.word_count ?? 0), 0),
     chapter_count: chapters.length,
   };
 }

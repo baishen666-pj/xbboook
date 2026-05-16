@@ -10,6 +10,7 @@ import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useSessionTracker } from "@/hooks/useSessionTracker";
 import { useCollabPresence } from "@/hooks/useCollabPresence";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+import { ToastContainer } from "@/components/ui/ToastContainer";
 
 const ProjectList = lazy(() =>
   import("@/components/project/ProjectList").then((m) => ({ default: m.ProjectList })),
@@ -70,6 +71,7 @@ function Workspace() {
 
   return (
     <div className="flex h-full flex-col">
+      <a href="#main-content" className="skip-to-content">跳到主要内容</a>
       {!isFullscreen && (
         <Suspense fallback={null}>
           <TitleBar />
@@ -95,10 +97,11 @@ function Workspace() {
       {!isLeftPanelOpen && (
         <button
           onClick={toggleLeftPanel}
-          className="fixed left-2 top-14 z-20 rounded-[var(--radius-sm)] bg-[var(--color-surface-2)] p-1.5 text-[var(--color-text-muted)] shadow-[var(--shadow-sm)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)] transition-colors"
+          className="fixed left-2 top-14 z-20 rounded-[var(--radius-sm)] bg-[var(--color-surface-2)] p-1.5 text-[var(--color-text-muted)] shadow-[var(--shadow-sm)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)] transition-colors btn-hover-scale touch-target"
           title="打开侧边栏"
+          aria-label="打开侧边栏"
         >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
             <path d="M5 2l5 5-5 5" />
           </svg>
         </button>
@@ -106,10 +109,11 @@ function Workspace() {
       {!isRightPanelOpen && (
         <button
           onClick={toggleRightPanel}
-          className="fixed right-2 top-14 z-20 rounded-[var(--radius-sm)] bg-[var(--color-surface-2)] p-1.5 text-[var(--color-text-muted)] shadow-[var(--shadow-sm)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)] transition-colors"
+          className="fixed right-2 top-14 z-20 rounded-[var(--radius-sm)] bg-[var(--color-surface-2)] p-1.5 text-[var(--color-text-muted)] shadow-[var(--shadow-sm)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)] transition-colors btn-hover-scale touch-target"
           title="打开 AI 面板"
+          aria-label="打开 AI 面板"
         >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
             <path d="M9 2L4 7l5 5" />
           </svg>
         </button>
@@ -141,6 +145,7 @@ export function App() {
 
   return (
     <BrowserRouter>
+      <ToastContainer />
       <Routes>
         <Route
           path="/"

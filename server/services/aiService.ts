@@ -1,8 +1,9 @@
 import { streamChat } from '../ai/agentFactory.js';
 import { isConfigured as checkConfigured } from '../ai/configStore.js';
-import { buildContext, type BuildContextOptions } from '../ai/contextBuilder.js';
+import { buildContext, characterDialogueProfiles, type BuildContextOptions, type HistoryMessage } from '../ai/contextBuilder.js';
 import { buildPrompt, buildUserPrompt, toMessages } from '../ai/promptBuilder.js';
 import { getSkill, listSkills, type WritingSkill } from '../ai/writingSkills.js';
+import { findById as findCharacterById, findRelationsForCharacter } from '../db/repositories/characterRepo.js';
 
 export interface AiRequest {
   projectId: string;
@@ -13,6 +14,9 @@ export interface AiRequest {
   question?: string;
   customInstruction?: string;
   outlineContent?: string;
+  historyMessages?: HistoryMessage[];
+  character1Id?: string;
+  character2Id?: string;
 }
 
 export { checkConfigured as isConfigured, listSkills, getSkill };
@@ -37,6 +41,27 @@ export async function* processAiRequest(
   };
 
   const sources = await buildContext(contextOptions);
+
+  // Inject character dialogue profiles for character-dialogue skill
+  if (req.skillId === 'character-dialogue' && req.character1Id && req.character2Id) {
+    const char1 = findCharacterById(req.character1Id);
+    const char2 = findCharacterById(req.character2Id);
+    if (!char1) throw new Error(`角色未找到: ${req.character1Id}`);
+    if (!char2) throw new Error(`角色未找到: ${req.character2Id}`);
+
+    const rels1 = findRelationsForCharacter(req.character1Id);
+    const relsBetween = rels1.filter(
+      (r) => r.character_a_id === req.character2Id || r.character_b_id === req.character2Id,
+    );
+
+    const dialogueProfile = characterDialogueProfiles(char1, char2, relsBetween);
+    sources.push({
+      priority: 10,
+      label: '角色对话设定',
+      content: dialogueProfile,
+    });
+  }
+
   const userPrompt = buildUserPrompt(req.skillId, {
     selectedText: req.selectedText,
     currentChapterTitle: sources.find((s) => s.label.startsWith('当前章节'))?.label?.replace('当前章节', '').replace(/[「」]/g, ''),
@@ -49,9 +74,11 @@ export async function* processAiRequest(
     sources,
     userMessage: userPrompt,
     customInstruction: req.customInstruction,
+    historyMessages: req.historyMessages,
+    maxContextTokens: 8000,
   });
 
-  const messages = toMessages(prompt);
+  const messages = toMessages(prompt, req.historyMessages, 8000);
 
   let fullContent = '';
 

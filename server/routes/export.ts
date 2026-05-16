@@ -133,8 +133,7 @@ router.get('/epub', async (req, res) => {
     res.setHeader('Content-Type', 'application/epub+zip');
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(projectName)}.epub"`);
     res.send(buffer);
-  } catch (err) {
-    console.error('EPUB export error:', err);
+  } catch {
     res.status(500).json({ success: false, error: 'EPUB 导出失败' });
   }
 });
@@ -200,8 +199,7 @@ router.get('/docx', async (req, res) => {
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(projectName)}.docx"`);
     res.send(buffer);
-  } catch (err) {
-    console.error('DOCX export error:', err);
+  } catch {
     res.status(500).json({ success: false, error: 'DOCX 导出失败' });
   }
 });
@@ -254,8 +252,7 @@ router.get('/pdf', async (req, res) => {
     }
 
     doc.end();
-  } catch (err) {
-    console.error('PDF export error:', err);
+  } catch {
     if (!res.headersSent) {
       res.status(500).json({ success: false, error: 'PDF 导出失败' });
     }

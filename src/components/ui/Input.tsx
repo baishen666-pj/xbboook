@@ -22,10 +22,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         <input
           ref={ref}
           id={inputId}
+          aria-invalid={error ? "true" : undefined}
+          aria-describedby={error ? `${inputId}-error` : undefined}
           className={[
             "w-full rounded-[var(--radius-md)] border border-[var(--color-border)]",
             "bg-[var(--color-surface-2)] text-[var(--color-text-primary)]",
-            "px-3 py-2 text-[var(--text-sm)]",
+            "px-3 py-2 text-[var(--text-sm)] min-h-[36px]",
             "placeholder:text-[var(--color-text-muted)]",
             "transition-colors duration-[var(--duration-fast)]",
             "focus:outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]",
@@ -35,7 +37,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           {...rest}
         />
         {error && (
-          <span className="text-[var(--text-xs)] text-[var(--color-error)]">
+          <span id={`${inputId}-error`} className="text-[var(--text-xs)] text-[var(--color-error)]" role="alert">
             {error}
           </span>
         )}

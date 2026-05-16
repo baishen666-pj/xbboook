@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-type LeftTab = "chapters" | "characters" | "worldview" | "outline" | "versions";
+type LeftTab = "chapters" | "characters" | "worldview" | "outline" | "versions" | "schedule" | "foreshadowing" | "snippets";
 type Theme = "dark" | "light" | "sepia";
 
 interface UiState {
@@ -13,6 +13,9 @@ interface UiState {
   activeLeftTab: LeftTab;
   theme: Theme;
   isSearchOpen: boolean;
+  splitPane: boolean;
+  splitChapterId: string | null;
+  splitRatio: number;
 }
 
 interface UiActions {
@@ -29,6 +32,9 @@ interface UiActions {
   cycleTheme: () => void;
   toggleSearch: () => void;
   closeSearch: () => void;
+  toggleSplitPane: () => void;
+  setSplitChapterId: (id: string | null) => void;
+  setSplitRatio: (ratio: number) => void;
 }
 
 const THEME_CYCLE: Theme[] = ["dark", "light", "sepia"];
@@ -43,6 +49,9 @@ export const useUiStore = create<UiState & UiActions>((set) => ({
   activeLeftTab: "chapters",
   theme: "dark",
   isSearchOpen: false,
+  splitPane: false,
+  splitChapterId: null,
+  splitRatio: 0.5,
 
   toggleLeftPanel: () =>
     set((state) => ({ isLeftPanelOpen: !state.isLeftPanelOpen })),
@@ -78,6 +87,16 @@ export const useUiStore = create<UiState & UiActions>((set) => ({
   toggleSearch: () => set((state) => ({ isSearchOpen: !state.isSearchOpen })),
 
   closeSearch: () => set({ isSearchOpen: false }),
+
+  toggleSplitPane: () =>
+    set((state) => ({
+      splitPane: !state.splitPane,
+      splitChapterId: state.splitPane ? null : state.splitChapterId,
+    })),
+
+  setSplitChapterId: (id) => set({ splitChapterId: id }),
+
+  setSplitRatio: (ratio) => set({ splitRatio: Math.min(0.8, Math.max(0.2, ratio)) }),
 }));
 
 useUiStore.subscribe((state, prev) => {

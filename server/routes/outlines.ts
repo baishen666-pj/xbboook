@@ -45,7 +45,7 @@ router.post('/', validate(createOutlineSchema), (req, res) => {
 });
 
 router.put('/:id', validate(updateOutlineSchema), (req, res) => {
-  const outline = outlineRepo.update(req.params.id, req.body);
+  const outline = outlineRepo.update(req.params.id as string, req.body);
   if (!outline) {
     res.status(404).json({ success: false, error: '大纲不存在' });
     return;

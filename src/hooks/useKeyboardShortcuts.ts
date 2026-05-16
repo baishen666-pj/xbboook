@@ -4,6 +4,7 @@ import { useUiStore } from "@/stores/uiStore";
 import { useAiStore } from "@/stores/aiStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { chapterService } from "@/services/chapterService";
+import { toast } from "@/stores/toastStore";
 
 export function useKeyboardShortcuts() {
   const toggleLeftPanel = useUiStore((s) => s.toggleLeftPanel);
@@ -24,10 +25,16 @@ export function useKeyboardShortcuts() {
         if (state.activeChapterId && state.isDirty && !state.isSaving && projectId) {
           useEditorStore.getState().saveContent();
           chapterService.saveContent(projectId, state.activeChapterId, state.content).then((res) => {
-            if (res.success) useEditorStore.getState().markSaved();
-            else useEditorStore.setState({ isSaving: false, isDirty: true });
+            if (res.success) {
+              useEditorStore.getState().markSaved();
+              toast("success", "已保存");
+            } else {
+              useEditorStore.setState({ isSaving: false, isDirty: true });
+              toast("error", "保存失败");
+            }
           }).catch(() => {
             useEditorStore.setState({ isSaving: false, isDirty: true });
+            toast("error", "保存失败");
           });
         }
         return;

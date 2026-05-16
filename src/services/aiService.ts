@@ -24,6 +24,11 @@ export interface AiStatus {
   apiKeyHint: string;
 }
 
+export interface HistoryMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export interface StreamRequest {
   projectId: string;
   skillId: string;
@@ -33,6 +38,9 @@ export interface StreamRequest {
   question?: string;
   customInstruction?: string;
   outlineContent?: string;
+  historyMessages?: HistoryMessage[];
+  character1Id?: string;
+  character2Id?: string;
 }
 
 export async function fetchSkills(): Promise<AiSkill[]> {
@@ -130,7 +138,7 @@ export async function* streamAi(req: StreamRequest, signal?: AbortSignal): Async
           }
         } catch (err) {
           if (err instanceof Error && err.message.includes('AI')) throw err;
-          console.warn('[SSE] Failed to parse event:', err);
+          // skip unparseable SSE events
         }
       }
     }

@@ -9,7 +9,7 @@ export interface SearchResult {
 
 export async function searchChapters(projectId: string, query: string): Promise<SearchResult[]> {
   const res = await apiClient.post<SearchResult[]>(
-    `/projects/${projectId}/chapters/search`,
+    `/projects/${projectId}/search`,
     { query }
   );
   return res.data ?? [];

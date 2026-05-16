@@ -7,19 +7,64 @@
   to { opacity: 1; }
 }
 
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes slideInLeft {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
+  from { opacity: 0; transform: translateX(-100%); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes slideInRight {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideOutLeft {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(-100%); }
+}
+
+@keyframes slideOutRight {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(100%); }
+}
+
+@keyframes toastSlideIn {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toastSlideOut {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(100%); }
+}
+
+@keyframes modalScaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes modalScaleOut {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.95); }
+}
+
+@keyframes tabFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes pulse-subtle {
@@ -99,9 +144,89 @@ body {
     opacity var(--duration-normal) var(--ease-out);
 }
 
+/* ---- Button micro-interaction ---- */
+.btn-hover-scale {
+  transition: transform var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+.btn-hover-scale:hover {
+  transform: scale(1.04);
+}
+.btn-hover-scale:active {
+  transform: scale(0.97);
+}
+
+/* ---- Tab content fade ---- */
+.tab-content-enter {
+  animation: tabFadeIn var(--duration-fast) var(--ease-out);
+}
+
+/* ---- Sidebar panel transition (desktop) ---- */
+.sidebar-panel-enter {
+  animation: slideInLeft var(--duration-normal) var(--ease-out);
+}
+.sidebar-panel-exit {
+  animation: slideOutLeft var(--duration-normal) var(--ease-out) forwards;
+}
+
+/* ---- Toast animations ---- */
+.toast-enter {
+  animation: toastSlideIn var(--duration-normal) var(--ease-out);
+}
+.toast-exit {
+  animation: toastSlideOut var(--duration-fast) var(--ease-out) forwards;
+}
+
+/* ---- Modal animations ---- */
+.modal-backdrop-enter {
+  animation: fadeIn var(--duration-fast) var(--ease-out);
+}
+.modal-content-enter {
+  animation: modalScaleIn var(--duration-normal) var(--ease-out);
+}
+
+/* ---- Smooth scrolling ---- */
+.smooth-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* ---- Mobile ---- */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .mobile-nav {
     padding-bottom: env(safe-area-inset-bottom);
   }
+}
+
+/* ---- Touch target minimum ---- */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---- Focus ring for keyboard nav ---- */
+.focus-ring:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* ---- Skip to content (a11y) ---- */
+.skip-to-content {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 8px 16px;
+  background: var(--color-primary);
+  color: white;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+}
+.skip-to-content:focus {
+  left: 8px;
+  top: 8px;
 }

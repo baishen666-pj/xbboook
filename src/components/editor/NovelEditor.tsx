@@ -49,7 +49,10 @@ export function NovelEditor({ content, onUpdate }: NovelEditorProps) {
       TextAlign.configure({
         types: ["heading", "paragraph"],
       }),
-      Markdown,
+      Markdown.configure({
+        transformPastedText: true,
+        transformCopiedText: true,
+      }),
       GhostMark,
     ],
     content,
@@ -106,7 +109,7 @@ export function NovelEditor({ content, onUpdate }: NovelEditorProps) {
   }, []);
 
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="h-full overflow-y-auto smooth-scroll">
       <EditorContent editor={editor} className="h-full" />
     </div>
   );

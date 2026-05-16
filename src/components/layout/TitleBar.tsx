@@ -28,14 +28,14 @@ export function TitleBar() {
   }, [showExport]);
 
   return (
-    <header className="flex h-10 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface-1)] px-4">
+    <header className="flex h-10 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface-1)] px-4" role="banner">
       <div className="flex items-center gap-3">
         <span className="text-sm font-bold tracking-tight text-[var(--color-primary)]">
           xbboook
         </span>
         {currentProject && (
           <>
-            <span className="text-[var(--color-text-muted)]">/</span>
+            <span className="text-[var(--color-text-muted)]" aria-hidden="true">/</span>
             <span className="text-sm text-[var(--color-text-primary)] truncate max-w-48">
               {currentProject.name}
             </span>
@@ -52,12 +52,15 @@ export function TitleBar() {
           <div className="relative" ref={exportRef}>
             <button
               onClick={() => setShowExport(!showExport)}
-              className="rounded-[var(--radius-sm)] px-2 py-1 text-[var(--text-xs)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)] transition-colors"
+              className="rounded-[var(--radius-sm)] px-2 py-1 text-[var(--text-xs)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)] transition-colors btn-hover-scale"
+              aria-label="导出"
+              aria-expanded={showExport}
+              aria-haspopup="true"
             >
               导出
             </button>
             {showExport && (
-              <div className="absolute right-0 top-full mt-1 z-20 w-44 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-1)] py-1 shadow-[var(--shadow-lg)] animate-[slideUp_150ms_var(--ease-out)]">
+              <div className="absolute right-0 top-full mt-1 z-20 w-44 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-1)] py-1 shadow-[var(--shadow-lg)] animate-[slideUp_150ms_var(--ease-out)]" role="menu" aria-label="导出格式">
                 {[
                   { label: "TXT", path: "txt" },
                   { label: "Markdown", path: "md" },
@@ -71,9 +74,10 @@ export function TitleBar() {
                     download
                     onClick={() => setShowExport(false)}
                     className="flex items-center justify-between px-3 py-1.5 text-[var(--text-xs)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)] transition-colors"
+                    role="menuitem"
                   >
                     导出 {fmt.label}
-                    <span className="text-[10px] text-[var(--color-text-muted)]">.{fmt.path === "md" ? "md" : fmt.path}</span>
+                    <span className="text-[10px] text-[var(--color-text-muted)]" aria-hidden="true">.{fmt.path === "md" ? "md" : fmt.path}</span>
                   </a>
                 ))}
               </div>
@@ -84,8 +88,9 @@ export function TitleBar() {
         {/* Theme toggle */}
         <button
           onClick={cycleTheme}
-          className="rounded-[var(--radius-sm)] px-2 py-1 text-[var(--text-xs)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)] transition-colors"
+          className="rounded-[var(--radius-sm)] px-2 py-1 text-[var(--text-xs)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)] transition-colors btn-hover-scale"
           title={`主题：${theme === "dark" ? "暗色" : theme === "light" ? "亮色" : "阅读"}（点击切换）`}
+          aria-label={`切换主题，当前：${theme === "dark" ? "暗色" : theme === "light" ? "亮色" : "阅读模式"}`}
         >
           {themeIcon}
         </button>
@@ -93,27 +98,30 @@ export function TitleBar() {
         {/* Focus mode toggle */}
         <button
           onClick={toggleFocusMode}
-          className={`rounded-[var(--radius-sm)] px-2 py-1 text-[var(--text-xs)] transition-colors ${
+          className={`rounded-[var(--radius-sm)] px-2 py-1 text-[var(--text-xs)] transition-colors btn-hover-scale ${
             isFocusMode
               ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
               : "text-[var(--color-text-muted)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)]"
           }`}
           title={isFocusMode ? "退出专注模式 (ESC)" : "专注模式"}
+          aria-label={isFocusMode ? "退出专注模式" : "进入专注模式"}
+          aria-pressed={isFocusMode}
         >
           {isFocusMode ? "退出专注" : "专注"}
         </button>
 
         <button
           onClick={toggleFullscreen}
-          className="rounded-[var(--radius-sm)] p-1 text-[var(--color-text-muted)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)] transition-colors duration-[var(--duration-fast)]"
+          className="rounded-[var(--radius-sm)] p-1 text-[var(--color-text-muted)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)] transition-colors duration-[var(--duration-fast)] btn-hover-scale touch-target"
           title={isFullscreen ? "退出全屏" : "全屏 (F11)"}
+          aria-label={isFullscreen ? "退出全屏" : "全屏模式"}
         >
           {isFullscreen ? (
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
               <path d="M2 10v4h4M14 6V2h-4M2 14l5-5M14 2L9 7" />
             </svg>
           ) : (
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
               <path d="M2 6V2h4M14 10v4h-4M2 2l5 5M14 14l-5-5" />
             </svg>
           )}

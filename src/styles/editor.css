@@ -8,6 +8,7 @@
   line-height: var(--leading-editor);
   color: var(--color-text-primary);
   caret-color: var(--color-primary);
+  scroll-behavior: smooth;
 }
 
 /* ---- Headings ---- */
@@ -149,4 +150,68 @@
   background-color: oklch(78% 0.16 75 / 0.3);
   border-radius: 2px;
   padding: 0.1em 0;
+}
+
+/* ---- Mobile / Touch ---- */
+@media (max-width: 768px) {
+  .tiptap.ProseMirror {
+    padding: var(--space-4) var(--space-3);
+    font-size: 16px; /* Prevent iOS zoom on focus */
+    line-height: 1.8;
+    -webkit-text-size-adjust: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tiptap h1 { font-size: 1.5em; }
+  .tiptap h2 { font-size: 1.3em; }
+  .tiptap h3 { font-size: 1.15em; }
+
+  /* Larger tap targets for lists */
+  .tiptap li {
+    margin: 0.4em 0;
+    min-height: 2em;
+  }
+
+  /* Comfortable blockquote on mobile */
+  .tiptap blockquote {
+    padding-left: var(--space-3);
+    margin: var(--space-3) 0;
+  }
+}
+
+/* Virtual keyboard viewport handling */
+@supports (height: 100dvh) {
+  .editor-container {
+    height: 100dvh;
+  }
+}
+
+/* Selection handles on mobile */
+.tiptap ::selection {
+  background-color: var(--color-primary-subtle);
+  color: var(--color-text-primary);
+}
+
+/* Theme-aware selection */
+[data-theme="light"] .tiptap ::selection {
+  background-color: oklch(55% 0.22 270 / 0.2);
+}
+
+[data-theme="sepia"] .tiptap ::selection {
+  background-color: oklch(52% 0.12 60 / 0.2);
+}
+
+/* Theme-aware highlight mark */
+[data-theme="light"] .tiptap mark {
+  background-color: oklch(78% 0.16 75 / 0.25);
+}
+
+[data-theme="sepia"] .tiptap mark {
+  background-color: oklch(52% 0.12 60 / 0.15);
+}
+
+/* Prevent pull-to-refresh on editor */
+.tiptap.ProseMirror {
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
 }

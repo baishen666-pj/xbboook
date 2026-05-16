@@ -16,7 +16,7 @@ interface ImportChapter {
   content: string;
 }
 
-function splitTxtIntoChapters(text: string): ImportChapter[] {
+export function splitTxtIntoChapters(text: string): ImportChapter[] {
   // Split by common chapter patterns
   const patterns = [
     /^(第[一二三四五六七八九十百千零\d]+[章节回幕集][\s\S]*?)$/gm,
@@ -46,7 +46,7 @@ function splitTxtIntoChapters(text: string): ImportChapter[] {
   return [];
 }
 
-function splitMdIntoChapters(text: string): ImportChapter[] {
+export function splitMdIntoChapters(text: string): ImportChapter[] {
   const lines = text.split('\n');
   const chapters: ImportChapter[] = [];
   let currentTitle = '第一章';
@@ -73,7 +73,7 @@ function splitMdIntoChapters(text: string): ImportChapter[] {
 }
 
 router.post('/:projectId/import', upload.single('file'), async (req, res) => {
-  const { projectId } = req.params;
+  const { projectId } = req.params as { projectId: string };
   const file = req.file;
 
   if (!file) {

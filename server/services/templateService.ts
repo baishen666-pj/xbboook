@@ -25,7 +25,7 @@ export function applyTemplate(templateId: string, projectId: string, mode: 'repl
   }
 
   const parentIdMap = new Map<number, string>();
-  let currentParentId: string | null = null;
+  let currentParentId: string | undefined = undefined;
 
   for (const node of nodes) {
     const created = outlineRepo.create({

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import {
   createBackup,
   listBackups,
@@ -9,6 +10,12 @@ import {
 } from '../services/backupService.js';
 
 const router = Router();
+
+const backupConfigSchema = z.object({
+  enabled: z.boolean().optional(),
+  intervalHours: z.number().min(1).optional(),
+  keepCount: z.number().min(1).optional(),
+}).strict();
 
 router.get('/config', (_req, res) => {
   try {
@@ -24,7 +31,15 @@ router.get('/config', (_req, res) => {
 
 router.patch('/config', (req, res) => {
   try {
-    const updated = setBackupConfig(req.body);
+    const parsed = backupConfigSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        success: false,
+        error: parsed.error.issues.map((i) => i.message).join('; '),
+      });
+      return;
+    }
+    const updated = setBackupConfig(parsed.data);
     res.json({ success: true, data: updated });
   } catch (err) {
     res.status(500).json({
