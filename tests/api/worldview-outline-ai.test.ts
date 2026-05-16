@@ -122,7 +122,7 @@ describe('Outlines API', () => {
 });
 
 describe('AI API', () => {
-  it('should list 9 skills', async () => {
+  it('should list 13 skills', async () => {
     const res = await request(BASE).get('/api/ai/skills');
 
     expect(res.status).toBe(200);
@@ -132,12 +132,49 @@ describe('AI API', () => {
     expect(ids).toContain('deai');
   });
 
-  it('should return AI status', async () => {
+  it('should list providers', async () => {
+    const res = await request(BASE).get('/api/ai/providers');
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.length).toBeGreaterThanOrEqual(4);
+    const ids = res.body.data.map((p: any) => p.id);
+    expect(ids).toContain('deepseek');
+    expect(ids).toContain('qwen');
+    expect(ids).toContain('moonshot');
+    expect(ids).toContain('openai');
+  });
+
+  it('should return AI status with new fields', async () => {
     const res = await request(BASE).get('/api/ai/status');
 
     expect(res.status).toBe(200);
     expect(res.body.data.configured).toBe(false);
     expect(res.body.data.model).toBeDefined();
+    expect(res.body.data.provider).toBeDefined();
+    expect(res.body.data.baseUrl).toBeDefined();
+    expect(res.body.data.temperature).toBeDefined();
+    expect(res.body.data.maxTokens).toBeDefined();
+  });
+
+  it('should update config via PATCH', async () => {
+    const res = await request(BASE).patch('/api/ai/config').send({
+      provider: 'deepseek',
+      temperature: 0.5,
+      maxTokens: 2048,
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.provider).toBe('deepseek');
+    expect(res.body.data.temperature).toBe(0.5);
+    expect(res.body.data.maxTokens).toBe(2048);
+  });
+
+  it('should test connection and fail without key', async () => {
+    const res = await request(BASE).post('/api/ai/test');
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error).toContain('API Key');
   });
 
   it('should reject stream without required fields', async () => {

@@ -1,9 +1,16 @@
 import { Router } from 'express';
 import { processAiRequest, listSkills, getSkill, isConfigured } from '../services/aiService.js';
 import { setupSSE, sendSSE, sendSSEError, sendSSEDone } from '../middleware/sse.js';
-import { getConfig, updateConfig } from '../ai/agentFactory.js';
+import { getConfig } from '../ai/agentFactory.js';
+import { saveConfig, loadStoredConfig } from '../ai/configStore.js';
+import { PROVIDERS, getProvider } from '../ai/providers.js';
 
 const router = Router();
+
+// List available providers
+router.get('/providers', (_req, res) => {
+  res.json({ success: true, data: PROVIDERS });
+});
 
 // List available skills
 router.get('/skills', (_req, res) => {
@@ -13,19 +20,27 @@ router.get('/skills', (_req, res) => {
 // Get AI configuration status
 router.get('/status', (_req, res) => {
   const config = getConfig();
+  const maskedKey = config.apiKey
+    ? config.apiKey.slice(0, 4) + '***' + config.apiKey.slice(-4)
+    : '';
   res.json({
     success: true,
     data: {
       configured: isConfigured(),
+      provider: config.provider,
       model: config.model,
-      baseUrl: config.baseUrl.replace(/\/v\d+$/, '').replace(/https?:\/\/[^/]+/, '***'),
+      baseUrl: config.baseUrl,
+      temperature: config.temperature,
+      maxTokens: config.maxTokens,
+      apiKeyHint: maskedKey,
     },
   });
 });
 
-// Update AI configuration
+// Update AI configuration (full: provider, apiKey, baseUrl, model, temperature, maxTokens)
 router.patch('/config', (req, res) => {
-  const { model, temperature, maxTokens } = req.body;
+  const { provider, apiKey, baseUrl, model, temperature, maxTokens } = req.body;
+
   if (temperature !== undefined && (typeof temperature !== 'number' || temperature < 0 || temperature > 2)) {
     res.status(400).json({ success: false, error: 'temperature must be between 0 and 2' });
     return;
@@ -38,15 +53,81 @@ router.patch('/config', (req, res) => {
     res.status(400).json({ success: false, error: 'model must be a string' });
     return;
   }
-  const updated = updateConfig({ model, temperature, maxTokens });
+  if (provider !== undefined && typeof provider !== 'string') {
+    res.status(400).json({ success: false, error: 'provider must be a string' });
+    return;
+  }
+  if (apiKey !== undefined && typeof apiKey !== 'string') {
+    res.status(400).json({ success: false, error: 'apiKey must be a string' });
+    return;
+  }
+
+  const updated = saveConfig({ provider, apiKey, baseUrl, model, temperature, maxTokens });
+  const maskedKey = updated.apiKey
+    ? updated.apiKey.slice(0, 4) + '***' + updated.apiKey.slice(-4)
+    : '';
+
   res.json({
     success: true,
     data: {
+      provider: updated.provider,
       model: updated.model,
+      baseUrl: updated.baseUrl,
       temperature: updated.temperature,
       maxTokens: updated.maxTokens,
+      apiKeyHint: maskedKey,
     },
   });
+});
+
+// Test connection to LLM provider
+router.post('/test', async (_req, res) => {
+  const config = loadStoredConfig();
+
+  if (!config.apiKey) {
+    res.json({ success: false, error: '请先配置 API Key' });
+    return;
+  }
+
+  try {
+    const url = `${config.baseUrl.replace(/\/$/, '')}/chat/completions`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${config.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: config.model,
+        messages: [{ role: 'user', content: '你好' }],
+        max_tokens: 10,
+        stream: false,
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+
+    if (response.ok) {
+      const data = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
+      const reply = data.choices?.[0]?.message?.content || '(empty)';
+      res.json({ success: true, data: { reply: reply.slice(0, 100) } });
+    } else {
+      const errorText = await response.text();
+      const sanitized = errorText.replace(/sk-[a-zA-Z0-9]{20,}/g, '***');
+      res.json({ success: false, error: `HTTP ${response.status}: ${sanitized.slice(0, 200)}` });
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    if (message.includes('abort')) {
+      res.json({ success: false, error: '连接超时（15秒）' });
+    } else {
+      res.json({ success: false, error: `连接失败: ${message}` });
+    }
+  }
 });
 
 // SSE streaming AI request

@@ -1,56 +1,16 @@
-export interface AiConfig {
-  baseUrl: string;
-  apiKey: string;
-  model: string;
-  maxTokens: number;
-  temperature: number;
-}
+import { loadStoredConfig, type StoredAiConfig } from './configStore.js';
 
 export interface StreamChunk {
   content: string;
   done: boolean;
 }
 
-const DEFAULT_CONFIG: Partial<AiConfig> = {
-  maxTokens: 4096,
-  temperature: 0.8,
-};
+export type AiConfig = StoredAiConfig;
 
-function loadConfig(): AiConfig {
-  const baseUrl = process.env.AI_BASE_URL || 'https://api.openai.com/v1';
-  const apiKey = process.env.AI_API_KEY || '';
-  const model = process.env.AI_MODEL || 'gpt-4o-mini';
-
-  if (!apiKey) {
-    console.warn('[AI] AI_API_KEY not set — AI features will be unavailable');
-  }
-
-  return { ...DEFAULT_CONFIG, baseUrl, apiKey, model } as AiConfig;
-}
-
-let cachedConfig: AiConfig | null = null;
+export { isConfigured } from './configStore.js';
 
 export function getConfig(): AiConfig {
-  if (!cachedConfig) cachedConfig = loadConfig();
-  return cachedConfig;
-}
-
-const SAFE_CONFIG_FIELDS = new Set(['model', 'temperature', 'maxTokens']);
-
-export function updateConfig(patch: Record<string, unknown>): AiConfig {
-  const current = getConfig();
-  const safe: Partial<AiConfig> = {};
-  for (const [key, value] of Object.entries(patch)) {
-    if (SAFE_CONFIG_FIELDS.has(key)) {
-      (safe as Record<string, unknown>)[key] = value;
-    }
-  }
-  cachedConfig = { ...current, ...safe };
-  return cachedConfig;
-}
-
-export function isConfigured(): boolean {
-  return !!getConfig().apiKey;
+  return loadStoredConfig();
 }
 
 export async function* streamChat(
@@ -126,4 +86,3 @@ export async function* streamChat(
     reader.releaseLock();
   }
 }
-

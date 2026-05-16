@@ -6,9 +6,22 @@ export interface AiSkill {
   needsSelection: boolean;
 }
 
+export interface AiProvider {
+  id: string;
+  name: string;
+  baseUrl: string;
+  defaultModel: string;
+  models: string[];
+}
+
 export interface AiStatus {
   configured: boolean;
+  provider: string;
   model: string;
+  baseUrl: string;
+  temperature: number;
+  maxTokens: number;
+  apiKeyHint: string;
 }
 
 export interface StreamRequest {
@@ -27,18 +40,41 @@ export async function fetchSkills(): Promise<AiSkill[]> {
   return json.data ?? [];
 }
 
+export async function fetchProviders(): Promise<AiProvider[]> {
+  const res = await fetch('/api/ai/providers');
+  const json = await res.json();
+  return json.data ?? [];
+}
+
 export async function fetchStatus(): Promise<AiStatus> {
   const res = await fetch('/api/ai/status');
   const json = await res.json();
   return json.data;
 }
 
-export async function updateAiConfig(patch: { model?: string; temperature?: number; maxTokens?: number }): Promise<void> {
-  await fetch('/api/ai/config', {
+export async function updateAiConfig(patch: {
+  provider?: string;
+  apiKey?: string;
+  baseUrl?: string;
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+}): Promise<AiStatus> {
+  const res = await fetch('/api/ai/config', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(patch),
   });
+  const json = await res.json();
+  return json.data;
+}
+
+export async function testConnection(): Promise<{ success: boolean; reply?: string; error?: string }> {
+  const res = await fetch('/api/ai/test', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  return res.json();
 }
 
 export async function* streamAi(req: StreamRequest, signal?: AbortSignal): AsyncGenerator<{ type: 'chunk' | 'done'; content: string }> {

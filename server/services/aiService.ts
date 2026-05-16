@@ -1,8 +1,8 @@
-import { streamChat, isConfigured } from '../ai/agentFactory.js';
+import { streamChat } from '../ai/agentFactory.js';
+import { isConfigured as checkConfigured } from '../ai/configStore.js';
 import { buildContext, type BuildContextOptions } from '../ai/contextBuilder.js';
 import { buildPrompt, buildUserPrompt, toMessages } from '../ai/promptBuilder.js';
 import { getSkill, listSkills, type WritingSkill } from '../ai/writingSkills.js';
-import type { StreamChunk } from '../ai/agentFactory.js';
 
 export interface AiRequest {
   projectId: string;
@@ -14,13 +14,13 @@ export interface AiRequest {
   customInstruction?: string;
 }
 
-export { isConfigured, listSkills, getSkill };
+export { checkConfigured as isConfigured, listSkills, getSkill };
 export type { WritingSkill };
 
 export async function* processAiRequest(
   req: AiRequest,
 ): AsyncGenerator<{ type: 'chunk' | 'done'; content: string }> {
-  if (!isConfigured()) {
+  if (!checkConfigured()) {
     throw new Error('AI 未配置，请设置 AI_API_KEY 环境变量');
   }
 
