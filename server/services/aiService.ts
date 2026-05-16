@@ -3,6 +3,7 @@ import { isConfigured as checkConfigured } from '../ai/configStore.js';
 import { buildContext, characterDialogueProfiles, type BuildContextOptions, type HistoryMessage } from '../ai/contextBuilder.js';
 import { buildPrompt, buildUserPrompt, toMessages } from '../ai/promptBuilder.js';
 import { getSkill, listSkills, type WritingSkill } from '../ai/writingSkills.js';
+import { getPluginSkill } from '../plugins/registry.js';
 import { findById as findCharacterById, findRelationsForCharacter } from '../db/repositories/characterRepo.js';
 
 export interface AiRequest {
@@ -29,7 +30,7 @@ export async function* processAiRequest(
     throw new Error('AI 未配置，请设置 AI_API_KEY 环境变量');
   }
 
-  const skill = getSkill(req.skillId);
+  const skill = getSkill(req.skillId) || getPluginSkill(req.skillId);
   if (!skill) throw new Error(`未知技能: ${req.skillId}`);
 
   const contextOptions: BuildContextOptions = {

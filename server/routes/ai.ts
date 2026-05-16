@@ -7,6 +7,8 @@ import { PROVIDERS, getProvider } from '../ai/providers.js';
 import { findById as findChapterById } from '../db/repositories/chapterRepo.js';
 import { readChapter } from '../services/fileService.js';
 import { createJob, runPipeline, getJob, type PipelineJob } from '../ai/chapterPipeline.js';
+import { isBuiltInSkill } from '../ai/writingSkills.js';
+import { getPluginSkill, getPluginSkills } from '../plugins/registry.js';
 
 const router = Router();
 
@@ -17,7 +19,9 @@ router.get('/providers', (_req, res) => {
 
 // List available skills
 router.get('/skills', (_req, res) => {
-  res.json({ success: true, data: listSkills() });
+  const builtIn = listSkills();
+  const plugins = getPluginSkills();
+  res.json({ success: true, data: [...builtIn, ...plugins] });
 });
 
 // Get AI configuration status
@@ -142,7 +146,7 @@ router.post('/stream', async (req, res) => {
     return;
   }
 
-  const skill = getSkill(skillId);
+  const skill = getSkill(skillId) || getPluginSkill(skillId);
   if (!skill) {
     res.status(400).json({ success: false, error: `Unknown skill: ${skillId}` });
     return;
