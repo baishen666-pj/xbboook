@@ -186,7 +186,8 @@ describe('Comments Routes', () => {
           try {
             const result = schema.safeParse(req.body);
             if (!result.success) {
-              const message = result.error.errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ');
+              const issues = result.error.issues ?? result.error.errors;
+              const message = issues.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ');
               res.status(400).json({ success: false, error: message });
               return;
             }

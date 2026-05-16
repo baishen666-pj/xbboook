@@ -89,7 +89,7 @@ export function NovelEditor({ content, onUpdate }: NovelEditorProps) {
     if (editor && content !== prevContentRef.current) {
       prevContentRef.current = content;
       const currentPos = editor.state.selection.from;
-      editor.commands.setContent(content, false);
+      editor.commands.setContent(content, { emitUpdate: false });
       try {
         const maxPos = editor.state.doc.content.size;
         editor.commands.setTextSelection(

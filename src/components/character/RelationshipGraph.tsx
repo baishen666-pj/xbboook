@@ -1,17 +1,38 @@
 import { useEffect, useRef, useCallback } from "react";
-import { Network } from "vis-network";
-import type { Data, Options } from "vis-network";
+import { forceSimulation, forceManyBody, forceCenter, forceLink, type SimulationNodeDatum, type SimulationLinkDatum } from "d3-force";
+import { zoom, zoomIdentity } from "d3-zoom";
+import { drag } from "d3-drag";
+import { select } from "d3-selection";
 import type { Character, CharacterRelation } from "@/types/project";
-import { ROLE_LABELS } from "@/lib/role-types";
 
-const ROLE_NODE_COLORS: Record<string, { background: string; border: string; highlight: { background: string; border: string } }> = {
-  protagonist: { background: "#f59e0b", border: "#d97706", highlight: { background: "#fbbf24", border: "#f59e0b" } },
-  antagonist: { background: "#ef4444", border: "#dc2626", highlight: { background: "#f87171", border: "#ef4444" } },
-  supporting: { background: "#3b82f6", border: "#2563eb", highlight: { background: "#60a5fa", border: "#3b82f6" } },
-  minor: { background: "#6b7280", border: "#4b5563", highlight: { background: "#9ca3af", border: "#6b7280" } },
+interface SimNode extends SimulationNodeDatum {
+  id: string;
+  name: string;
+  nickname?: string;
+  roleType: string;
+}
+
+interface SimLink extends SimulationLinkDatum<SimNode> {
+  id: string;
+  label: string;
+}
+
+const ROLE_COLORS: Record<string, string> = {
+  protagonist: "#f59e0b",
+  antagonist: "#ef4444",
+  supporting: "#3b82f6",
+  minor: "#6b7280",
 };
 
-const DEFAULT_NODE_COLOR = ROLE_NODE_COLORS.minor;
+const ROLE_SIZES: Record<string, number> = {
+  protagonist: 22,
+  antagonist: 19,
+  supporting: 16,
+  minor: 12,
+};
+
+const DEFAULT_COLOR = ROLE_COLORS.minor!;
+const DEFAULT_SIZE = ROLE_SIZES.minor!;
 
 interface Props {
   characters: Character[];
@@ -22,8 +43,7 @@ interface Props {
 }
 
 export function RelationshipGraph({ characters, relations, onNodeClick, onEdgeClick, filterRole }: Props) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const networkRef = useRef<Network | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
 
   const getCharacterById = useCallback(
     (id: string) => characters.find((c) => c.id === id),
@@ -31,8 +51,13 @@ export function RelationshipGraph({ characters, relations, onNodeClick, onEdgeCl
   );
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    const svg = svgRef.current;
+    if (!svg) return;
 
+    const width = svg.clientWidth || 400;
+    const height = svg.clientHeight || 300;
+
+    // Filter relations by role
     const filteredRelations = filterRole && filterRole !== "all"
       ? relations.filter((r) => {
           const a = getCharacterById(r.characterAId);
@@ -55,95 +80,191 @@ export function RelationshipGraph({ characters, relations, onNodeClick, onEdgeCl
       characters.forEach((c) => visibleIds.add(c.id));
     }
 
-    const nodes: Data["nodes"] = characters
+    const nodes: SimNode[] = characters
       .filter((c) => visibleIds.has(c.id))
-      .map((c) => {
-        const colors = ROLE_NODE_COLORS[c.roleType] ?? DEFAULT_NODE_COLOR;
-        return {
-          id: c.id,
-          label: c.nickname ? `${c.name}\n「${c.nickname}」` : c.name,
-          title: `${c.name}${c.nickname ? ` (${c.nickname})` : ""}\n${ROLE_LABELS[c.roleType] ?? c.roleType}`,
-          color: colors,
-          font: { color: "#e5e7eb", size: 13, face: "system-ui, sans-serif" },
-          shape: "dot",
-          size: c.roleType === "protagonist" ? 28 : c.roleType === "antagonist" ? 24 : c.roleType === "supporting" ? 20 : 14,
-          borderWidth: 2,
-        };
+      .map((c) => ({
+        id: c.id,
+        name: c.name,
+        nickname: c.nickname || undefined,
+        roleType: c.roleType,
+      }));
+
+    const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+
+    const links: SimLink[] = filteredRelations
+      .filter((r) => nodeMap.has(r.characterAId) && nodeMap.has(r.characterBId))
+      .map((r) => ({
+        source: r.characterAId,
+        target: r.characterBId,
+        id: r.id,
+        label: r.relationType,
+      }));
+
+    // Clear previous content
+    const svgSel = select(svg);
+    svgSel.selectAll("*").remove();
+
+    // Root group for zoom/pan
+    const g = svgSel.append("g");
+
+    // Setup zoom
+    const zoomBehavior = zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.2, 5])
+      .on("zoom", (event) => {
+        g.attr("transform", event.transform.toString());
       });
 
-    const edges: Data["edges"] = filteredRelations.map((r) => ({
-      id: r.id,
-      from: r.characterAId,
-      to: r.characterBId,
-      label: r.relationType,
-      title: r.description ? `${r.relationType}: ${r.description}` : r.relationType,
-      font: { color: "#9ca3af", size: 11, face: "system-ui, sans-serif", strokeWidth: 3, strokeColor: "#1f2937" },
-      color: { color: "#4b5563", highlight: "#60a5fa", hover: "#6b7280" },
-      arrows: "to",
-      smooth: { enabled: true, type: "curvedCW", roundness: 0.2 },
-      width: 1.5,
-    }));
+    svgSel.call(zoomBehavior);
 
-    const options: Options = {
-      physics: {
-        enabled: true,
-        solver: "forceAtlas2Based",
-        forceAtlas2Based: {
-          gravitationalConstant: -80,
-          centralGravity: 0.01,
-          springLength: 150,
-          springConstant: 0.08,
-        },
-        stabilization: { iterations: 150 },
-      },
-      interaction: {
-        hover: true,
-        tooltipDelay: 200,
-        dragNodes: true,
-        dragView: true,
-        zoomView: true,
-        navigationButtons: false,
-      },
-      nodes: {
-        shadow: { enabled: true, color: "rgba(0,0,0,0.3)", size: 8 },
-      },
-      edges: {
-        shadow: { enabled: false },
-      },
-    };
+    // Arrow marker definition
+    const defs = svgSel.append("defs");
+    defs.append("marker")
+      .attr("id", "arrowhead")
+      .attr("viewBox", "0 0 10 7")
+      .attr("refX", 10)
+      .attr("refY", 3.5)
+      .attr("markerWidth", 8)
+      .attr("markerHeight", 6)
+      .attr("orient", "auto")
+      .append("path")
+      .attr("d", "M 0 0 L 10 3.5 L 0 7 z")
+      .attr("fill", "#6b7280");
 
-    const network = new Network(containerRef.current, { nodes, edges } as Data, options);
-    networkRef.current = network;
+    // Edge labels background + text
+    const linkGroup = g.append("g").attr("class", "links");
+    const linkElements = linkGroup.selectAll("line")
+      .data(links)
+      .join("line")
+      .attr("stroke", "#4b5563")
+      .attr("stroke-width", 1.5)
+      .attr("marker-end", "url(#arrowhead)")
+      .style("cursor", "pointer")
+      .on("click", (_event, d) => {
+        const rel = relations.find((r) => r.id === d.id);
+        if (rel) onEdgeClick?.(rel);
+      });
 
-    network.on("click", (params) => {
-      if (params.nodes && params.nodes.length > 0) {
-        const nodeId = params.nodes[0] as string;
-        onNodeClick?.(nodeId);
-      } else if (params.edges && params.edges.length > 0) {
-        const edgeId = params.edges[0] as string;
-        const relation = relations.find((r) => r.id === edgeId);
-        if (relation) onEdgeClick?.(relation);
-      }
+    const linkLabelGroup = g.append("g").attr("class", "link-labels");
+    const linkLabels = linkLabelGroup.selectAll("g")
+      .data(links)
+      .join("g");
+
+    linkLabels.append("rect")
+      .attr("rx", 3)
+      .attr("ry", 3)
+      .attr("fill", "var(--color-surface-1)")
+      .attr("stroke", "var(--color-border)")
+      .attr("stroke-width", 0.5)
+      .attr("opacity", 0.85);
+
+    const linkTexts = linkLabels.append("text")
+      .attr("text-anchor", "middle")
+      .attr("dominant-baseline", "central")
+      .attr("fill", "var(--color-text-muted)")
+      .attr("font-size", 10)
+      .attr("font-family", "system-ui, sans-serif")
+      .text((d) => d.label);
+
+    linkTexts.each(function (_d, i) {
+      const bbox = this.getBBox();
+      const rect = linkLabels.filter((_, j) => j === i).select("rect");
+      rect.attr("x", bbox.x - 3)
+        .attr("y", bbox.y - 2)
+        .attr("width", bbox.width + 6)
+        .attr("height", bbox.height + 4);
     });
 
-    network.once("stabilizationIterationsDone", () => {
-      network.fit({ animation: { duration: 300, easingFunction: "easeOutQuad" } });
+    // Node groups
+    const nodeGroup = g.append("g").attr("class", "nodes");
+    const nodeElements = nodeGroup.selectAll("g")
+      .data(nodes)
+      .join("g")
+      .style("cursor", "pointer");
+
+    nodeElements.append("circle")
+      .attr("r", (d) => ROLE_SIZES[d.roleType] ?? DEFAULT_SIZE)
+      .attr("fill", (d) => ROLE_COLORS[d.roleType] ?? DEFAULT_COLOR)
+      .attr("stroke", "var(--color-surface-1)")
+      .attr("stroke-width", 2)
+      .on("click", (_event, d) => {
+        onNodeClick?.(d.id);
+      });
+
+    nodeElements.append("text")
+      .attr("text-anchor", "middle")
+      .attr("dy", (d) => (ROLE_SIZES[d.roleType] ?? DEFAULT_SIZE) + 14)
+      .attr("fill", "var(--color-text-secondary)")
+      .attr("font-size", 11)
+      .attr("font-family", "system-ui, sans-serif")
+      .text((d) => d.nickname ? `${d.name}「${d.nickname}」` : d.name);
+
+    // Drag behavior
+    const dragBehavior = drag<SVGGElement, SimNode>()
+      .on("start", (event, d) => {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+      })
+      .on("drag", (event, d) => {
+        d.fx = event.x;
+        d.fy = event.y;
+      })
+      .on("end", (event, d) => {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+      });
+
+    nodeElements.call(dragBehavior as unknown as (selection: import("d3-selection").Selection<import("d3-selection").BaseType | SVGGElement, SimNode, SVGGElement, unknown>) => void);
+
+    // Force simulation
+    const simulation = forceSimulation<SimNode>(nodes)
+      .force("charge", forceManyBody().strength(-200))
+      .force("center", forceCenter(width / 2, height / 2))
+      .force("link", forceLink<SimNode, SimLink>(links)
+        .id((d) => d.id)
+        .distance(120))
+      .on("tick", () => {
+        linkElements
+          .attr("x1", (d) => (d.source as SimNode).x ?? 0)
+          .attr("y1", (d) => (d.source as SimNode).y ?? 0)
+          .attr("x2", (d) => (d.target as SimNode).x ?? 0)
+          .attr("y2", (d) => (d.target as SimNode).y ?? 0);
+
+        linkLabels
+          .attr("transform", (d) => {
+            const sx = (d.source as SimNode).x ?? 0;
+            const sy = (d.source as SimNode).y ?? 0;
+            const tx = (d.target as SimNode).x ?? 0;
+            const ty = (d.target as SimNode).y ?? 0;
+            return `translate(${(sx + tx) / 2},${(sy + ty) / 2})`;
+          });
+
+        nodeElements
+          .attr("transform", (d) => `translate(${d.x ?? 0},${d.y ?? 0})`);
+      });
+
+    // Center view after initial layout
+    simulation.on("end", () => {
+      svgSel.call(
+        zoomBehavior.transform,
+        zoomIdentity.translate(0, 0).scale(1),
+      );
     });
 
     return () => {
-      network.destroy();
-      networkRef.current = null;
+      simulation.stop();
     };
   }, [characters, relations, filterRole, onNodeClick, onEdgeClick, getCharacterById]);
 
   return (
     <div
-      ref={containerRef}
       className="w-full h-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-1)]"
       style={{ minHeight: 300 }}
       role="img"
       aria-label={`角色关系图谱: ${characters.length} 个角色, ${relations.length} 段关系`}
     >
+      <svg ref={svgRef} className="w-full h-full" />
       <span className="sr-only">此区域显示角色关系可视化图谱，支持拖拽和缩放交互</span>
     </div>
   );

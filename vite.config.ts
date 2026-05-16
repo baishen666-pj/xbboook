@@ -33,8 +33,8 @@ export default defineConfig({
             if (id.includes('zustand')) {
               return 'vendor-zustand';
             }
-            if (id.includes('vis-network') || id.includes('vis-data')) {
-              return 'vendor-vis';
+            if (id.includes('d3-force') || id.includes('d3-zoom') || id.includes('d3-drag') || id.includes('d3-selection') || id.includes('d3-dispatch') || id.includes('d3-timer')) {
+              return 'vendor-d3';
             }
             if (id.includes('@dnd-kit')) {
               return 'vendor-dnd';

@@ -43,7 +43,7 @@ function ReadOnlyEditor({ content }: { content: string }) {
   useEffect(() => {
     if (editor && content !== prevContentRef.current) {
       prevContentRef.current = content;
-      editor.commands.setContent(content, false);
+      editor.commands.setContent(content, { emitUpdate: false });
     }
   }, [editor, content]);
 

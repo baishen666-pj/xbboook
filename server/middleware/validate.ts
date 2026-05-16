@@ -8,7 +8,8 @@ export function validate(schema: ZodSchema) {
       next();
     } catch (err) {
       if (err instanceof ZodError) {
-        const message = err.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join(', ');
+        const issues = err.issues ?? err.errors;
+        const message = issues.map((e: { path: (string | number)[]; message: string }) => `${e.path.join('.')}: ${e.message}`).join(', ');
         res.status(400).json({ success: false, error: message });
         return;
       }
