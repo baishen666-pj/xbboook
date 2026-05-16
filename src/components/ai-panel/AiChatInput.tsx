@@ -47,6 +47,9 @@ export function AiChatInput() {
     qa: "输入你的问题...",
     deai: "点击发送对选中文本去AI味...",
     "character-dialogue": "描述对话场景或直接发送...",
+    "style-analysis": "选中要分析风格的文本后点击发送...",
+    "plot-suggest": "描述想要的情节方向，或直接发送获取建议...",
+    "foreshadowing-track": "点击发送扫描当前章节的伏笔...",
   };
 
   const placeholder = isCharacterDialogue && !charactersReady

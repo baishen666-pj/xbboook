@@ -125,6 +125,15 @@ export function buildUserPrompt(skillId: string, params: {
     case 'character-dialogue':
       return `请根据角色设定和关系，模拟这两个角色之间的对话场景`;
 
+    case 'style-analysis':
+      return `请分析以下选中文本的写作风格：\n\n${params.selectedText || ''}`;
+
+    case 'plot-suggest':
+      return '请基于当前情节进展，推荐后续发展方向';
+
+    case 'foreshadowing-track':
+      return '请扫描当前内容，识别与已有伏笔相关的段落';
+
     default:
       return params.question || '请协助创作';
   }

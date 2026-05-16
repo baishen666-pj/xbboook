@@ -5,6 +5,11 @@ import { getConfig } from '../ai/agentFactory.js';
 import { saveConfig, loadStoredConfig } from '../ai/configStore.js';
 import { PROVIDERS, getProvider } from '../ai/providers.js';
 import { findById as findChapterById } from '../db/repositories/chapterRepo.js';
+import { findById as findProjectById } from '../db/repositories/projectRepo.js';
+import { findByProject as findCharacters } from '../db/repositories/characterRepo.js';
+import { findByProject as findOutlines } from '../db/repositories/outlineRepo.js';
+import { findByProject as findWorldviews } from '../db/repositories/worldviewRepo.js';
+import { findAll as findAllForeshadowing } from '../db/repositories/foreshadowingRepo.js';
 import { readChapter } from '../services/fileService.js';
 import { createJob, runPipeline, getJob, type PipelineJob } from '../ai/chapterPipeline.js';
 import { isBuiltInSkill } from '../ai/writingSkills.js';
@@ -184,7 +189,7 @@ router.post('/stream', async (req, res) => {
         fullContent += event.content;
         sendSSE(res, 'chunk', { content: event.content });
       } else if (event.type === 'done') {
-        sendSSEDone(res, event.content || fullContent);
+        sendSSEDone(res, event.content || fullContent, event.tokenUsage);
       }
     }
   } catch (err) {
@@ -318,6 +323,56 @@ router.get('/pipeline/:jobId', (req, res) => {
     return;
   }
   res.json({ success: true, data: job });
+});
+
+// Lightweight inline completion
+router.post('/complete', async (req, res) => {
+  const { projectId, chapterId, cursorContext, maxTokens } = req.body;
+  if (!projectId || !chapterId || !cursorContext) {
+    res.status(400).json({ success: false, error: 'projectId, chapterId, cursorContext required' });
+    return;
+  }
+  if (!isConfigured()) {
+    res.status(400).json({ success: false, error: 'AI 未配置' });
+    return;
+  }
+  try {
+    const { completeChat } = await import('../ai/agentFactory.js');
+    const result = await completeChat(
+      [
+        { role: 'system', content: '你是一位网文写作助手。根据给定的光标前后文本，续写接下来的内容。只输出续写内容，不要解释。续写应自然衔接上下文，保持风格一致，50-200字。' },
+        { role: 'user', content: cursorContext },
+      ],
+      { maxTokens: maxTokens || 200 },
+    );
+    res.json({ success: true, data: { completion: result } });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err instanceof Error ? err.message : '补全失败' });
+  }
+});
+
+// Context summary for frontend hints
+router.get('/context-summary/:projectId', (req, res) => {
+  const { projectId } = req.params;
+  try {
+    const project = findProjectById(projectId);
+    const foreshadowings = findAllForeshadowing(projectId);
+    const characters = findCharacters(projectId);
+    const outlines = findOutlines(projectId);
+    const worldviews = findWorldviews(projectId);
+    res.json({
+      success: true,
+      data: {
+        genre: project?.genre || null,
+        hasWorldview: worldviews.length > 0,
+        plantedForeshadowingCount: foreshadowings.filter(f => f.status === 'planted').length,
+        charactersWithoutVoice: characters.filter(c => !c.speech_style && !c.verbal_tics).length,
+        outlineNodeCount: outlines.length,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err instanceof Error ? err.message : '获取上下文摘要失败' });
+  }
 });
 
 export default router;

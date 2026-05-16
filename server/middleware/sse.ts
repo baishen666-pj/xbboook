@@ -23,7 +23,7 @@ export function sendSSEError(res: Response, error: string): void {
   res.end();
 }
 
-export function sendSSEDone(res: Response, fullContent: string): void {
-  sendSSE(res, 'done', { content: fullContent });
+export function sendSSEDone(res: Response, fullContent: string, tokenUsage?: unknown): void {
+  sendSSE(res, 'done', { content: fullContent, tokenUsage });
   res.end();
 }

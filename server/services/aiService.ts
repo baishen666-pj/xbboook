@@ -1,6 +1,6 @@
 import { streamChat } from '../ai/agentFactory.js';
 import { isConfigured as checkConfigured } from '../ai/configStore.js';
-import { buildContext, characterDialogueProfiles, type BuildContextOptions, type HistoryMessage } from '../ai/contextBuilder.js';
+import { buildContext, characterDialogueProfiles, estimateTokens, contextToString, type BuildContextOptions, type ContextSource, type HistoryMessage } from '../ai/contextBuilder.js';
 import { buildPrompt, buildUserPrompt, toMessages } from '../ai/promptBuilder.js';
 import { getSkill, listSkills, type WritingSkill } from '../ai/writingSkills.js';
 import { getPluginSkill } from '../plugins/registry.js';
@@ -23,9 +23,15 @@ export interface AiRequest {
 export { checkConfigured as isConfigured, listSkills, getSkill };
 export type { WritingSkill };
 
+export interface TokenUsageInfo {
+  contextTokens: number;
+  totalSources: number;
+  sourceBreakdown: Array<{ label: string; tokens: number }>;
+}
+
 export async function* processAiRequest(
   req: AiRequest,
-): AsyncGenerator<{ type: 'chunk' | 'done'; content: string }> {
+): AsyncGenerator<{ type: 'chunk' | 'done'; content: string; tokenUsage?: TokenUsageInfo }> {
   if (!checkConfigured()) {
     throw new Error('AI 未配置，请设置 AI_API_KEY 环境变量');
   }
@@ -37,8 +43,9 @@ export async function* processAiRequest(
     projectId: req.projectId,
     currentChapterId: req.chapterId,
     selectedText: req.selectedText,
-    maxTokens: 8000,
+    maxTokens: 10000,
     outlineContent: req.outlineContent,
+    skillId: req.skillId,
   };
 
   const sources = await buildContext(contextOptions);
@@ -76,10 +83,10 @@ export async function* processAiRequest(
     userMessage: userPrompt,
     customInstruction: req.customInstruction,
     historyMessages: req.historyMessages,
-    maxContextTokens: 8000,
+    maxContextTokens: 10000,
   });
 
-  const messages = toMessages(prompt, req.historyMessages, 8000);
+  const messages = toMessages(prompt, req.historyMessages, 10000);
 
   let fullContent = '';
 
@@ -92,11 +99,21 @@ export async function* processAiRequest(
       yield { type: 'chunk', content: chunk.content };
     }
     if (chunk.done) {
-      yield { type: 'done', content: fullContent };
+      const tokenUsage: TokenUsageInfo = {
+        contextTokens: estimateTokens(contextToString(sources)),
+        totalSources: sources.length,
+        sourceBreakdown: sources.map(s => ({ label: s.label, tokens: estimateTokens(s.content) })),
+      };
+      yield { type: 'done', content: fullContent, tokenUsage };
       return;
     }
   }
 
   // Fallback: stream ended without done flag
-  yield { type: 'done', content: fullContent };
+  const tokenUsage: TokenUsageInfo = {
+    contextTokens: estimateTokens(contextToString(sources)),
+    totalSources: sources.length,
+    sourceBreakdown: sources.map(s => ({ label: s.label, tokens: estimateTokens(s.content) })),
+  };
+  yield { type: 'done', content: fullContent, tokenUsage };
 }

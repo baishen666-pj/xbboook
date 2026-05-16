@@ -1,8 +1,12 @@
 import { findByProject as findChapters } from '../db/repositories/chapterRepo.js';
 import { readChapter } from '../services/fileService.js';
-import { findByProject as findCharacters, findById as findCharacterById, findRelationsForCharacter } from '../db/repositories/characterRepo.js';
+import { findByProject as findCharacters, findById as findCharacterById, findRelationsForCharacter, findRelations } from '../db/repositories/characterRepo.js';
 import { findByProject as findArcs } from '../db/repositories/storyArcRepo.js';
 import { findByProject as findThreads } from '../db/repositories/plotThreadRepo.js';
+import { findByProject as findWorldviews } from '../db/repositories/worldviewRepo.js';
+import { findAll as findAllForeshadowing } from '../db/repositories/foreshadowingRepo.js';
+import { findByProject as findOutlines } from '../db/repositories/outlineRepo.js';
+import { findById as findProject } from '../db/repositories/projectRepo.js';
 import type { Chapter, Character, CharacterRelation } from '../types/index.js';
 
 export interface ContextSource {
@@ -17,6 +21,7 @@ export interface BuildContextOptions {
   selectedText?: string;
   maxTokens?: number;
   outlineContent?: string;
+  skillId?: string;
 }
 
 const CHARS_PER_TOKEN = 2.5;
@@ -137,8 +142,9 @@ export async function buildContext(options: BuildContextOptions): Promise<Contex
     projectId,
     currentChapterId,
     selectedText,
-    maxTokens = 8000,
+    maxTokens = 10000,
     outlineContent,
+    skillId = '',
   } = options;
 
   const sources: ContextSource[] = [];
@@ -230,6 +236,87 @@ export async function buildContext(options: BuildContextOptions): Promise<Contex
       label: '故事弧线与情节线索',
       content: [arcText, threadText].filter(Boolean).join('\n'),
     });
+  }
+
+  // Priority 9: project-level settings (genre, writing style, description)
+  const project = findProject(projectId);
+  if (project) {
+    const parts: string[] = [];
+    if (project.genre) parts.push(`题材: ${project.genre}`);
+    if (project.writing_style) parts.push(`写作风格: ${project.writing_style}`);
+    if (project.description) parts.push(`作品简介: ${project.description}`);
+    if (project.writing_mode && project.writing_mode !== 'webnovel') {
+      parts.push(`写作模式: ${project.writing_mode}`);
+    }
+    if (parts.length > 0) {
+      sources.push({ priority: 9, label: '项目设定', content: parts.join('\n') });
+    }
+  }
+
+  // Priority 7: worldview (grouped by category)
+  try {
+    const worldviews = findWorldviews(projectId);
+    if (worldviews.length > 0) {
+      const grouped = new Map<string, string[]>();
+      for (const w of worldviews) {
+        const list = grouped.get(w.category) || [];
+        list.push(w.content ? `${w.title}: ${truncateToTokens(w.content, 80)}` : w.title);
+        grouped.set(w.category, list);
+      }
+      const wvText = Array.from(grouped.entries())
+        .map(([cat, items]) => `【${cat}】\n${items.join('\n')}`)
+        .join('\n\n');
+      sources.push({ priority: 7, label: '世界设定', content: truncateToTokens(wvText, 500) });
+    }
+  } catch { /* worldview table may not exist */ }
+
+  // Priority 6: foreshadowing (skill-aware filtering)
+  try {
+    const foreshadowings = findAllForeshadowing(projectId);
+    if (foreshadowings.length > 0) {
+      const foreshadowingSkills = ['continue', 'plot-planning', 'foreshadowing-track', 'consistency', 'consistency-scan', 'inspiration', 'chapter-generate'];
+      const filtered = foreshadowingSkills.includes(skillId)
+        ? foreshadowings
+        : foreshadowings.filter(f => f.status === 'planted');
+      if (filtered.length > 0) {
+        const fsText = filtered.map(f => {
+          const status = f.status === 'planted' ? '已埋设' : f.status === 'harvested' ? '已回收' : '已遗忘';
+          return `「${f.title}」(${status}, ${f.importance}) ${f.description || ''}`;
+        }).join('\n');
+        sources.push({ priority: 6, label: '伏笔线索', content: truncateToTokens(fsText, 400) });
+      }
+    }
+  } catch { /* foreshadowing table may not exist */ }
+
+  // Priority 6: character relations
+  if (characters.length > 0) {
+    try {
+      const relations = findRelations(projectId);
+      if (relations.length > 0) {
+        const relationText = relations.map(r => {
+          const charA = characters.find(c => c.id === r.character_a_id);
+          const charB = characters.find(c => c.id === r.character_b_id);
+          if (!charA || !charB) return '';
+          return `${charA.name} ↔ ${charB.name}: ${r.relation_type}${r.description ? ` (${r.description})` : ''}`;
+        }).filter(Boolean).join('\n');
+        if (relationText) {
+          sources.push({ priority: 6, label: '角色关系', content: relationText });
+        }
+      }
+    } catch { /* relations table may not exist */ }
+  }
+
+  // Priority 5: outline structure (when not passed via outlineContent)
+  if (!outlineContent) {
+    try {
+      const outlines = findOutlines(projectId);
+      if (outlines.length > 0) {
+        const outlineText = outlines
+          .map(o => `${'  '.repeat(o.level)}${o.title}${o.content ? `: ${truncateToTokens(o.content, 50)}` : ''}`)
+          .join('\n');
+        sources.push({ priority: 5, label: '大纲结构', content: truncateToTokens(outlineText, 400) });
+      }
+    } catch { /* outlines table may not exist */ }
   }
 
   // Apply Lost-in-Middle ordering and budget

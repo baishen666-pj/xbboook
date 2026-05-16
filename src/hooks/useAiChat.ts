@@ -102,6 +102,9 @@ export function useAiChat() {
         deai: "对选中文本去AI味",
         "chapter-generate": "根据大纲生成章节",
         "character-dialogue": "角色对话模拟",
+        "style-analysis": "分析选中文本风格",
+        "plot-suggest": "获取情节建议",
+        "foreshadowing-track": "追踪伏笔线索",
       };
 
       const label = skillLabels[skillId] || skillId;
