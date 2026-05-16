@@ -284,6 +284,28 @@ CREATE TABLE IF NOT EXISTS plot_threads (
 
 CREATE INDEX IF NOT EXISTS idx_story_arcs_project ON story_arcs(project_id, sort_order);
 CREATE INDEX IF NOT EXISTS idx_plot_threads_project ON plot_threads(project_id, arc_id);
+
+CREATE TABLE IF NOT EXISTS check_ins (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL,
+  date TEXT NOT NULL,
+  words_today INTEGER DEFAULT 0,
+  note TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  UNIQUE(project_id, date),
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS achievements (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL,
+  badge_type TEXT NOT NULL,
+  earned_at TEXT DEFAULT (datetime('now')),
+  metadata TEXT,
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_achievements_project_badge ON achievements(project_id, badge_type);
 `;
 
 /**

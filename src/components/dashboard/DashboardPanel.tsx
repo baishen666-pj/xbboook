@@ -7,6 +7,9 @@ import { ChapterProgressChart } from "./ChapterProgressChart";
 import { CharacterAppearances } from "./CharacterAppearances";
 import { WritingStreak } from "./WritingStreak";
 import { TargetProgress } from "./TargetProgress";
+import { CheckInPanel } from "./CheckInPanel";
+import { AchievementPanel } from "./AchievementPanel";
+import { WritingCalendar } from "./WritingCalendar";
 
 interface Props {
   onClose?: () => void;
@@ -106,6 +109,15 @@ export function DashboardPanel({ onClose }: Props) {
           <div className="rounded-lg bg-white/[0.03] p-3">
             <CharacterAppearances data={characters} />
           </div>
+
+          {/* Check-in */}
+          <CheckInPanel />
+
+          {/* Achievements */}
+          <AchievementPanel />
+
+          {/* Writing calendar */}
+          <WritingCalendar />
         </div>
       )}
     </div>

@@ -25,6 +25,9 @@ import snippetsRouter from './routes/snippets.js';
 import storyArcsRouter from './routes/storyArcs.js';
 import searchRouter from './routes/search.js';
 import healthRouter from './routes/health.js';
+import checkInRouter from './routes/checkIn.js';
+import achievementsRouter from './routes/achievements.js';
+import pluginsRouter from './routes/plugins.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestIdMiddleware, requestLogger } from './middleware/logger.js';
 
@@ -88,6 +91,9 @@ app.use('/api/projects', importRouter);
 app.use('/api/foreshadowing/:projectId', foreshadowingRouter);
 app.use('/api/snippets/:projectId', snippetsRouter);
 app.use('/api/projects/:projectId/story', storyArcsRouter);
+app.use('/api/projects/:projectId/checkins', checkInRouter);
+app.use('/api/projects/:projectId/achievements', achievementsRouter);
+app.use('/api/plugins', pluginsRouter);
 
 app.use(errorHandler);
 
