@@ -34,13 +34,14 @@ xbboook/
 │   └── lib/                      # 工具函数
 ├── server/                       # 后端
 │   ├── ai/                       # AI 模块
-│   │   ├── agentFactory.ts       # SSE 流式客户端
+│   │   ├── agentFactory.ts       # SSE 流式客户端 + 重试/超时
 │   │   ├── chapterPipeline.ts    # 多章节批量生成
 │   │   ├── configStore.ts        # 供应商配置
 │   │   ├── contextBuilder.ts     # 上下文编译 (CJK-aware token 估算)
+│   │   ├── contextCache.ts       # 60s TTL LRU 缓存
 │   │   ├── promptBuilder.ts      # 提示词组装
 │   │   ├── providers.ts          # 供应商适配器
-│   │   └── writingSkills.ts      # 18 个写作技能
+│   │   └── writingSkills.ts      # 写作技能定义
 │   ├── db/                       # 数据库
 │   │   ├── database.ts           # 连接管理
 │   │   ├── migrations.ts         # 版本化迁移系统
@@ -51,8 +52,10 @@ xbboook/
 │   │   ├── errorHandler.ts       # 全局错误处理
 │   │   ├── logger.ts             # pino 结构化日志
 │   │   ├── rateLimit.ts          # 速率限制
+│   │   ├── sse.ts                # SSE 工具
 │   │   └── validate.ts           # Zod 验证
-│   ├── routes/                   # 20 个 API 路由
+│   ├── plugins/                  # 插件系统
+│   ├── routes/                   # 20+ API 路由
 │   ├── services/                 # 业务逻辑
 │   ├── types/                    # TypeScript 类型
 │   └── ws/                       # WebSocket 协作
@@ -63,7 +66,7 @@ xbboook/
     └── helpers/                  # 测试辅助
 ```
 
-## API 路由 (20 个)
+## API 路由 (20+)
 
 | 路由 | 端点 | 说明 |
 |------|------|------|
@@ -75,21 +78,21 @@ xbboook/
 | worldviews | /api/projects/:id/worldview | 世界观 |
 | outlines | /api/projects/:id/outlines | 大纲管理 |
 | stats | /api/projects/:id/stats | 写作统计 |
-| export | /api/projects/:id/export | 导出 |
+| export | /api/projects/:id/export | 导出 (TXT/MD/EPUB/DOCX/PDF) |
 | search | /api/projects/:id/search | 全文搜索 |
 | storyArcs | /api/projects/:id/story | 故事弧线与情节线 |
-| ai | /api/ai | AI 写作 (含批量生成) |
+| ai | /api/ai | AI 写作 (含批量生成、补全、上下文摘要) |
 | templates | /api/templates | 模板管理 |
 | users | /api/users | 用户设置 |
 | collab | /api/projects/:id/collab | WebSocket 协作 |
-| comments | /api/projects/:id/chapters/:cid/comments | 批注 |
+| comments | /api/projects/:id/chapters/:cid/comments | 批注 (需认证) |
 | backups | /api/backups | 备份管理 |
 | import | /api/projects | 项目导入 |
 | foreshadowing | /api/foreshadowing/:id | 伏笔管理 |
 | snippets | /api/snippets/:id | 片段管理 |
 | health | /api/health | 健康检查 |
 
-## AI 写作技能 (18 个)
+## AI 写作技能 (24 个)
 
 | 技能 | 说明 |
 |------|------|
@@ -111,6 +114,12 @@ xbboook/
 | foreshadowing-setup | 伏笔埋设 |
 | foreshadowing-payoff | 伏笔回收 |
 | style-imitation | 风格模仿 |
+| style-analysis | 风格分析 |
+| plot-suggest | 情节推荐 |
+| foreshadowing-track | 伏笔追踪 |
+| consistency-scan | 一致性扫描 |
+| writing-advice | 写作建议 |
+| qa | 问答 |
 
 ## 数据库表 (18 个)
 
@@ -125,8 +134,11 @@ projects, volumes, chapters, chapter_versions, characters, character_relations, 
 - **Token 估算**: CJK-aware 双比率估算 (中文 ~1.5 chars/token, ASCII ~4.0)
 - **上下文编译**: Lost-in-Middle 排序，优先级 1-10
 - **AI 流式**: SSE (Server-Sent Events)
-- **前端状态**: Zustand stores，按功能拆分
-- **测试**: vitest --pool=forks，870+ 测试
+- **AI 重试**: 429/5xx 最多 3 次，指数退避，120s 超时
+- **AI 缓存**: 60s TTL 项目级 LRU 缓存
+- **前端状态**: Zustand stores，按功能拆分，细粒度选择器
+- **测试**: vitest --pool=forks，1560+ 测试
+- **安全**: baseUrl SSRF 防护、API Key 脱敏、WebSocket origin 校验、EPUB HTML 净化
 
 ## 开发命令
 
@@ -143,7 +155,20 @@ npx vitest run --pool=forks  # 稳定运行测试
 AI_API_KEY=          # AI API 密钥
 AI_BASE_URL=         # AI API 基础 URL
 AI_MODEL=            # 默认模型名称
-PORT=3001            # 服务端口
+PORT=3210            # 服务端口
 LOG_LEVEL=info       # 日志级别
 NODE_ENV=development # 环境
 ```
+
+## 部署
+
+```bash
+# 生产启动
+cd E:\xbbook && nohup npx tsx server/index.ts > data/logs/server.log 2>&1 &
+
+# PM2
+# ecosystem.config.cjs 用 ./node_modules/.bin/tsx 作为 interpreter
+```
+
+- **数据库**: `E:\xbbook\data\novel-pen.db`
+- **注意**: 部署时需同步 server/plugins/ 目录
