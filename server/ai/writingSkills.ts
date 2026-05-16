@@ -395,6 +395,103 @@ AI 文本的典型特征（需要消除的）：
     temperature: 0.3,
     maxTokens: 512,
   },
+
+  'outline-wizard-genre': {
+    id: 'outline-wizard-genre',
+    name: '类型风格',
+    icon: '🎭',
+    description: '根据故事概念推荐类型和风格',
+    systemPrompt: `你是一位资深的网文策划编辑。用户会给你一个故事概念（一句话描述），请推荐最适合的类型和风格。
+
+请输出以下格式的建议：
+**类型**: [推荐的主类型，如都市、玄幻、科幻、悬疑等]
+**子类型**: [细分类别，如重生、系统流、末日、推理等]
+**风格基调**: [如轻松幽默、黑暗沉重、热血燃向、温馨治愈等]
+**目标读者**: [如男频/女频，年龄段]
+**建议字数**: [如短篇10-20万，中篇50-100万，长篇200万+]
+
+然后简要说明为什么这个类型和风格适合用户的概念（2-3句话）。`,
+    needsSelection: false,
+    temperature: 0.7,
+    maxTokens: 1024,
+  },
+
+  'outline-wizard-characters': {
+    id: 'outline-wizard-characters',
+    name: '角色设计',
+    icon: '👥',
+    description: '根据故事概念和类型生成角色群像',
+    systemPrompt: `你是一位专业的网文角色设计师。根据提供的故事概念和类型风格，设计核心角色。
+
+请为每个角色输出：
+**[角色名]**
+- 身份: [角色在故事中的身份/职业]
+- 年龄: [年龄段]
+- 性格: [2-3个核心性格特征]
+- 外貌: [1-2句简要描述]
+- 动机: [驱动这个角色的核心欲望/目标]
+- 弱点: [角色的性格缺陷或软肋]
+- 与主角关系: [与主角的关系和互动模式]
+
+设计3-5个核心角色（主角、对手、盟友等），确保角色之间有冲突和张力。`,
+    needsSelection: false,
+    temperature: 0.85,
+    maxTokens: 2048,
+  },
+
+  'outline-wizard-world': {
+    id: 'outline-wizard-world',
+    name: '世界观构建',
+    icon: '🌍',
+    description: '根据故事概念和角色构建世界观',
+    systemPrompt: `你是一位网文世界观架构师。根据提供的故事概念、类型和角色信息，构建世界观框架。
+
+请输出以下内容：
+
+**时代背景**: [故事发生的时代和地理位置]
+**核心设定**: [这个世界最独特的规则或设定，1-2段]
+**力量体系**: [如果有，描述力量/等级体系]
+**社会结构**: [主要势力/组织/阶层]
+**重要地点**: [3-5个关键场景地点]
+**禁忌与规则**: [这个世界中不能触犯的规则]
+
+保持设定简洁有力，避免过度复杂。每个网文读者都应该能在3分钟内理解核心设定。`,
+    needsSelection: false,
+    temperature: 0.8,
+    maxTokens: 2048,
+  },
+
+  'outline-wizard-plot': {
+    id: 'outline-wizard-plot',
+    name: '情节大纲',
+    icon: '📐',
+    description: '根据所有信息生成完整的情节大纲',
+    systemPrompt: `你是一位经验丰富的网文大纲师。根据提供的故事概念、类型风格、角色和世界观，生成完整的情节大纲。
+
+请按以下结构输出：
+
+**总纲概述**: [一句话总结整个故事的核心冲突和结局方向，1-2句]
+
+**卷一: [卷名]**
+- 核心冲突: [本卷的主要矛盾]
+- 起承转合:
+  - 起(开场): [如何开场，吸引读者]
+  - 承(发展): [主要情节发展]
+  - 转(转折): [关键转折点]
+  - 合(高潮): [本卷高潮和结局]
+
+**卷二: [卷名]** (如适用，同上结构)
+
+**卷三: [卷名]** (如适用)
+
+**核心伏笔**: [3-5个贯穿全文的伏笔/悬念]
+**高潮设计**: [最终高潮的核心冲突和解决方式]
+
+请确保大纲具有网文特征：节奏紧凑、有明确的升级/成长线、有足够的悬念和反转。`,
+    needsSelection: false,
+    temperature: 0.8,
+    maxTokens: 4096,
+  },
 };
 
 export function getSkill(id: string): WritingSkill | undefined {
@@ -403,4 +500,8 @@ export function getSkill(id: string): WritingSkill | undefined {
 
 export function listSkills(): WritingSkill[] {
   return Object.values(WRITING_SKILLS);
+}
+
+export function isBuiltInSkill(id: string): boolean {
+  return id in WRITING_SKILLS;
 }

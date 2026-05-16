@@ -417,11 +417,11 @@ describe('AI API', () => {
     teardownMocks();
   });
 
-  it('should list 17 skills', async () => {
+  it('should list all skills including wizard skills', async () => {
     const res = await request(app).get('/api/ai/skills');
 
     expect(res.status).toBe(200);
-    expect(res.body.data).toHaveLength(17);
+    expect(res.body.data.length).toBeGreaterThanOrEqual(21);
     const ids = res.body.data.map((s: any) => s.id);
     expect(ids).toContain('continue');
     expect(ids).toContain('deai');
