@@ -45,6 +45,15 @@ router.post('/arcs', validate(createArcSchema), (req: Request<ProjectParams>, re
   res.status(201).json({ success: true, data: arc });
 });
 
+const reorderArcsSchema = z.object({
+  items: z.array(z.object({ id: z.string(), sortOrder: z.number() })),
+});
+
+router.put('/arcs/reorder', validate(reorderArcsSchema), (req: Request<ProjectParams>, res) => {
+  storyArcRepo.reorder(req.body.items);
+  res.json({ success: true });
+});
+
 router.put('/arcs/:id', validate(updateArcSchema), (req: Request<ArcParams>, res) => {
   const arc = storyArcRepo.update(req.params.id, req.body);
   if (!arc) {
@@ -60,15 +69,6 @@ router.delete('/arcs/:id', (req: Request<ArcParams>, res) => {
     res.status(404).json({ success: false, error: '弧线不存在' });
     return;
   }
-  res.json({ success: true });
-});
-
-const reorderArcsSchema = z.object({
-  items: z.array(z.object({ id: z.string(), sortOrder: z.number() })),
-});
-
-router.put('/arcs/reorder', validate(reorderArcsSchema), (req: Request<ProjectParams>, res) => {
-  storyArcRepo.reorder(req.body.items);
   res.json({ success: true });
 });
 
@@ -113,6 +113,15 @@ router.post('/threads', validate(createThreadSchema), (req: Request<ProjectParam
   res.status(201).json({ success: true, data: thread });
 });
 
+const reorderThreadsSchema = z.object({
+  items: z.array(z.object({ id: z.string(), sortOrder: z.number() })),
+});
+
+router.put('/threads/reorder', validate(reorderThreadsSchema), (req: Request<ProjectParams>, res) => {
+  plotThreadRepo.reorder(req.body.items);
+  res.json({ success: true });
+});
+
 router.put('/threads/:threadId', validate(updateThreadSchema), (req: Request<ProjectParams & { threadId: string }>, res) => {
   const thread = plotThreadRepo.update(req.params.threadId, req.body);
   if (!thread) {
@@ -128,15 +137,6 @@ router.delete('/threads/:threadId', (req: Request<ProjectParams & { threadId: st
     res.status(404).json({ success: false, error: '线索不存在' });
     return;
   }
-  res.json({ success: true });
-});
-
-const reorderThreadsSchema = z.object({
-  items: z.array(z.object({ id: z.string(), sortOrder: z.number() })),
-});
-
-router.put('/threads/reorder', validate(reorderThreadsSchema), (req: Request<ProjectParams>, res) => {
-  plotThreadRepo.reorder(req.body.items);
   res.json({ success: true });
 });
 
