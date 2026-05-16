@@ -3,6 +3,7 @@ import { useProjectStore } from "@/stores/projectStore";
 import { useForeshadowingStore } from "@/stores/foreshadowingStore";
 import { ForeshadowingBadge, ForeshadowingImportanceBadge } from "./ForeshadowingBadge";
 import { ForeshadowingForm } from "./ForeshadowingForm";
+import { DeleteButton } from '@/components/ui/DeleteButton';
 import type { Foreshadowing, ForeshadowingStatus } from "@/types/project";
 
 const STATUS_GROUPS: Array<{ key: ForeshadowingStatus; label: string }> = [
@@ -57,13 +58,13 @@ export function ForeshadowingPanel() {
   return (
     <div className="flex flex-col h-full">
       {/* Status group tabs */}
-      <div className="flex items-center gap-1 overflow-x-auto border-b border-white/5 px-2 py-1.5 scrollbar-none">
+      <div className="flex items-center gap-1 overflow-x-auto border-b border-[var(--color-border)] px-2 py-1.5 scrollbar-none">
         <button
           onClick={() => setActiveGroup("all")}
           className={`shrink-0 rounded px-2 py-1 text-xs transition-colors ${
             activeGroup === "all"
               ? "bg-[var(--color-primary)]/20 text-[var(--color-primary)]"
-              : "text-white/40 hover:bg-white/5"
+              : "text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)]"
           }`}
         >
           全部
@@ -75,12 +76,12 @@ export function ForeshadowingPanel() {
             className={`shrink-0 rounded px-2 py-1 text-xs transition-colors ${
               activeGroup === g.key
                 ? "bg-[var(--color-primary)]/20 text-[var(--color-primary)]"
-                : "text-white/40 hover:bg-white/5"
+                : "text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)]"
             }`}
           >
             {g.label}
             {items.filter((f) => f.status === g.key).length > 0 && (
-              <span className="ml-1 text-[10px] text-white/20">
+              <span className="ml-1 text-[10px] text-[var(--color-text-muted)]">
                 {items.filter((f) => f.status === g.key).length}
               </span>
             )}
@@ -98,10 +99,10 @@ export function ForeshadowingPanel() {
       {/* Items */}
       <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
         {loading && items.length === 0 && (
-          <div className="py-8 text-center text-xs text-white/20">加载中...</div>
+          <div className="py-8 text-center text-xs text-[var(--color-text-muted)]">加载中...</div>
         )}
         {!loading && filtered.length === 0 && (
-          <div className="py-8 text-center text-xs text-white/20">
+          <div className="py-8 text-center text-xs text-[var(--color-text-muted)]">
             {items.length === 0 ? "还没有伏笔，点击新建添加" : "该分组下没有伏笔"}
           </div>
         )}
@@ -154,16 +155,16 @@ function ForeshadowingCard({
   const actualChapter = getChapterTitle(item.actualHarvestChapterId);
 
   return (
-    <div className="group rounded-lg border border-white/5 bg-white/[0.02] p-2.5 transition-colors hover:bg-white/[0.04]">
+    <div className="group rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-2)] p-2.5 transition-colors hover:bg-[var(--color-surface-3)]">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1 cursor-pointer" onClick={() => setExpanded(!expanded)}>
           <div className="flex items-center gap-2">
             <ForeshadowingBadge status={item.status} />
             <ForeshadowingImportanceBadge importance={item.importance} />
-            <span className="text-sm font-medium text-white/80 truncate">{item.title}</span>
+            <span className="text-sm font-medium text-[var(--color-text-primary)] truncate">{item.title}</span>
           </div>
           {!expanded && (
-            <div className="mt-1 flex items-center gap-2 text-[10px] text-white/25">
+            <div className="mt-1 flex items-center gap-2 text-[10px] text-[var(--color-text-muted)]">
               {plantChapter && <span>埋设: {plantChapter}</span>}
               {expectedChapter && <span>预期回收: {expectedChapter}</span>}
             </div>
@@ -171,9 +172,9 @@ function ForeshadowingCard({
           {expanded && (
             <div className="mt-2 space-y-1.5">
               {item.description && (
-                <p className="text-xs text-white/40 whitespace-pre-wrap leading-relaxed">{item.description}</p>
+                <p className="text-xs text-[var(--color-text-muted)] whitespace-pre-wrap leading-relaxed">{item.description}</p>
               )}
-              <div className="space-y-1 text-[10px] text-white/30">
+              <div className="space-y-1 text-[10px] text-[var(--color-text-muted)]">
                 {plantChapter && <div>埋设章节: {plantChapter}</div>}
                 {expectedChapter && <div>预期回收章节: {expectedChapter}</div>}
                 {actualChapter && <div>实际回收章节: {actualChapter}</div>}
@@ -228,22 +229,14 @@ function ForeshadowingCard({
         <div className="shrink-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={onEdit}
-            className="rounded p-1 text-white/30 hover:bg-white/5 hover:text-white/60"
+            className="rounded p-1 text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-secondary)]"
             title="编辑"
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.2">
               <path d="M8.5 1.5l2 2-7 7H1.5V8.5l7-7z" />
             </svg>
           </button>
-          <button
-            onClick={onDelete}
-            className="rounded p-1 text-white/30 hover:bg-red-500/10 hover:text-red-400"
-            title="删除"
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.2">
-              <path d="M2 2l8 8M10 2l-8 8" />
-            </svg>
-          </button>
+          <DeleteButton onDelete={onDelete} />
         </div>
       </div>
     </div>

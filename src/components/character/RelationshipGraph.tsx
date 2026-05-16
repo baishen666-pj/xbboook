@@ -139,7 +139,7 @@ export function RelationshipGraph({ characters, relations, onNodeClick, onEdgeCl
   return (
     <div
       ref={containerRef}
-      className="w-full h-full rounded-lg border border-white/5 bg-[oklch(0.12_0_0)]"
+      className="w-full h-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-1)]"
       style={{ minHeight: 300 }}
     />
   );

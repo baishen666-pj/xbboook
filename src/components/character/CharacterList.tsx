@@ -98,29 +98,29 @@ export function CharacterList() {
   return (
     <div className="flex flex-col h-full">
       {/* Header + actions */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-white/5">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--color-border)]">
         <div className="flex items-center gap-2">
           <select
             value={filterRole}
             onChange={(e) => setFilterRole(e.target.value)}
-            className="rounded border border-white/10 bg-transparent px-2 py-1 text-xs text-white/60 focus:outline-none"
+            className="rounded border border-[var(--color-border)] bg-transparent px-2 py-1 text-[var(--text-xs)] text-[var(--color-text-secondary)] focus:outline-none"
           >
             <option value="all">全部角色</option>
             {ROLE_TYPES.map((r) => (
               <option key={r.value} value={r.value}>{r.label}</option>
             ))}
           </select>
-          <span className="text-[10px] text-white/20">
+          <span className="text-[10px] text-[var(--color-text-muted)]">
             {characters.length} 角色 / {relations.length} 关系
           </span>
         </div>
         <div className="flex items-center gap-1">
           <button
             onClick={() => setViewMode((m) => m === "list" ? "graph" : "list")}
-            className={`rounded px-2 py-1 text-xs transition-colors ${
+            className={`rounded px-2 py-1 text-[var(--text-xs)] transition-colors ${
               viewMode === "graph"
                 ? "bg-[var(--color-primary)]/20 text-[var(--color-primary)]"
-                : "text-white/40 hover:bg-white/5 hover:text-white/60"
+                : "text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-secondary)]"
             }`}
             title={viewMode === "list" ? "切换到图谱视图" : "切换到列表视图"}
           >
@@ -141,7 +141,7 @@ export function CharacterList() {
           </button>
           <button
             onClick={() => { setEditingCharacter(null); setShowForm(true); }}
-            className="rounded bg-[var(--color-primary)] px-2 py-1 text-xs text-white hover:opacity-90"
+            className="rounded bg-[var(--color-primary)] px-2 py-1 text-[var(--text-xs)] text-white hover:opacity-90"
           >
             + 新建
           </button>
@@ -153,7 +153,7 @@ export function CharacterList() {
         <>
           <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
             {filtered.length === 0 && (
-              <div className="py-8 text-center text-xs text-white/20">
+              <div className="py-8 text-center text-[var(--text-xs)] text-[var(--color-text-muted)]">
                 {characters.length === 0 ? "还没有角色，点击新建添加" : "该分类下没有角色"}
               </div>
             )}
@@ -169,9 +169,9 @@ export function CharacterList() {
 
           {/* Relations list at bottom */}
           {relations.length > 0 && (
-            <div className="border-t border-white/5 max-h-40 overflow-y-auto">
+            <div className="border-t border-[var(--color-border)] max-h-40 overflow-y-auto">
               <div className="flex items-center justify-between px-3 py-1.5">
-                <span className="text-[10px] text-white/30">关系列表</span>
+                <span className="text-[10px] text-[var(--color-text-muted)]">关系列表</span>
                 <button
                   onClick={() => { setEditingRelation(null); setShowRelationEditor(true); }}
                   className="text-[10px] text-[var(--color-primary)] hover:underline"
@@ -186,14 +186,14 @@ export function CharacterList() {
                   return (
                     <div
                       key={r.id}
-                      className="flex items-center gap-1.5 rounded px-2 py-1 text-[11px] text-white/50 hover:bg-white/[0.03] cursor-pointer"
+                      className="flex items-center gap-1.5 rounded px-2 py-1 text-[11px] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] cursor-pointer"
                       onClick={() => setSelectedRelation(r)}
                     >
-                      <span className="text-white/60 truncate">{a?.name ?? "?"}</span>
+                      <span className="text-[var(--color-text-secondary)] truncate">{a?.name ?? "?"}</span>
                       <span className="shrink-0 text-[var(--color-primary)]/70">-</span>
-                      <span className="text-white/30 truncate">{r.relationType}</span>
+                      <span className="text-[var(--color-text-muted)] truncate">{r.relationType}</span>
                       <span className="shrink-0 text-[var(--color-primary)]/70">-</span>
-                      <span className="text-white/60 truncate">{b?.name ?? "?"}</span>
+                      <span className="text-[var(--color-text-secondary)] truncate">{b?.name ?? "?"}</span>
                     </div>
                   );
                 })}
@@ -204,13 +204,13 @@ export function CharacterList() {
       ) : (
         <div className="flex-1 flex flex-col min-h-0">
           {/* Graph toolbar */}
-          <div className="flex items-center justify-between px-3 py-1.5 border-b border-white/5">
-            <span className="text-[10px] text-white/30">
+          <div className="flex items-center justify-between px-3 py-1.5 border-b border-[var(--color-border)]">
+            <span className="text-[10px] text-[var(--color-text-muted)]">
               拖拽节点调整位置 / 点击节点查看角色 / 点击连线查看关系
             </span>
             <button
               onClick={() => { setEditingRelation(null); setShowRelationEditor(true); }}
-              className="rounded bg-[var(--color-primary)] px-2 py-1 text-xs text-white hover:opacity-90"
+              className="rounded bg-[var(--color-primary)] px-2 py-1 text-[var(--text-xs)] text-white hover:opacity-90"
             >
               + 添加关系
             </button>
@@ -219,7 +219,7 @@ export function CharacterList() {
           {/* Graph */}
           <div className="flex-1 min-h-0 p-2">
             {characters.length < 2 ? (
-              <div className="flex items-center justify-center h-full text-xs text-white/20">
+              <div className="flex items-center justify-center h-full text-[var(--text-xs)] text-[var(--color-text-muted)]">
                 至少需要2个角色才能显示关系图谱
               </div>
             ) : (
@@ -236,8 +236,8 @@ export function CharacterList() {
           </div>
 
           {/* Legend */}
-          <div className="flex items-center gap-3 px-3 py-1.5 border-t border-white/5">
-            <span className="text-[10px] text-white/20">图例:</span>
+          <div className="flex items-center gap-3 px-3 py-1.5 border-t border-[var(--color-border)]">
+            <span className="text-[10px] text-[var(--color-text-muted)]">图例:</span>
             {[
               { label: "主角", color: "#f59e0b" },
               { label: "反派", color: "#ef4444" },
@@ -249,7 +249,7 @@ export function CharacterList() {
                   className="inline-block h-2 w-2 rounded-full"
                   style={{ backgroundColor: item.color }}
                 />
-                <span className="text-[10px] text-white/30">{item.label}</span>
+                <span className="text-[10px] text-[var(--color-text-muted)]">{item.label}</span>
               </div>
             ))}
           </div>

@@ -45,17 +45,17 @@ function ScheduleItemRow({
   );
 
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 border-b border-white/5 last:border-0">
-      <span className="flex-1 truncate text-xs text-white/60">
+    <div className="flex items-center gap-2 px-3 py-1.5 border-b border-[var(--color-border)] last:border-0">
+      <span className="flex-1 truncate text-xs text-[var(--color-text-secondary)]">
         {item.title}
       </span>
-      <span className="text-[10px] text-white/20 tabular-nums">
+      <span className="text-[10px] text-[var(--color-text-muted)] tabular-nums">
         {item.wordCount > 0 ? `${item.wordCount}字` : ""}
       </span>
       <PublishStatusBadge status={item.publishStatus} />
       <button
         onClick={() => onStatusChange(item.id, NEXT_STATUS[item.publishStatus])}
-        className="rounded px-1 py-0.5 text-[10px] text-white/30 hover:text-white/50 hover:bg-white/5 transition-colors"
+        className="rounded px-1 py-0.5 text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-2)] transition-colors"
         title="切换状态"
       >
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -70,7 +70,7 @@ function ScheduleItemRow({
                 type="datetime-local"
                 value={scheduleDate}
                 onChange={(e) => setScheduleDate(e.target.value)}
-                className="w-28 rounded border border-white/10 bg-white/[0.02] px-1 py-0.5 text-[10px] text-white/50 focus:outline-none focus:border-[var(--color-primary)]/30"
+                className="w-28 rounded border border-[var(--color-border)] bg-[var(--color-surface-2)] px-1 py-0.5 text-[10px] text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-primary)]/30"
               />
               <button
                 onClick={() => {
@@ -85,7 +85,7 @@ function ScheduleItemRow({
               </button>
               <button
                 onClick={() => setEditingSchedule(false)}
-                className="rounded px-1 py-0.5 text-[10px] text-white/30 hover:text-white/50 transition-colors"
+                className="rounded px-1 py-0.5 text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
               >
                 取消
               </button>
@@ -93,7 +93,7 @@ function ScheduleItemRow({
           ) : (
             <button
               onClick={() => setEditingSchedule(true)}
-              className="rounded px-1 py-0.5 text-[10px] text-white/30 hover:text-white/50 hover:bg-white/5 transition-colors"
+              className="rounded px-1 py-0.5 text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-2)] transition-colors"
               title="设置定时发布"
             >
               {item.scheduledAt ? formatDateTime(item.scheduledAt) : "设时间"}
@@ -151,7 +151,7 @@ export function SchedulePanel() {
 
   if (!currentProject) {
     return (
-      <div className="flex h-full items-center justify-center text-xs text-white/20">
+      <div className="flex h-full items-center justify-center text-xs text-[var(--color-text-muted)]">
         选择作品查看排期
       </div>
     );
@@ -159,7 +159,7 @@ export function SchedulePanel() {
 
   if (loading && scheduleItems.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center text-xs text-white/20">
+      <div className="flex h-full items-center justify-center text-xs text-[var(--color-text-muted)]">
         加载中...
       </div>
     );
@@ -168,8 +168,8 @@ export function SchedulePanel() {
   return (
     <div className="flex h-full flex-col">
       {/* Stats bar */}
-      <div className="flex items-center gap-3 border-b border-white/5 px-3 py-2">
-        <span className="text-[10px] text-white/30">
+      <div className="flex items-center gap-3 border-b border-[var(--color-border)] px-3 py-2">
+        <span className="text-[10px] text-[var(--color-text-muted)]">
           存稿: {stats.chapters}章 / {stats.words}字
         </span>
       </div>
@@ -181,7 +181,7 @@ export function SchedulePanel() {
           if (items.length === 0) return null;
           return (
             <div key={group.key}>
-              <div className="flex items-center gap-1 px-3 py-1 text-[10px] text-white/20">
+              <div className="flex items-center gap-1 px-3 py-1 text-[10px] text-[var(--color-text-muted)]">
                 <PublishStatusBadge status={group.key} />
                 <span>{items.length}章</span>
               </div>

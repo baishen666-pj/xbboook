@@ -45,13 +45,13 @@ function OutlineItem({ node, onEdit, onDelete, onCreateChild, onGenerate, genera
   return (
     <div>
       <div
-        className="group flex items-center gap-1.5 rounded px-2 py-1 text-sm text-white/70 hover:bg-white/5 cursor-pointer"
+        className="group flex items-center gap-1.5 rounded px-2 py-1 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-2)] cursor-pointer"
         style={{ paddingLeft: `${8 + indent}px` }}
       >
         {node.children.length > 0 ? (
           <button
             onClick={() => setExpanded(!expanded)}
-            className="shrink-0 text-white/30 text-xs w-4"
+            className="shrink-0 text-[var(--color-text-muted)] text-xs w-4"
           >
             {expanded ? "▼" : "▶"}
           </button>
@@ -63,21 +63,21 @@ function OutlineItem({ node, onEdit, onDelete, onCreateChild, onGenerate, genera
           <button
             onClick={(e) => { e.stopPropagation(); onGenerate(node); }}
             disabled={isGenerating}
-            className="rounded p-0.5 text-white/30 hover:bg-[var(--color-primary)]/10 hover:text-[var(--color-primary)] text-[10px] disabled:opacity-40"
+            className="rounded p-0.5 text-[var(--color-text-muted)] hover:bg-[var(--color-primary)]/10 hover:text-[var(--color-primary)] text-[10px] disabled:opacity-40"
             title={isGenerating ? "生成中..." : "AI 生成章节"}
           >
             {isGenerating ? "⏳" : "📖"}
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); onCreateChild(node.id); }}
-            className="rounded p-0.5 text-white/30 hover:bg-white/5 hover:text-white/60 text-[10px]"
+            className="rounded p-0.5 text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-secondary)] text-[10px]"
             title="添加子节点"
           >
             +
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(node.id); }}
-            className="rounded p-0.5 text-white/30 hover:bg-red-500/10 hover:text-red-400 text-[10px]"
+            className="rounded p-0.5 text-[var(--color-text-muted)] hover:bg-red-500/10 hover:text-red-400 text-[10px]"
             title="删除"
           >
             ×
@@ -238,14 +238,14 @@ export function OutlinePanel() {
   return (
     <div className="flex flex-col h-full">
       {/* Add root node */}
-      <div className="flex items-center gap-2 border-b border-white/5 px-3 py-2">
+      <div className="flex items-center gap-2 border-b border-[var(--color-border)] px-3 py-2">
         <input
           type="text"
           value={newTitle}
           onChange={(e) => setNewTitle(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleCreate()}
           placeholder="新大纲节点..."
-          className="flex-1 rounded border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/70 placeholder:text-white/20 focus:outline-none focus:border-[var(--color-primary)]/50"
+          className="flex-1 rounded border border-[var(--color-border)] bg-[var(--color-surface-2)] px-2 py-1 text-xs text-[var(--color-text-secondary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-primary)]/50"
         />
         <button
           onClick={() => handleCreate()}
@@ -260,7 +260,7 @@ export function OutlinePanel() {
             "rounded px-2 py-1 text-xs transition-colors",
             showTemplates
               ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
-              : "text-white/30 hover:text-white/50",
+              : "text-[var(--color-text-muted)] hover:text-[var(--color-text-muted)]",
           ].join(" ")}
           title="从模板导入"
         >
@@ -276,7 +276,7 @@ export function OutlinePanel() {
           {generatingId && (
             <button
               onClick={() => { abortRef.current?.abort(); setGeneratingId(null); setGeneratingStatus(""); }}
-              className="ml-auto text-white/40 hover:text-white/60"
+              className="ml-auto text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"
             >
               取消
             </button>
@@ -297,7 +297,7 @@ export function OutlinePanel() {
       ) : (
         <div className="flex-1 overflow-y-auto py-1">
           {tree.length === 0 && (
-            <div className="py-8 text-center text-xs text-white/20">
+            <div className="py-8 text-center text-xs text-[var(--color-text-muted)]">
               还没有大纲，添加你的第一个节点
             </div>
           )}
@@ -324,14 +324,14 @@ export function OutlinePanel() {
 
       {/* Add child input */}
       {addingChildOf && (
-        <div className="flex items-center gap-2 border-t border-white/5 px-3 py-2">
+        <div className="flex items-center gap-2 border-t border-[var(--color-border)] px-3 py-2">
           <input
             type="text"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleCreate(addingChildOf)}
             placeholder="子节点标题..."
-            className="flex-1 rounded border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/70 placeholder:text-white/20 focus:outline-none"
+            className="flex-1 rounded border border-[var(--color-border)] bg-[var(--color-surface-2)] px-2 py-1 text-xs text-[var(--color-text-secondary)] placeholder:text-[var(--color-text-muted)] focus:outline-none"
             autoFocus
           />
           <button
@@ -342,7 +342,7 @@ export function OutlinePanel() {
           </button>
           <button
             onClick={() => setAddingChildOf(null)}
-            className="rounded px-2 py-1 text-xs text-white/40 hover:bg-white/5"
+            className="rounded px-2 py-1 text-xs text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)]"
           >
             取消
           </button>
@@ -352,23 +352,23 @@ export function OutlinePanel() {
       {/* Edit modal */}
       {editing && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-md rounded-xl border border-white/10 bg-[oklch(0.16_0_0)] p-4 shadow-2xl">
-            <h3 className="mb-3 text-sm font-medium text-white/80">编辑大纲节点</h3>
+          <div className="w-full max-w-md rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4 shadow-2xl">
+            <h3 className="mb-3 text-sm font-medium text-[var(--color-text-primary)]">编辑大纲节点</h3>
             <input
               type="text"
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
-              className="w-full rounded border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white/80 mb-2 focus:outline-none focus:border-[var(--color-primary)]/50"
+              className="w-full rounded border border-[var(--color-border)] bg-[var(--color-surface-2)] px-2 py-1.5 text-sm text-[var(--color-text-primary)] mb-2 focus:outline-none focus:border-[var(--color-primary)]/50"
             />
             <textarea
               value={editContent}
               onChange={(e) => setEditContent(e.target.value)}
               placeholder="大纲描述..."
               rows={4}
-              className="w-full rounded border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white/80 placeholder:text-white/15 focus:outline-none resize-none"
+              className="w-full rounded border border-[var(--color-border)] bg-[var(--color-surface-2)] px-2 py-1.5 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none resize-none"
             />
             <div className="flex justify-end gap-2 mt-3">
-              <button onClick={() => setEditing(null)} className="rounded px-3 py-1.5 text-sm text-white/40 hover:bg-white/5">取消</button>
+              <button onClick={() => setEditing(null)} className="rounded px-3 py-1.5 text-sm text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)]">取消</button>
               <button onClick={handleUpdate} className="rounded bg-[var(--color-primary)] px-3 py-1.5 text-sm text-white hover:opacity-90">保存</button>
             </div>
           </div>

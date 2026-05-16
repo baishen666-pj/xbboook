@@ -49,16 +49,16 @@ export function SnippetForm({ item, onSubmit, onCancel }: SnippetFormProps) {
     <div className="absolute inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-md rounded-lg bg-[#1a1a2e] border border-white/10 p-4 space-y-3"
+        className="w-full max-w-md rounded-lg bg-[var(--color-surface-2)] border border-[var(--color-border)] p-4 space-y-3"
       >
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-white/80">
+          <h3 className="text-sm font-medium text-[var(--color-text-primary)]">
             {isReadonly ? "查看模板" : isEditing ? "编辑模板" : "新建片段模板"}
           </h3>
           <button
             type="button"
             onClick={onCancel}
-            className="rounded p-1 text-white/30 hover:bg-white/5 hover:text-white/60"
+            className="rounded p-1 text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-secondary)]"
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M2 2l8 8M10 2l-8 8" />
@@ -67,24 +67,24 @@ export function SnippetForm({ item, onSubmit, onCancel }: SnippetFormProps) {
         </div>
 
         <div>
-          <label className="block text-[10px] text-white/30 uppercase tracking-wider mb-1">名称</label>
+          <label className="block text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider mb-1">名称</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={isReadonly}
             placeholder="模板名称"
-            className="w-full rounded bg-white/5 px-2 py-1.5 text-xs text-white/80 placeholder:text-white/20 outline-none focus:bg-white/10 disabled:opacity-50"
+            className="w-full rounded bg-[var(--color-surface-2)] px-2 py-1.5 text-xs text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] outline-none focus:bg-[var(--color-surface-3)] disabled:opacity-50"
           />
         </div>
 
         <div>
-          <label className="block text-[10px] text-white/30 uppercase tracking-wider mb-1">分类</label>
+          <label className="block text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider mb-1">分类</label>
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value as SnippetCategory)}
             disabled={isReadonly}
-            className="w-full rounded bg-white/5 px-2 py-1.5 text-xs text-white/80 outline-none focus:bg-white/10 disabled:opacity-50"
+            className="w-full rounded bg-[var(--color-surface-2)] px-2 py-1.5 text-xs text-[var(--color-text-primary)] outline-none focus:bg-[var(--color-surface-3)] disabled:opacity-50"
           >
             {CATEGORIES.map((c) => (
               <option key={c.value} value={c.value}>{c.label}</option>
@@ -93,14 +93,14 @@ export function SnippetForm({ item, onSubmit, onCancel }: SnippetFormProps) {
         </div>
 
         <div>
-          <label className="block text-[10px] text-white/30 uppercase tracking-wider mb-1">内容</label>
+          <label className="block text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider mb-1">内容</label>
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
             disabled={isReadonly}
             placeholder="片段内容..."
             rows={6}
-            className="w-full rounded bg-white/5 px-2 py-1.5 text-xs text-white/80 placeholder:text-white/20 outline-none focus:bg-white/10 resize-y disabled:opacity-50"
+            className="w-full rounded bg-[var(--color-surface-2)] px-2 py-1.5 text-xs text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] outline-none focus:bg-[var(--color-surface-3)] resize-y disabled:opacity-50"
           />
         </div>
 
@@ -109,7 +109,7 @@ export function SnippetForm({ item, onSubmit, onCancel }: SnippetFormProps) {
             <button
               type="button"
               onClick={onCancel}
-              className="rounded px-3 py-1.5 text-xs text-white/40 hover:bg-white/5"
+              className="rounded px-3 py-1.5 text-xs text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)]"
             >
               取消
             </button>

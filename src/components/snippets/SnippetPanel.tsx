@@ -79,7 +79,7 @@ export function SnippetPanel() {
   return (
     <div className="flex flex-col h-full">
       {/* Category tabs */}
-      <div className="flex items-center gap-1 overflow-x-auto border-b border-white/5 px-2 py-1.5 scrollbar-none">
+      <div className="flex items-center gap-1 overflow-x-auto border-b border-[var(--color-border)] px-2 py-1.5 scrollbar-none">
         {CATEGORY_GROUPS.map((g) => (
           <button
             key={g.key}
@@ -87,7 +87,7 @@ export function SnippetPanel() {
             className={`shrink-0 rounded px-2 py-1 text-xs transition-colors ${
               selectedCategory === g.key
                 ? "bg-[var(--color-primary)]/20 text-[var(--color-primary)]"
-                : "text-white/40 hover:bg-white/5"
+                : "text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)]"
             }`}
           >
             {g.label}
@@ -103,23 +103,23 @@ export function SnippetPanel() {
       </div>
 
       {/* Search */}
-      <div className="px-2 py-1.5 border-b border-white/5">
+      <div className="px-2 py-1.5 border-b border-[var(--color-border)]">
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="搜索片段..."
-          className="w-full rounded bg-white/5 px-2 py-1 text-xs text-white/80 placeholder:text-white/20 outline-none focus:bg-white/10"
+          className="w-full rounded bg-[var(--color-surface-2)] px-2 py-1 text-xs text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] outline-none focus:bg-[var(--color-surface-3)]"
         />
       </div>
 
       {/* Items list */}
       <div className="flex-1 overflow-y-auto p-2 space-y-2">
         {loading && items.length === 0 && (
-          <div className="py-8 text-center text-xs text-white/20">加载中...</div>
+          <div className="py-8 text-center text-xs text-[var(--color-text-muted)]">加载中...</div>
         )}
         {!loading && filteredItems.length === 0 && (
-          <div className="py-8 text-center text-xs text-white/20">
+          <div className="py-8 text-center text-xs text-[var(--color-text-muted)]">
             {items.length === 0 ? "还没有片段模板" : "没有匹配的片段"}
           </div>
         )}
@@ -139,14 +139,14 @@ export function SnippetPanel() {
 
       {/* Preview panel */}
       {previewItem && (
-        <div className="border-t border-white/5 p-3 max-h-[40%] overflow-y-auto">
+        <div className="border-t border-[var(--color-border)] p-3 max-h-[40%] overflow-y-auto">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-white/80">{previewItem.name}</span>
+            <span className="text-sm font-medium text-[var(--color-text-primary)]">{previewItem.name}</span>
             <div className="flex items-center gap-1">
               {!previewItem.isBuiltin && (
                 <button
                   onClick={() => openForm(previewItem)}
-                  className="rounded p-1 text-white/30 hover:bg-white/5 hover:text-white/60"
+                  className="rounded p-1 text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-secondary)]"
                   title="编辑"
                 >
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.2">
@@ -162,7 +162,7 @@ export function SnippetPanel() {
               </button>
             </div>
           </div>
-          <p className="text-xs text-white/50 whitespace-pre-wrap leading-relaxed">{previewItem.content}</p>
+          <p className="text-xs text-[var(--color-text-muted)] whitespace-pre-wrap leading-relaxed">{previewItem.content}</p>
         </div>
       )}
 
@@ -207,7 +207,7 @@ function SnippetCategoryGroup({
     <div>
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="flex items-center gap-1.5 w-full text-[10px] text-white/30 uppercase tracking-wider mb-1"
+        className="flex items-center gap-1.5 w-full text-[10px] text-[var(--color-text-muted)] uppercase tracking-wider mb-1"
       >
         <svg
           width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" strokeWidth="1.5"
@@ -257,7 +257,7 @@ function SnippetCard({
       className={`group rounded-lg border p-2 transition-colors cursor-pointer ${
         isActive
           ? "border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10"
-          : "border-white/5 bg-white/[0.02] hover:bg-white/[0.04]"
+          : "border-[var(--color-border)] bg-[var(--color-surface-2)] hover:bg-[var(--color-surface-3)]"
       }`}
     >
       <div className="flex items-center justify-between gap-2">
@@ -268,14 +268,14 @@ function SnippetCard({
                 内置
               </span>
             )}
-            <span className="text-sm text-white/80 truncate">{item.name}</span>
+            <span className="text-sm text-[var(--color-text-primary)] truncate">{item.name}</span>
           </div>
-          <p className="mt-0.5 text-[10px] text-white/25 truncate">{item.content.slice(0, 40)}...</p>
+          <p className="mt-0.5 text-[10px] text-[var(--color-text-muted)] truncate">{item.content.slice(0, 40)}...</p>
         </div>
         <div className="shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={(e) => { e.stopPropagation(); onInsert(); }}
-            className="rounded p-1 text-white/30 hover:bg-[var(--color-primary)]/10 hover:text-[var(--color-primary)]"
+            className="rounded p-1 text-[var(--color-text-muted)] hover:bg-[var(--color-primary)]/10 hover:text-[var(--color-primary)]"
             title="插入到编辑器"
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.2">
@@ -286,7 +286,7 @@ function SnippetCard({
             <>
               <button
                 onClick={(e) => { e.stopPropagation(); onEdit(); }}
-                className="rounded p-1 text-white/30 hover:bg-white/5 hover:text-white/60"
+                className="rounded p-1 text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)] hover:text-[var(--color-text-secondary)]"
                 title="编辑"
               >
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.2">
@@ -295,7 +295,7 @@ function SnippetCard({
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                className="rounded p-1 text-white/30 hover:bg-red-500/10 hover:text-red-400"
+                className="rounded p-1 text-[var(--color-text-muted)] hover:bg-red-500/10 hover:text-red-400"
                 title="删除"
               >
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.2">

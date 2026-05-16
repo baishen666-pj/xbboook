@@ -43,40 +43,40 @@ export function ForeshadowingForm({ item, onSubmit, onCancel }: Props) {
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-md max-h-[85vh] overflow-y-auto rounded-xl border border-white/10 bg-[oklch(0.16_0_0)] p-4 shadow-2xl">
-        <h3 className="mb-3 text-sm font-medium text-white/80">
+      <div className="w-full max-w-md max-h-[85vh] overflow-y-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4 shadow-2xl">
+        <h3 className="mb-3 text-sm font-medium text-[var(--color-text-primary)]">
           {item ? "编辑伏笔" : "新建伏笔"}
         </h3>
 
         <form onSubmit={handleSubmit} className="space-y-2.5">
           <div>
-            <label className="block text-xs text-white/40 mb-1">标题</label>
+            <label className="block text-xs text-[var(--color-text-muted)] mb-1">标题</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="伏笔标题"
-              className="w-full rounded border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white/80 placeholder:text-white/15 focus:outline-none focus:border-[var(--color-primary)]/50"
+              className="w-full rounded border border-[var(--color-border)] bg-[var(--color-surface-1)] px-2 py-1.5 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-primary)]/50"
             />
           </div>
 
           <div>
-            <label className="block text-xs text-white/40 mb-1">描述</label>
+            <label className="block text-xs text-[var(--color-text-muted)] mb-1">描述</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="伏笔描述..."
               rows={4}
-              className="w-full rounded border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white/80 placeholder:text-white/15 focus:outline-none focus:border-[var(--color-primary)]/50 resize-none"
+              className="w-full rounded border border-[var(--color-border)] bg-[var(--color-surface-1)] px-2 py-1.5 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-primary)]/50 resize-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs text-white/40 mb-1">埋设章节</label>
+            <label className="block text-xs text-[var(--color-text-muted)] mb-1">埋设章节</label>
             <select
               value={plantChapterId}
               onChange={(e) => setPlantChapterId(e.target.value)}
-              className="w-full rounded border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white/80 focus:outline-none"
+              className="w-full rounded border border-[var(--color-border)] bg-[var(--color-surface-1)] px-2 py-1.5 text-sm text-[var(--color-text-primary)] focus:outline-none"
             >
               <option value="">未指定</option>
               {chapters.map((ch) => (
@@ -86,11 +86,11 @@ export function ForeshadowingForm({ item, onSubmit, onCancel }: Props) {
           </div>
 
           <div>
-            <label className="block text-xs text-white/40 mb-1">预期回收章节</label>
+            <label className="block text-xs text-[var(--color-text-muted)] mb-1">预期回收章节</label>
             <select
               value={expectedHarvestChapterId}
               onChange={(e) => setExpectedHarvestChapterId(e.target.value)}
-              className="w-full rounded border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white/80 focus:outline-none"
+              className="w-full rounded border border-[var(--color-border)] bg-[var(--color-surface-1)] px-2 py-1.5 text-sm text-[var(--color-text-primary)] focus:outline-none"
             >
               <option value="">未指定</option>
               {chapters.map((ch) => (
@@ -100,7 +100,7 @@ export function ForeshadowingForm({ item, onSubmit, onCancel }: Props) {
           </div>
 
           <div>
-            <label className="block text-xs text-white/40 mb-1">重要程度</label>
+            <label className="block text-xs text-[var(--color-text-muted)] mb-1">重要程度</label>
             <div className="flex gap-1.5">
               {IMPORTANCE_OPTIONS.map((opt) => (
                 <button
@@ -110,7 +110,7 @@ export function ForeshadowingForm({ item, onSubmit, onCancel }: Props) {
                   className={`rounded px-2 py-1 text-xs transition-colors ${
                     importance === opt.value
                       ? "bg-[var(--color-primary)]/20 text-[var(--color-primary)]"
-                      : "text-white/30 hover:bg-white/5"
+                      : "text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)]"
                   }`}
                 >
                   {opt.label}
@@ -123,7 +123,7 @@ export function ForeshadowingForm({ item, onSubmit, onCancel }: Props) {
             <button
               type="button"
               onClick={onCancel}
-              className="rounded px-3 py-1.5 text-sm text-white/40 hover:bg-white/5"
+              className="rounded px-3 py-1.5 text-sm text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)]"
             >
               取消
             </button>

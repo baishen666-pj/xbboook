@@ -46,20 +46,20 @@ export function CharacterForm({ character, onSubmit, onCancel }: Props) {
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-md max-h-[85vh] overflow-y-auto rounded-xl border border-white/10 bg-[oklch(0.16_0_0)] p-4 shadow-2xl">
-        <h3 className="mb-3 text-sm font-medium text-white/80">
+      <div className="w-full max-w-md max-h-[85vh] overflow-y-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4 shadow-2xl">
+        <h3 className="mb-3 text-[var(--text-sm)] font-medium text-[var(--color-text-primary)]">
           {character ? "编辑角色" : "新建角色"}
         </h3>
 
         <form onSubmit={handleSubmit} className="space-y-2.5">
           {FIELDS.map((f) => (
             <div key={f.key}>
-              <label className="block text-xs text-white/40 mb-1">{f.label}</label>
+              <label className="block text-[var(--text-xs)] text-[var(--color-text-muted)] mb-1">{f.label}</label>
               {f.key === "roleType" ? (
                 <select
                   value={form[f.key]}
                   onChange={(e) => update(f.key, e.target.value)}
-                  className="w-full rounded border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white/80 focus:outline-none focus:border-[var(--color-primary)]/50"
+                  className="w-full rounded border border-[var(--color-border)] bg-[var(--color-surface-1)] px-2 py-1.5 text-[var(--text-sm)] text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-primary)]/50"
                 >
                   {ROLE_TYPES.map((r) => (
                     <option key={r.value} value={r.value}>{r.label}</option>
@@ -71,7 +71,7 @@ export function CharacterForm({ character, onSubmit, onCancel }: Props) {
                   onChange={(e) => update(f.key, e.target.value)}
                   placeholder={f.placeholder}
                   rows={3}
-                  className="w-full rounded border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white/80 placeholder:text-white/15 focus:outline-none focus:border-[var(--color-primary)]/50 resize-none"
+                  className="w-full rounded border border-[var(--color-border)] bg-[var(--color-surface-1)] px-2 py-1.5 text-[var(--text-sm)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-primary)]/50 resize-none"
                 />
               ) : (
                 <input
@@ -79,7 +79,7 @@ export function CharacterForm({ character, onSubmit, onCancel }: Props) {
                   value={form[f.key]}
                   onChange={(e) => update(f.key, e.target.value)}
                   placeholder={f.placeholder}
-                  className="w-full rounded border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white/80 placeholder:text-white/15 focus:outline-none focus:border-[var(--color-primary)]/50"
+                  className="w-full rounded border border-[var(--color-border)] bg-[var(--color-surface-1)] px-2 py-1.5 text-[var(--text-sm)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-primary)]/50"
                 />
               )}
             </div>
@@ -89,13 +89,13 @@ export function CharacterForm({ character, onSubmit, onCancel }: Props) {
             <button
               type="button"
               onClick={onCancel}
-              className="rounded px-3 py-1.5 text-sm text-white/40 hover:bg-white/5"
+              className="rounded px-3 py-1.5 text-[var(--text-sm)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)]"
             >
               取消
             </button>
             <button
               type="submit"
-              className="rounded bg-[var(--color-primary)] px-3 py-1.5 text-sm text-white hover:opacity-90"
+              className="rounded bg-[var(--color-primary)] px-3 py-1.5 text-[var(--text-sm)] text-white hover:opacity-90"
             >
               {character ? "保存" : "创建"}
             </button>

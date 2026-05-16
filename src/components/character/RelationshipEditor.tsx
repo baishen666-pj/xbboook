@@ -114,8 +114,8 @@ export function RelationshipEditor({ onClose, editingRelation }: Props) {
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-md rounded-xl border border-white/10 bg-[oklch(0.16_0_0)] p-4 shadow-2xl">
-        <h3 className="mb-3 text-sm font-medium text-white/80">
+      <div className="w-full max-w-md rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-2)] p-4 shadow-2xl">
+        <h3 className="mb-3 text-[var(--text-sm)] font-medium text-[var(--color-text-primary)]">
           {editingRelation ? "编辑关系" : "添加关系"}
         </h3>
 
@@ -123,11 +123,11 @@ export function RelationshipEditor({ onClose, editingRelation }: Props) {
           {!editingRelation && (
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-xs text-white/40 mb-1">角色 A</label>
+                <label className="block text-[var(--text-xs)] text-[var(--color-text-muted)] mb-1">角色 A</label>
                 <select
                   value={characterAId}
                   onChange={(e) => setCharacterAId(e.target.value)}
-                  className="w-full rounded border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white/80 focus:outline-none focus:border-[var(--color-primary)]/50"
+                  className="w-full rounded border border-[var(--color-border)] bg-[var(--color-surface-1)] px-2 py-1.5 text-[var(--text-sm)] text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-primary)]/50"
                 >
                   <option value="">选择角色</option>
                   {characters.map((c) => (
@@ -138,11 +138,11 @@ export function RelationshipEditor({ onClose, editingRelation }: Props) {
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-white/40 mb-1">角色 B</label>
+                <label className="block text-[var(--text-xs)] text-[var(--color-text-muted)] mb-1">角色 B</label>
                 <select
                   value={characterBId}
                   onChange={(e) => setCharacterBId(e.target.value)}
-                  className="w-full rounded border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white/80 focus:outline-none focus:border-[var(--color-primary)]/50"
+                  className="w-full rounded border border-[var(--color-border)] bg-[var(--color-surface-1)] px-2 py-1.5 text-[var(--text-sm)] text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-primary)]/50"
                 >
                   <option value="">选择角色</option>
                   {characters.map((c) => (
@@ -156,32 +156,32 @@ export function RelationshipEditor({ onClose, editingRelation }: Props) {
           )}
 
           {editingRelation && (
-            <div className="flex items-center gap-2 rounded border border-white/5 bg-white/[0.02] px-3 py-2 text-xs text-white/50">
-              <span className="text-white/70">{getCharacterName(editingRelation.characterAId)}</span>
+            <div className="flex items-center gap-2 rounded border border-[var(--color-border)] bg-[var(--color-surface-1)] px-3 py-2 text-[var(--text-xs)] text-[var(--color-text-muted)]">
+              <span className="text-[var(--color-text-secondary)]">{getCharacterName(editingRelation.characterAId)}</span>
               <span className="text-[var(--color-primary)]">&lt;-&gt;</span>
-              <span className="text-white/70">{getCharacterName(editingRelation.characterBId)}</span>
+              <span className="text-[var(--color-text-secondary)]">{getCharacterName(editingRelation.characterBId)}</span>
             </div>
           )}
 
           {isDuplicate && (
-            <p className="text-xs text-red-400">不能选择相同的角色</p>
+            <p className="text-[var(--text-xs)] text-red-400">不能选择相同的角色</p>
           )}
 
           {existingRelation && (
-            <p className="text-xs text-amber-400">
+            <p className="text-[var(--text-xs)] text-amber-400">
               这两个角色已有关系: {existingRelation.relationType}
             </p>
           )}
 
           <div>
-            <label className="block text-xs text-white/40 mb-1">关系类型</label>
+            <label className="block text-[var(--text-xs)] text-[var(--color-text-muted)] mb-1">关系类型</label>
             <input
               type="text"
               value={relationType}
               onChange={(e) => setRelationType(e.target.value)}
               placeholder="如: 朋友、师徒、恋人..."
               list="relation-presets"
-              className="w-full rounded border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white/80 placeholder:text-white/15 focus:outline-none focus:border-[var(--color-primary)]/50"
+              className="w-full rounded border border-[var(--color-border)] bg-[var(--color-surface-1)] px-2 py-1.5 text-[var(--text-sm)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-primary)]/50"
             />
             <datalist id="relation-presets">
               {RELATION_PRESETS.map((p) => (
@@ -191,18 +191,18 @@ export function RelationshipEditor({ onClose, editingRelation }: Props) {
           </div>
 
           <div>
-            <label className="block text-xs text-white/40 mb-1">描述</label>
+            <label className="block text-[var(--text-xs)] text-[var(--color-text-muted)] mb-1">描述</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="描述这段关系的细节..."
               rows={2}
-              className="w-full rounded border border-white/10 bg-white/5 px-2 py-1.5 text-sm text-white/80 placeholder:text-white/15 focus:outline-none focus:border-[var(--color-primary)]/50 resize-none"
+              className="w-full rounded border border-[var(--color-border)] bg-[var(--color-surface-1)] px-2 py-1.5 text-[var(--text-sm)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-primary)]/50 resize-none"
             />
           </div>
 
           {error && (
-            <p className="text-xs text-red-400">{error}</p>
+            <p className="text-[var(--text-xs)] text-red-400">{error}</p>
           )}
 
           <div className="flex justify-between gap-2 pt-1">
@@ -211,7 +211,7 @@ export function RelationshipEditor({ onClose, editingRelation }: Props) {
                 type="button"
                 onClick={handleDelete}
                 disabled={isSubmitting}
-                className="rounded px-3 py-1.5 text-sm text-red-400 hover:bg-red-500/10 disabled:opacity-50"
+                className="rounded px-3 py-1.5 text-[var(--text-sm)] text-red-400 hover:bg-red-500/10 disabled:opacity-50"
               >
                 删除
               </button>
@@ -220,14 +220,14 @@ export function RelationshipEditor({ onClose, editingRelation }: Props) {
             <button
               type="button"
               onClick={onClose}
-              className="rounded px-3 py-1.5 text-sm text-white/40 hover:bg-white/5"
+              className="rounded px-3 py-1.5 text-[var(--text-sm)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)]"
             >
               取消
             </button>
             <button
               type="submit"
               disabled={isSubmitting || !relationType.trim() || isDuplicate || (!editingRelation && (!characterAId || !characterBId))}
-              className="rounded bg-[var(--color-primary)] px-3 py-1.5 text-sm text-white hover:opacity-90 disabled:opacity-50"
+              className="rounded bg-[var(--color-primary)] px-3 py-1.5 text-[var(--text-sm)] text-white hover:opacity-90 disabled:opacity-50"
             >
               {isSubmitting ? "..." : editingRelation ? "保存" : "创建"}
             </button>
