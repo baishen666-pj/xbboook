@@ -7,18 +7,27 @@ import { CharacterList } from "@/components/character/CharacterList";
 import { WorldviewList } from "@/components/worldview/WorldviewList";
 import { OutlinePanel } from "@/components/outline/OutlinePanel";
 import { VersionPanel } from "@/components/version/VersionPanel";
+import { SchedulePanel } from "@/components/schedule/SchedulePanel";
+import { ForeshadowingPanel } from "@/components/foreshadowing/ForeshadowingPanel";
 import { SearchPanel } from "@/components/search/SearchPanel";
 import { ImportPanel } from "@/components/settings/ImportPanel";
 import { WritingGoalPanel } from "@/components/settings/WritingGoalPanel";
+import { StoryArcPanel } from "@/components/story-arcs/StoryArcPanel";
 
-type Tab = "chapters" | "characters" | "worldview" | "outline" | "versions";
+import { SnippetPanel } from "@/components/snippets/SnippetPanel";
+
+type Tab = "chapters" | "characters" | "worldview" | "outline" | "versions" | "schedule" | "foreshadowing" | "snippets" | "arcs";
 
 const TABS: Array<{ key: Tab; label: string }> = [
   { key: "chapters", label: "章节" },
   { key: "characters", label: "角色" },
   { key: "worldview", label: "世界观" },
   { key: "outline", label: "大纲" },
+  { key: "foreshadowing", label: "伏笔" },
+  { key: "arcs", label: "弧线" },
+  { key: "snippets", label: "片段" },
   { key: "versions", label: "历史" },
+  { key: "schedule", label: "排期" },
 ];
 
 export function ChapterSidebar() {
@@ -42,51 +51,58 @@ export function ChapterSidebar() {
         <div className="flex items-center gap-1">
           <button
             onClick={toggleSearch}
-            className={`rounded-[var(--radius-sm)] p-1 transition-colors ${
+            className={`touch-target rounded-[var(--radius-sm)] p-1 transition-colors ${
               isSearchOpen
                 ? "text-[var(--color-primary)] bg-[var(--color-primary-subtle)]"
                 : "text-[var(--color-text-muted)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)]"
             }`}
             title="搜索 (Ctrl+Shift+F)"
+            aria-label="搜索"
+            aria-expanded={isSearchOpen}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
           </button>
           <button
             onClick={() => setShowImport(!showImport)}
-            className={`rounded-[var(--radius-sm)] p-1 transition-colors ${
+            className={`touch-target rounded-[var(--radius-sm)] p-1 transition-colors ${
               showImport
                 ? "text-[var(--color-primary)] bg-[var(--color-primary-subtle)]"
                 : "text-[var(--color-text-muted)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)]"
             }`}
             title="导入文件"
+            aria-label="导入文件"
+            aria-expanded={showImport}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
             </svg>
           </button>
           <button
             onClick={() => setShowGoal(!showGoal)}
-            className={`rounded-[var(--radius-sm)] p-1 transition-colors ${
+            className={`touch-target rounded-[var(--radius-sm)] p-1 transition-colors ${
               showGoal
                 ? "text-[var(--color-primary)] bg-[var(--color-primary-subtle)]"
                 : "text-[var(--color-text-muted)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)]"
             }`}
             title="写作目标"
+            aria-label="写作目标"
+            aria-expanded={showGoal}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <circle cx="12" cy="12" r="10" />
               <path d="M12 6v6l4 2" />
             </svg>
           </button>
           <button
             onClick={toggleLeftPanel}
-            className="rounded-[var(--radius-sm)] p-1 text-[var(--color-text-muted)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)] transition-colors"
+            className="touch-target rounded-[var(--radius-sm)] p-1 text-[var(--color-text-muted)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)] transition-colors"
             title="关闭面板"
+            aria-label="关闭侧边栏"
           >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
               <path d="M9 2L4 7l5 5" />
             </svg>
           </button>
@@ -95,19 +111,22 @@ export function ChapterSidebar() {
 
       {/* Search overlay */}
       {isSearchOpen && (
-        <div className="border-b border-[var(--color-border)]" style={{ height: "40vh", minHeight: 160 }}>
+        <div className="border-b border-[var(--color-border)] tab-content-enter" style={{ height: "40vh", minHeight: 160 }}>
           <SearchPanel onClose={closeSearch} />
         </div>
       )}
 
       {/* Tabs */}
-      <div className="flex border-b border-[var(--color-border)]">
+      <div className="flex border-b border-[var(--color-border)]" role="tablist" aria-label="侧边栏标签页">
         {TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveLeftTab(tab.key)}
+            role="tab"
+            aria-selected={activeLeftTab === tab.key}
+            aria-controls={`tabpanel-${tab.key}`}
             className={[
-              "flex-1 px-1 py-2 text-[var(--text-xs)] transition-colors",
+              "flex-1 px-1 py-2 text-[var(--text-xs)] transition-colors min-h-[44px]",
               activeLeftTab === tab.key
                 ? "border-b-2 border-[var(--color-primary)] text-[var(--color-primary)]"
                 : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]",
@@ -119,20 +138,37 @@ export function ChapterSidebar() {
       </div>
 
       {/* Content */}
-      {showImport ? (
-        <ImportPanel onClose={() => setShowImport(false)} />
-      ) : showGoal ? (
-        <WritingGoalPanel />
-      ) : activeLeftTab === "versions" ? (
-        <VersionPanel />
-      ) : (
-        <ScrollArea className="flex-1">
-          {activeLeftTab === "chapters" && <VolumeTree />}
-          {activeLeftTab === "characters" && <CharacterList />}
-          {activeLeftTab === "worldview" && <WorldviewList />}
-          {activeLeftTab === "outline" && <OutlinePanel />}
-        </ScrollArea>
-      )}
+      <div className="flex-1 overflow-hidden">
+        {showImport ? (
+          <div className="tab-content-enter h-full" role="tabpanel">
+            <ImportPanel onClose={() => setShowImport(false)} />
+          </div>
+        ) : showGoal ? (
+          <div className="tab-content-enter h-full" role="tabpanel">
+            <WritingGoalPanel />
+          </div>
+        ) : activeLeftTab === "versions" ? (
+          <div id="tabpanel-versions" className="tab-content-enter h-full" role="tabpanel" aria-label="历史版本">
+            <VersionPanel />
+          </div>
+        ) : activeLeftTab === "schedule" ? (
+          <div id="tabpanel-schedule" className="tab-content-enter h-full" role="tabpanel" aria-label="排期">
+            <SchedulePanel />
+          </div>
+        ) : (
+          <ScrollArea className="h-full">
+            <div className="tab-content-enter">
+              {activeLeftTab === "chapters" && <div id="tabpanel-chapters" role="tabpanel" aria-label="章节列表"><VolumeTree /></div>}
+              {activeLeftTab === "characters" && <div id="tabpanel-characters" role="tabpanel" aria-label="角色列表"><CharacterList /></div>}
+              {activeLeftTab === "worldview" && <div id="tabpanel-worldview" role="tabpanel" aria-label="世界观"><WorldviewList /></div>}
+              {activeLeftTab === "outline" && <div id="tabpanel-outline" role="tabpanel" aria-label="大纲"><OutlinePanel /></div>}
+              {activeLeftTab === "foreshadowing" && <div id="tabpanel-foreshadowing" role="tabpanel" aria-label="伏笔"><ForeshadowingPanel /></div>}
+              {activeLeftTab === "arcs" && <div id="tabpanel-arcs" role="tabpanel" aria-label="故事弧线"><StoryArcPanel /></div>}
+              {activeLeftTab === "snippets" && <div id="tabpanel-snippets" role="tabpanel" aria-label="片段"><SnippetPanel /></div>}
+            </div>
+          </ScrollArea>
+        )}
+      </div>
     </div>
   );
 }

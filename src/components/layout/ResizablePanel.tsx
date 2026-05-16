@@ -68,6 +68,13 @@ export function ResizablePanel({
         className="absolute top-0 bottom-0 z-10 w-1 cursor-col-resize hover:bg-[var(--color-primary)]/30 transition-colors duration-[var(--duration-fast)]"
         style={{ [side === "left" ? "right" : "left"]: 0 }}
         onMouseDown={handleMouseDown}
+        role="separator"
+        aria-orientation="vertical"
+        aria-valuenow={width}
+        aria-valuemin={minWidth}
+        aria-valuemax={maxWidth}
+        aria-label="调整面板宽度"
+        tabIndex={0}
       />
     </div>
   );
