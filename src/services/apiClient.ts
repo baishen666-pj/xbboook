@@ -31,16 +31,16 @@ async function request<T>(
   const { method = "GET", body, headers = {} } = options;
 
   try {
+    const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
     const config: RequestInit = {
       method,
-      headers: {
-        "Content-Type": "application/json",
-        ...headers,
-      },
+      headers: isFormData
+        ? { ...headers }
+        : { "Content-Type": "application/json", ...headers },
     };
 
     if (body !== undefined && method !== "GET") {
-      config.body = JSON.stringify(body);
+      config.body = isFormData ? body : JSON.stringify(body);
     }
 
     const response = await fetch(`${BASE_URL}${path}`, config);
@@ -89,5 +89,9 @@ export const apiClient = {
 
   delete<T>(path: string): Promise<ApiResponse<T>> {
     return request<T>(path, { method: "DELETE" });
+  },
+
+  upload<T>(path: string, formData: FormData): Promise<ApiResponse<T>> {
+    return request<T>(path, { method: "POST", body: formData });
   },
 };

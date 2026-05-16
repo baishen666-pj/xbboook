@@ -1,47 +1,26 @@
 import { useState, useEffect, useCallback } from "react";
 import { useProjectStore } from "@/stores/projectStore";
-
-interface EarnedAchievement {
-  id: string;
-  badge_type: string;
-  earned_at: string;
-  metadata: string | null;
-}
-
-interface BadgeDefinition {
-  type: string;
-  name: string;
-  description: string;
-  icon: string;
-}
-
-interface AchievementData {
-  earned: EarnedAchievement[];
-  definitions: BadgeDefinition[];
-}
+import { fetchAchievements, type AchievementData } from "@/services/achievementService";
 
 export function AchievementPanel() {
   const currentProject = useProjectStore((s) => s.currentProject);
   const [data, setData] = useState<AchievementData | null>(null);
 
-  const fetchAchievements = useCallback(async () => {
+  const loadAchievements = useCallback(async () => {
     if (!currentProject) return;
     try {
-      const res = await fetch(`/api/projects/${currentProject.id}/achievements`);
-      if (res.ok) {
-        const json = await res.json();
-        setData(json.data);
-      }
+      const result = await fetchAchievements(currentProject.id);
+      if (result) setData(result);
     } catch { /* ignore */ }
   }, [currentProject]);
 
   useEffect(() => {
-    fetchAchievements();
-  }, [fetchAchievements]);
+    loadAchievements();
+  }, [loadAchievements]);
 
   if (!data) return null;
 
-  const earnedTypes = new Set(data.earned.map((a) => a.badge_type));
+  const earnedTypes = new Set(data.earned.map((a) => a.badgeType));
   const earnedCount = data.earned.length;
   const totalCount = data.definitions.length;
 

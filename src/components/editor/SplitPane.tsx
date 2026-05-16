@@ -1,34 +1,15 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Placeholder from "@tiptap/extension-placeholder";
-import CharacterCount from "@tiptap/extension-character-count";
-import Highlight from "@tiptap/extension-highlight";
-import Underline from "@tiptap/extension-underline";
-import TextAlign from "@tiptap/extension-text-align";
-import { Markdown } from "tiptap-markdown";
 import { useUiStore } from "@/stores/uiStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { useEditorStore } from "@/stores/editorStore";
 import { chapterService } from "@/services/chapterService";
-import { GhostMark } from "./GhostMark";
+import { getEditorExtensions } from "./editorExtensions";
 import "@/styles/editor.css";
 
 function ReadOnlyEditor({ content }: { content: string }) {
   const editor = useEditor({
-    extensions: [
-      StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
-      Placeholder.configure({ placeholder: "" }),
-      CharacterCount,
-      Highlight.configure({ multicolor: false }),
-      Underline,
-      TextAlign.configure({ types: ["heading", "paragraph"] }),
-      Markdown.configure({
-        transformPastedText: true,
-        transformCopiedText: true,
-      }),
-      GhostMark,
-    ],
+    extensions: getEditorExtensions(""),
     content,
     editable: false,
     editorProps: {

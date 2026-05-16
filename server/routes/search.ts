@@ -32,16 +32,21 @@ router.post('/', async (req: Request<SearchParams>, res) => {
   const CONTEXT = 30;
   const MAX_RESULTS = 50;
 
-  for (const ch of chapters) {
-    if (results.length >= MAX_RESULTS) break;
+  const chapterContents = await Promise.all(
+    chapters.map(async (ch) => {
+      try {
+        const content = await readChapter(ch.project_id, ch.id);
+        return { ch, content };
+      } catch {
+        return null;
+      }
+    }),
+  );
 
-    let content: string;
-    try {
-      content = await readChapter(ch.project_id, ch.id);
-    } catch {
-      continue;
-    }
+  for (const entry of chapterContents) {
+    if (!entry || results.length >= MAX_RESULTS) continue;
 
+    const { ch, content } = entry;
     const plain = content.replace(/<[^>]+>/g, '').replace(/&[^;]+;/g, ' ');
     const lower = plain.toLowerCase();
     let searchFrom = 0;

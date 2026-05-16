@@ -1,13 +1,6 @@
 import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Placeholder from "@tiptap/extension-placeholder";
-import CharacterCount from "@tiptap/extension-character-count";
-import Highlight from "@tiptap/extension-highlight";
-import Underline from "@tiptap/extension-underline";
-import TextAlign from "@tiptap/extension-text-align";
-import { Markdown } from "tiptap-markdown";
 import { useEffect, useRef, useCallback } from "react";
-import { GhostMark } from "./GhostMark";
+import { getEditorExtensions } from "./editorExtensions";
 import { GhostTextToolbar } from "./GhostTextToolbar";
 import { useEditorStore } from "@/stores/editorStore";
 import { useUiStore } from "@/stores/uiStore";
@@ -38,27 +31,7 @@ export function NovelEditor({ content, onUpdate }: NovelEditorProps) {
   );
 
   const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        heading: { levels: [1, 2, 3] },
-      }),
-      Placeholder.configure({
-        placeholder: "开始写作你的故事...",
-      }),
-      CharacterCount,
-      Highlight.configure({
-        multicolor: false,
-      }),
-      Underline,
-      TextAlign.configure({
-        types: ["heading", "paragraph"],
-      }),
-      Markdown.configure({
-        transformPastedText: true,
-        transformCopiedText: true,
-      }),
-      GhostMark,
-    ],
+    extensions: getEditorExtensions(),
     content,
     editorProps: {
       attributes: {

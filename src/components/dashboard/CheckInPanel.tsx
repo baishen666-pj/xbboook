@@ -1,75 +1,51 @@
 import { useState, useEffect, useCallback } from "react";
 import { useProjectStore } from "@/stores/projectStore";
-
-interface CheckInData {
-  id: string;
-  date: string;
-  words_today: number;
-  note: string | null;
-}
-
-interface CheckInStats {
-  totalCheckIns: number;
-  totalWords: number;
-  currentStreak: number;
-  longestStreak: number;
-}
+import { fetchCalendar, fetchCheckinStats, createCheckin, type CheckinDay, type CheckinStats } from "@/services/checkinService";
 
 export function CheckInPanel() {
   const currentProject = useProjectStore((s) => s.currentProject);
-  const [todayCheckIn, setTodayCheckIn] = useState<CheckInData | null>(null);
-  const [stats, setStats] = useState<CheckInStats | null>(null);
+  const [todayCheckIn, setTodayCheckIn] = useState<CheckinDay | null>(null);
+  const [stats, setStats] = useState<CheckinStats | null>(null);
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
   const [justCheckedIn, setJustCheckedIn] = useState(false);
-  const [newAchievements, setNewAchievements] = useState<Array<{ badge_type: string }>>([]);
+  const [newAchievements, setNewAchievements] = useState<Array<{ badgeType: string }>>([]);
 
   const projectId = currentProject?.id;
 
   const fetchToday = useCallback(async () => {
     if (!projectId) return;
     try {
+      const days = await fetchCalendar(projectId, new Date().getFullYear());
       const today = new Date().toISOString().slice(0, 10);
-      const res = await fetch(`/api/projects/${projectId}/checkins/calendar?year=${new Date().getFullYear()}`);
-      if (res.ok) {
-        const data = await res.json();
-        const todayData = data.data?.find((c: CheckInData) => c.date === today);
-        setTodayCheckIn(todayData || null);
-      }
+      const todayData = days.find((c) => c.date === today);
+      setTodayCheckIn(todayData || null);
     } catch { /* ignore */ }
   }, [projectId]);
 
-  const fetchStats = useCallback(async () => {
+  const fetchStatsData = useCallback(async () => {
     if (!projectId) return;
     try {
-      const res = await fetch(`/api/projects/${projectId}/checkins/stats`);
-      if (res.ok) {
-        const data = await res.json();
-        setStats(data.data);
-      }
+      const data = await fetchCheckinStats(projectId);
+      if (data) setStats(data);
     } catch { /* ignore */ }
   }, [projectId]);
 
   useEffect(() => {
     fetchToday();
-    fetchStats();
-  }, [fetchToday, fetchStats]);
+    fetchStatsData();
+  }, [fetchToday, fetchStatsData]);
 
   const handleCheckIn = async () => {
     if (!projectId || loading) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/projects/${projectId}/checkins`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ note: note || undefined }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setTodayCheckIn(data.data.checkIn);
+      const data = await createCheckin(projectId, note || undefined);
+      if (data) {
+        setTodayCheckIn(data.checkIn);
         setJustCheckedIn(true);
-        setNewAchievements(data.data.newAchievements || []);
-        fetchStats();
+        setNewAchievements(data.newAchievements || []);
+        fetchStatsData();
         setNote("");
         setTimeout(() => setJustCheckedIn(false), 3000);
       }
@@ -122,7 +98,7 @@ export function CheckInPanel() {
           </div>
           {todayCheckIn && (
             <div className="text-xs text-[var(--color-text-muted)] mt-1">
-              今日 {todayCheckIn.words_today} 字
+              今日 {todayCheckIn.wordsToday} 字
             </div>
           )}
         </div>
@@ -150,7 +126,7 @@ export function CheckInPanel() {
           <div className="text-xs font-medium text-[var(--color-warning)]">解锁新成就！</div>
           {newAchievements.map((a, i) => (
             <div key={i} className="text-xs text-[var(--color-text-secondary)] mt-1">
-              {a.badge_type}
+              {a.badgeType}
             </div>
           ))}
         </div>

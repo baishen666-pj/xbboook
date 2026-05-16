@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useProjectStore } from "@/stores/projectStore";
+import { fetchCalendar } from "@/services/checkinService";
 
 function getIntensity(words: number): number {
   if (words === 0) return 0;
@@ -14,24 +15,21 @@ export function WritingCalendar() {
   const [year, setYear] = useState(new Date().getFullYear());
   const [days, setDays] = useState<Map<string, number>>(new Map());
 
-  const fetchCalendar = useCallback(async () => {
+  const fetchCalendarData = useCallback(async () => {
     if (!currentProject) return;
     try {
-      const res = await fetch(`/api/projects/${currentProject.id}/checkins/calendar?year=${year}`);
-      if (res.ok) {
-        const data = await res.json();
-        const map = new Map<string, number>();
-        for (const d of data.data) {
-          map.set(d.date, d.words_today);
-        }
-        setDays(map);
+      const days = await fetchCalendar(currentProject.id, year);
+      const map = new Map<string, number>();
+      for (const d of days) {
+        map.set(d.date, d.wordsToday);
       }
+      setDays(map);
     } catch { /* ignore */ }
   }, [currentProject, year]);
 
   useEffect(() => {
-    fetchCalendar();
-  }, [fetchCalendar]);
+    fetchCalendarData();
+  }, [fetchCalendarData]);
 
   // Generate grid: 52 weeks x 7 days
   const startDate = new Date(year, 0, 1);

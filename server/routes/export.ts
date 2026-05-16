@@ -75,11 +75,17 @@ async function buildChapterGroups(projectId: string): Promise<ChapterGroup[]> {
   const volumes = findVolumes(projectId);
   const volumeMap = new Map(volumes.map((v) => [v.id, v.title]));
 
+  const readResults = await Promise.all(
+    chapters.map(async (ch) => {
+      const content = await readChapter(projectId, ch.id);
+      return { ch, content };
+    }),
+  );
+
   const unassigned: ChapterGroup['chapters'] = [];
   const byVolume = new Map<string, ChapterGroup['chapters']>();
 
-  for (const ch of chapters) {
-    const content = await readChapter(projectId, ch.id);
+  for (const { ch, content } of readResults) {
     if (ch.volume_id) {
       const list = byVolume.get(ch.volume_id) || [];
       list.push({ title: ch.title, content });

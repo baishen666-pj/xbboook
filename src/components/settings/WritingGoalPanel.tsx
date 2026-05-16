@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { analyticsService } from "@/services/analyticsService";
+import { apiClient } from "@/services/apiClient";
 
 export function WritingGoalPanel() {
   const currentProject = useProjectStore((s) => s.currentProject);
@@ -16,12 +17,8 @@ export function WritingGoalPanel() {
 
   const handleSave = async () => {
     if (!currentProject) return;
-    const res = await fetch(`/api/projects/${currentProject.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ daily_target: dailyTarget }),
-    });
-    if (res.ok) {
+    const res = await apiClient.put(`/projects/${currentProject.id}`, { daily_target: dailyTarget });
+    if (res.success) {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     }

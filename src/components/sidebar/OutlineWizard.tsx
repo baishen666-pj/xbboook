@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { useProjectStore } from "@/stores/projectStore";
+import { outlineService } from "@/services/outlineService";
 
 type WizardStep = "concept" | "genre" | "characters" | "world" | "plot" | "review";
 
@@ -135,14 +136,10 @@ export function OutlineWizard({ onClose }: { onClose?: () => void }) {
     ].filter(Boolean);
 
     try {
-      await fetch(`/api/projects/${currentProject.id}/outlines`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: `AI大纲 - ${concept.slice(0, 30)}`,
-          content: parts.join("\n\n"),
-          level: 0,
-        }),
+      await outlineService.create(currentProject.id, {
+        title: `AI大纲 - ${concept.slice(0, 30)}`,
+        content: parts.join("\n\n"),
+        level: 0,
       });
       onClose?.();
     } catch { /* ignore */ }

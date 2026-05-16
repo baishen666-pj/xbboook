@@ -1,3 +1,5 @@
+import { apiClient } from './apiClient';
+
 export interface AiSkill {
   id: string;
   name: string;
@@ -44,21 +46,19 @@ export interface StreamRequest {
 }
 
 export async function fetchSkills(): Promise<AiSkill[]> {
-  const res = await fetch('/api/ai/skills');
-  const json = await res.json();
-  return json.data ?? [];
+  const res = await apiClient.get<AiSkill[]>('/ai/skills');
+  return res.success ? res.data ?? [] : [];
 }
 
 export async function fetchProviders(): Promise<AiProvider[]> {
-  const res = await fetch('/api/ai/providers');
-  const json = await res.json();
-  return json.data ?? [];
+  const res = await apiClient.get<AiProvider[]>('/ai/providers');
+  return res.success ? res.data ?? [] : [];
 }
 
 export async function fetchStatus(): Promise<AiStatus> {
-  const res = await fetch('/api/ai/status');
-  const json = await res.json();
-  return json.data;
+  const res = await apiClient.get<AiStatus>('/ai/status');
+  if (!res.success || !res.data) throw new Error(res.error || '获取 AI 状态失败');
+  return res.data;
 }
 
 export async function updateAiConfig(patch: {
@@ -69,21 +69,15 @@ export async function updateAiConfig(patch: {
   temperature?: number;
   maxTokens?: number;
 }): Promise<AiStatus> {
-  const res = await fetch('/api/ai/config', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(patch),
-  });
-  const json = await res.json();
-  return json.data;
+  const res = await apiClient.patch<AiStatus>('/ai/config', patch);
+  if (!res.success || !res.data) throw new Error(res.error || '更新 AI 配置失败');
+  return res.data;
 }
 
 export async function testConnection(): Promise<{ success: boolean; reply?: string; error?: string }> {
-  const res = await fetch('/api/ai/test', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-  });
-  return res.json();
+  const res = await apiClient.post<{ reply?: string }>('/ai/test', {});
+  if (!res.success) return { success: false, error: res.error ?? undefined };
+  return { success: true, reply: res.data?.reply };
 }
 
 export interface CompletionRequest {
@@ -94,14 +88,9 @@ export interface CompletionRequest {
 }
 
 export async function fetchCompletion(req: CompletionRequest): Promise<string> {
-  const res = await fetch('/api/ai/complete', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(req),
-  });
-  const json = await res.json();
-  if (!json.success) throw new Error(json.error || '补全失败');
-  return json.data.completion;
+  const res = await apiClient.post<{ completion: string }>('/ai/complete', req);
+  if (!res.success || !res.data) throw new Error(res.error || '补全失败');
+  return res.data.completion;
 }
 
 export interface ContextSummary {
@@ -113,10 +102,9 @@ export interface ContextSummary {
 }
 
 export async function fetchContextSummary(projectId: string): Promise<ContextSummary> {
-  const res = await fetch(`/api/ai/context-summary/${projectId}`);
-  const json = await res.json();
-  if (!json.success) throw new Error(json.error || '获取上下文摘要失败');
-  return json.data;
+  const res = await apiClient.get<ContextSummary>(`/ai/context-summary/${projectId}`);
+  if (!res.success || !res.data) throw new Error(res.error || '获取上下文摘要失败');
+  return res.data;
 }
 
 export async function* streamAi(req: StreamRequest, signal?: AbortSignal): AsyncGenerator<{ type: 'chunk' | 'done'; content: string }> {
@@ -171,7 +159,6 @@ export async function* streamAi(req: StreamRequest, signal?: AbortSignal): Async
           }
         } catch (err) {
           if (err instanceof Error && err.message.includes('AI')) throw err;
-          // skip unparseable SSE events
         }
       }
     }

@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { useProjectStore } from "@/stores/projectStore";
+import { apiClient } from "@/services/apiClient";
 
 interface ImportResult {
   imported: number;
@@ -26,18 +27,14 @@ export function ImportPanel({ onClose }: { onClose?: () => void }) {
       const formData = new FormData();
       formData.append("file", file);
 
-      const res = await fetch(`/api/projects/${currentProject.id}/import`, {
-        method: "POST",
-        body: formData,
-      });
-      const json = await res.json();
+      const res = await apiClient.upload<ImportResult>(`/projects/${currentProject.id}/import`, formData);
 
-      if (json.success) {
-        setResult({ ...json.data, warnings: json.warnings });
+      if (res.success) {
+        setResult(res.data);
         setFile(null);
         if (inputRef.current) inputRef.current.value = "";
       } else {
-        setError(json.error || "导入失败");
+        setError(res.error || "导入失败");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "导入失败");
