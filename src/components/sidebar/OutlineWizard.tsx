@@ -109,7 +109,7 @@ export function OutlineWizard({ onClose }: { onClose?: () => void }) {
   const handleNext = () => {
     const nextIndex = stepIndex + 1;
     if (nextIndex < STEPS.length) {
-      const nextStep = STEPS[nextIndex].key;
+      const nextStep = STEPS[nextIndex]!.key;
       setStep(nextStep);
       if (nextStep !== "review" && !results[nextStep]?.content) {
         generateStep(nextStep);
@@ -119,7 +119,7 @@ export function OutlineWizard({ onClose }: { onClose?: () => void }) {
 
   const handlePrev = () => {
     if (stepIndex > 0) {
-      setStep(STEPS[stepIndex - 1].key);
+      setStep(STEPS[stepIndex - 1]!.key);
     }
   };
 
