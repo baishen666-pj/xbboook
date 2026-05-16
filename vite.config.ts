@@ -33,6 +33,12 @@ export default defineConfig({
             if (id.includes('zustand')) {
               return 'vendor-zustand';
             }
+            if (id.includes('vis-network') || id.includes('vis-data')) {
+              return 'vendor-vis';
+            }
+            if (id.includes('@dnd-kit')) {
+              return 'vendor-dnd';
+            }
           }
         },
       },

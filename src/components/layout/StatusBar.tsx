@@ -1,10 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, lazy, Suspense } from "react";
 import { useEditorStore } from "@/stores/editorStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { countMixedText } from "@/lib/word-count";
-import { StatsPanel } from "@/components/stats/StatsPanel";
-import { DashboardPanel } from "@/components/dashboard/DashboardPanel";
 import { CollabStatusBar } from "@/components/collab/CollabStatusBar";
+
+const StatsPanel = lazy(() => import("@/components/stats/StatsPanel").then(m => ({ default: m.StatsPanel })));
+const DashboardPanel = lazy(() => import("@/components/dashboard/DashboardPanel").then(m => ({ default: m.DashboardPanel })));
 
 export function StatusBar() {
   const content = useEditorStore((s) => s.content);
@@ -66,14 +67,18 @@ export function StatusBar() {
             <span className="text-[var(--text-xs)] font-medium text-[var(--color-text-secondary)]">写作统计</span>
             <button onClick={() => setShowStats(false)} className="text-[var(--text-xs)] text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]" aria-label="关闭统计面板">&times;</button>
           </div>
-          <StatsPanel />
+          <Suspense fallback={<div className="p-4 text-[var(--color-text-muted)] text-[var(--text-sm)]">加载中...</div>}>
+            <StatsPanel />
+          </Suspense>
         </div>
       )}
 
       {/* Dashboard popover */}
       {showDashboard && (
         <div className="absolute bottom-7 right-0 z-30 w-[640px] h-[480px] rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] shadow-[var(--shadow-lg)] animate-[slideUp_200ms_var(--ease-out)]" role="dialog" aria-modal="true" aria-label="仪表盘">
-          <DashboardPanel onClose={() => setShowDashboard(false)} />
+          <Suspense fallback={<div className="p-4 text-[var(--color-text-muted)] text-[var(--text-sm)]">加载中...</div>}>
+            <DashboardPanel onClose={() => setShowDashboard(false)} />
+          </Suspense>
         </div>
       )}
     </footer>

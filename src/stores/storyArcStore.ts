@@ -36,11 +36,13 @@ interface StoryArcState {
   fetchArcs: (projectId: string) => Promise<void>;
   fetchThreads: (projectId: string) => Promise<void>;
   createArc: (projectId: string, data: { name: string; description?: string }) => Promise<void>;
-  updateArc: (arcId: string, data: Partial<StoryArc>) => Promise<void>;
-  deleteArc: (arcId: string) => Promise<void>;
+  updateArc: (projectId: string, arcId: string, data: Partial<StoryArc>) => Promise<void>;
+  deleteArc: (projectId: string, arcId: string) => Promise<void>;
+  reorderArcs: (projectId: string, items: { id: string; sortOrder: number }[]) => Promise<void>;
   createThread: (projectId: string, data: { name: string; arcId?: string; description?: string }) => Promise<void>;
-  updateThread: (threadId: string, data: Partial<PlotThread>) => Promise<void>;
-  deleteThread: (threadId: string) => Promise<void>;
+  updateThread: (projectId: string, threadId: string, data: Partial<PlotThread>) => Promise<void>;
+  deleteThread: (projectId: string, threadId: string) => Promise<void>;
+  reorderThreads: (projectId: string, items: { id: string; sortOrder: number }[]) => Promise<void>;
   clearError: () => void;
 }
 
@@ -81,9 +83,9 @@ export const useStoryArcStore = create<StoryArcState>((set) => ({
     }
   },
 
-  updateArc: async (arcId, data) => {
+  updateArc: async (projectId, arcId, data) => {
     try {
-      const res = await apiClient.put<StoryArc>(`/story/arcs/${arcId}`, data);
+      const res = await apiClient.put<StoryArc>(`/projects/${projectId}/story/arcs/${arcId}`, data);
       if (res.data) {
         set((state) => ({
           arcs: state.arcs.map((a) => a.id === arcId ? res.data! : a),
@@ -94,10 +96,24 @@ export const useStoryArcStore = create<StoryArcState>((set) => ({
     }
   },
 
-  deleteArc: async (arcId) => {
+  deleteArc: async (projectId, arcId) => {
     try {
-      await apiClient.delete(`/story/arcs/${arcId}`);
+      await apiClient.delete(`/projects/${projectId}/story/arcs/${arcId}`);
       set((state) => ({ arcs: state.arcs.filter((a) => a.id !== arcId) }));
+    } catch (err) {
+      set({ error: (err as Error).message });
+    }
+  },
+
+  reorderArcs: async (projectId, items) => {
+    try {
+      await apiClient.put(`/projects/${projectId}/story/arcs/reorder`, { items });
+      set((state) => ({
+        arcs: state.arcs.map((arc) => {
+          const item = items.find((i) => i.id === arc.id);
+          return item ? { ...arc, sort_order: item.sortOrder } : arc;
+        }),
+      }));
     } catch (err) {
       set({ error: (err as Error).message });
     }
@@ -114,9 +130,9 @@ export const useStoryArcStore = create<StoryArcState>((set) => ({
     }
   },
 
-  updateThread: async (threadId, data) => {
+  updateThread: async (projectId, threadId, data) => {
     try {
-      const res = await apiClient.put<PlotThread>(`/story/threads/${threadId}`, data);
+      const res = await apiClient.put<PlotThread>(`/projects/${projectId}/story/threads/${threadId}`, data);
       if (res.data) {
         set((state) => ({
           threads: state.threads.map((t) => t.id === threadId ? res.data! : t),
@@ -127,10 +143,24 @@ export const useStoryArcStore = create<StoryArcState>((set) => ({
     }
   },
 
-  deleteThread: async (threadId) => {
+  deleteThread: async (projectId, threadId) => {
     try {
-      await apiClient.delete(`/story/threads/${threadId}`);
+      await apiClient.delete(`/projects/${projectId}/story/threads/${threadId}`);
       set((state) => ({ threads: state.threads.filter((t) => t.id !== threadId) }));
+    } catch (err) {
+      set({ error: (err as Error).message });
+    }
+  },
+
+  reorderThreads: async (projectId, items) => {
+    try {
+      await apiClient.put(`/projects/${projectId}/story/threads/reorder`, { items });
+      set((state) => ({
+        threads: state.threads.map((thread) => {
+          const item = items.find((i) => i.id === thread.id);
+          return item ? { ...thread, sort_order: item.sortOrder } : thread;
+        }),
+      }));
     } catch (err) {
       set({ error: (err as Error).message });
     }

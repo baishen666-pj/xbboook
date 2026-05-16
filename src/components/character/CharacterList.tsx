@@ -1,13 +1,14 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, lazy, Suspense } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { characterService } from "@/services/characterService";
 import { CharacterCard } from "./CharacterCard";
 import { CharacterForm } from "./CharacterForm";
-import { RelationshipGraph } from "./RelationshipGraph";
 import { RelationshipEditor } from "./RelationshipEditor";
 import { RelationshipDetail } from "./RelationshipDetail";
 import { ROLE_TYPES } from "@/lib/role-types";
 import type { Character, CharacterRelation } from "@/types/project";
+
+const RelationshipGraph = lazy(() => import("./RelationshipGraph").then(m => ({ default: m.RelationshipGraph })));
 
 type ViewMode = "list" | "graph";
 
@@ -222,13 +223,15 @@ export function CharacterList() {
                 至少需要2个角色才能显示关系图谱
               </div>
             ) : (
-              <RelationshipGraph
-                characters={characters}
-                relations={relations}
-                onNodeClick={handleNodeClick}
-                onEdgeClick={handleEdgeClick}
-                filterRole={filterRole}
-              />
+              <Suspense fallback={<div className="flex items-center justify-center h-full text-[var(--color-text-muted)] text-[var(--text-sm)]">加载图谱...</div>}>
+                <RelationshipGraph
+                  characters={characters}
+                  relations={relations}
+                  onNodeClick={handleNodeClick}
+                  onEdgeClick={handleEdgeClick}
+                  filterRole={filterRole}
+                />
+              </Suspense>
             )}
           </div>
 

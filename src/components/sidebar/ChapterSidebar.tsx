@@ -1,20 +1,20 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { useUiStore } from "@/stores/uiStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { ScrollArea } from "@/components/ui/ScrollArea";
-import { VolumeTree } from "./VolumeTree";
-import { CharacterList } from "@/components/character/CharacterList";
-import { WorldviewList } from "@/components/worldview/WorldviewList";
-import { OutlinePanel } from "@/components/outline/OutlinePanel";
-import { VersionPanel } from "@/components/version/VersionPanel";
-import { SchedulePanel } from "@/components/schedule/SchedulePanel";
-import { ForeshadowingPanel } from "@/components/foreshadowing/ForeshadowingPanel";
-import { SearchPanel } from "@/components/search/SearchPanel";
-import { ImportPanel } from "@/components/settings/ImportPanel";
-import { WritingGoalPanel } from "@/components/settings/WritingGoalPanel";
-import { StoryArcPanel } from "@/components/story-arcs/StoryArcPanel";
 
-import { SnippetPanel } from "@/components/snippets/SnippetPanel";
+const VolumeTree = lazy(() => import("./VolumeTree").then(m => ({ default: m.VolumeTree })));
+const CharacterList = lazy(() => import("@/components/character/CharacterList").then(m => ({ default: m.CharacterList })));
+const WorldviewList = lazy(() => import("@/components/worldview/WorldviewList").then(m => ({ default: m.WorldviewList })));
+const OutlinePanel = lazy(() => import("@/components/outline/OutlinePanel").then(m => ({ default: m.OutlinePanel })));
+const VersionPanel = lazy(() => import("@/components/version/VersionPanel").then(m => ({ default: m.VersionPanel })));
+const SchedulePanel = lazy(() => import("@/components/schedule/SchedulePanel").then(m => ({ default: m.SchedulePanel })));
+const ForeshadowingPanel = lazy(() => import("@/components/foreshadowing/ForeshadowingPanel").then(m => ({ default: m.ForeshadowingPanel })));
+const SearchPanel = lazy(() => import("@/components/search/SearchPanel").then(m => ({ default: m.SearchPanel })));
+const ImportPanel = lazy(() => import("@/components/settings/ImportPanel").then(m => ({ default: m.ImportPanel })));
+const WritingGoalPanel = lazy(() => import("@/components/settings/WritingGoalPanel").then(m => ({ default: m.WritingGoalPanel })));
+const StoryArcPanel = lazy(() => import("@/components/story-arcs/StoryArcPanel").then(m => ({ default: m.StoryArcPanel })));
+const SnippetPanel = lazy(() => import("@/components/snippets/SnippetPanel").then(m => ({ default: m.SnippetPanel })));
 
 type Tab = "chapters" | "characters" | "worldview" | "outline" | "versions" | "schedule" | "foreshadowing" | "snippets" | "arcs";
 
@@ -112,7 +112,9 @@ export function ChapterSidebar() {
       {/* Search overlay */}
       {isSearchOpen && (
         <div className="border-b border-[var(--color-border)] tab-content-enter" style={{ height: "40vh", minHeight: 160 }}>
-          <SearchPanel onClose={closeSearch} />
+          <Suspense fallback={<div className="p-4 text-[var(--color-text-muted)] text-[var(--text-sm)]">加载中...</div>}>
+            <SearchPanel onClose={closeSearch} />
+          </Suspense>
         </div>
       )}
 
@@ -141,30 +143,40 @@ export function ChapterSidebar() {
       <div className="flex-1 overflow-hidden">
         {showImport ? (
           <div className="tab-content-enter h-full" role="tabpanel">
-            <ImportPanel onClose={() => setShowImport(false)} />
+            <Suspense fallback={<div className="p-4 text-[var(--color-text-muted)] text-[var(--text-sm)]">加载中...</div>}>
+              <ImportPanel onClose={() => setShowImport(false)} />
+            </Suspense>
           </div>
         ) : showGoal ? (
           <div className="tab-content-enter h-full" role="tabpanel">
-            <WritingGoalPanel />
+            <Suspense fallback={<div className="p-4 text-[var(--color-text-muted)] text-[var(--text-sm)]">加载中...</div>}>
+              <WritingGoalPanel />
+            </Suspense>
           </div>
         ) : activeLeftTab === "versions" ? (
           <div id="tabpanel-versions" className="tab-content-enter h-full" role="tabpanel" aria-label="历史版本">
-            <VersionPanel />
+            <Suspense fallback={<div className="p-4 text-[var(--color-text-muted)] text-[var(--text-sm)]">加载中...</div>}>
+              <VersionPanel />
+            </Suspense>
           </div>
         ) : activeLeftTab === "schedule" ? (
           <div id="tabpanel-schedule" className="tab-content-enter h-full" role="tabpanel" aria-label="排期">
-            <SchedulePanel />
+            <Suspense fallback={<div className="p-4 text-[var(--color-text-muted)] text-[var(--text-sm)]">加载中...</div>}>
+              <SchedulePanel />
+            </Suspense>
           </div>
         ) : (
           <ScrollArea className="h-full">
             <div className="tab-content-enter">
-              {activeLeftTab === "chapters" && <div id="tabpanel-chapters" role="tabpanel" aria-label="章节列表"><VolumeTree /></div>}
-              {activeLeftTab === "characters" && <div id="tabpanel-characters" role="tabpanel" aria-label="角色列表"><CharacterList /></div>}
-              {activeLeftTab === "worldview" && <div id="tabpanel-worldview" role="tabpanel" aria-label="世界观"><WorldviewList /></div>}
-              {activeLeftTab === "outline" && <div id="tabpanel-outline" role="tabpanel" aria-label="大纲"><OutlinePanel /></div>}
-              {activeLeftTab === "foreshadowing" && <div id="tabpanel-foreshadowing" role="tabpanel" aria-label="伏笔"><ForeshadowingPanel /></div>}
-              {activeLeftTab === "arcs" && <div id="tabpanel-arcs" role="tabpanel" aria-label="故事弧线"><StoryArcPanel /></div>}
-              {activeLeftTab === "snippets" && <div id="tabpanel-snippets" role="tabpanel" aria-label="片段"><SnippetPanel /></div>}
+              <Suspense fallback={<div className="p-4 text-[var(--color-text-muted)] text-[var(--text-sm)]">加载中...</div>}>
+                {activeLeftTab === "chapters" && <div id="tabpanel-chapters" role="tabpanel" aria-label="章节列表"><VolumeTree /></div>}
+                {activeLeftTab === "characters" && <div id="tabpanel-characters" role="tabpanel" aria-label="角色列表"><CharacterList /></div>}
+                {activeLeftTab === "worldview" && <div id="tabpanel-worldview" role="tabpanel" aria-label="世界观"><WorldviewList /></div>}
+                {activeLeftTab === "outline" && <div id="tabpanel-outline" role="tabpanel" aria-label="大纲"><OutlinePanel /></div>}
+                {activeLeftTab === "foreshadowing" && <div id="tabpanel-foreshadowing" role="tabpanel" aria-label="伏笔"><ForeshadowingPanel /></div>}
+                {activeLeftTab === "arcs" && <div id="tabpanel-arcs" role="tabpanel" aria-label="故事弧线"><StoryArcPanel /></div>}
+                {activeLeftTab === "snippets" && <div id="tabpanel-snippets" role="tabpanel" aria-label="片段"><SnippetPanel /></div>}
+              </Suspense>
             </div>
           </ScrollArea>
         )}

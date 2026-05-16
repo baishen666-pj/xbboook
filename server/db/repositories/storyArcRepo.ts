@@ -86,3 +86,11 @@ export function deleteById(id: string): boolean {
   const result = db.prepare('DELETE FROM story_arcs WHERE id = ?').run(id);
   return result.changes > 0;
 }
+
+export function reorder(items: { id: string; sortOrder: number }[]): void {
+  const db = getDb();
+  const stmt = db.prepare("UPDATE story_arcs SET sort_order = ?, updated_at = datetime('now') WHERE id = ?");
+  db.transaction(() => {
+    for (const item of items) stmt.run(item.sortOrder, item.id);
+  })();
+}

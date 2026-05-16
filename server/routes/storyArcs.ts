@@ -63,6 +63,15 @@ router.delete('/arcs/:id', (req: Request<ArcParams>, res) => {
   res.json({ success: true });
 });
 
+const reorderArcsSchema = z.object({
+  items: z.array(z.object({ id: z.string(), sortOrder: z.number() })),
+});
+
+router.put('/arcs/reorder', validate(reorderArcsSchema), (req: Request<ProjectParams>, res) => {
+  storyArcRepo.reorder(req.body.items);
+  res.json({ success: true });
+});
+
 // --- Plot Threads ---
 
 const createThreadSchema = z.object({
@@ -119,6 +128,15 @@ router.delete('/threads/:threadId', (req: Request<ProjectParams & { threadId: st
     res.status(404).json({ success: false, error: '线索不存在' });
     return;
   }
+  res.json({ success: true });
+});
+
+const reorderThreadsSchema = z.object({
+  items: z.array(z.object({ id: z.string(), sortOrder: z.number() })),
+});
+
+router.put('/threads/reorder', validate(reorderThreadsSchema), (req: Request<ProjectParams>, res) => {
+  plotThreadRepo.reorder(req.body.items);
   res.json({ success: true });
 });
 
