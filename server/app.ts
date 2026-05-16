@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import path from 'path';
 
 import projectsRouter from './routes/projects.js';
 import chaptersRouter from './routes/chapters.js';
@@ -23,7 +24,7 @@ const app = express();
 
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5210',
+  origin: process.env.CORS_ORIGIN || '*',
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -50,5 +51,12 @@ app.use('/api/projects/:projectId/collab', collabRouter);
 app.use('/api/projects/:projectId/chapters/:chapterId/comments', commentsRouter);
 
 app.use(errorHandler);
+
+// Serve static frontend (production)
+const distPath = path.join(process.cwd(), 'dist');
+app.use(express.static(distPath));
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
+});
 
 export default app;
