@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { Editor } from "@tiptap/react";
 
 interface EditorState {
   activeChapterId: string | null;
@@ -7,6 +8,7 @@ interface EditorState {
   isDirty: boolean;
   lastSavedAt: Date | null;
   isSaving: boolean;
+  editorInstance: Editor | null;
 }
 
 interface EditorActions {
@@ -16,6 +18,7 @@ interface EditorActions {
   setSelectedText: (text: string) => void;
   clearChapter: () => void;
   markSaved: () => void;
+  setEditor: (editor: Editor | null) => void;
 }
 
 export const useEditorStore = create<EditorState & EditorActions>(
@@ -26,6 +29,7 @@ export const useEditorStore = create<EditorState & EditorActions>(
     isDirty: false,
     lastSavedAt: null,
     isSaving: false,
+    editorInstance: null,
 
     openChapter: (chapterId, content) => {
       set({
@@ -60,6 +64,10 @@ export const useEditorStore = create<EditorState & EditorActions>(
 
     markSaved: () => {
       set({ isSaving: false, isDirty: false, lastSavedAt: new Date() });
+    },
+
+    setEditor: (editor) => {
+      set({ editorInstance: editor });
     },
   })
 );

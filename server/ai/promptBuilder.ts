@@ -87,6 +87,12 @@ export function buildUserPrompt(skillId: string, params: {
     case 'deai':
       return `请对以下选中的文本进行去AI味改写，消除机械感使其更像人类写作：\n\n${params.selectedText || ''}`;
 
+    case 'consistency-scan':
+      return `请对提供的全文内容和角色设定进行一致性扫描，输出 JSON 格式的问题列表`;
+
+    case 'chapter-generate':
+      return `请根据大纲内容生成完整章节草稿`;
+
     default:
       return params.question || '请协助创作';
   }

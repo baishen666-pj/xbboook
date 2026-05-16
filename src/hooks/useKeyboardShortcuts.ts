@@ -9,6 +9,7 @@ export function useKeyboardShortcuts() {
   const toggleLeftPanel = useUiStore((s) => s.toggleLeftPanel);
   const toggleRightPanel = useUiStore((s) => s.toggleRightPanel);
   const toggleFullscreen = useUiStore((s) => s.toggleFullscreen);
+  const toggleSearch = useUiStore((s) => s.toggleSearch);
   const togglePanel = useAiStore((s) => s.togglePanel);
 
   useEffect(() => {
@@ -32,8 +33,15 @@ export function useKeyboardShortcuts() {
         return;
       }
 
-      // Ctrl+Shift+F — toggle fullscreen
+      // Ctrl+Shift+F — toggle search
       if (mod && e.shiftKey && e.key === "F") {
+        e.preventDefault();
+        toggleSearch();
+        return;
+      }
+
+      // Ctrl+Shift+H — toggle fullscreen
+      if (mod && e.shiftKey && e.key === "H") {
         e.preventDefault();
         toggleFullscreen();
         return;
@@ -65,5 +73,5 @@ export function useKeyboardShortcuts() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [toggleLeftPanel, toggleRightPanel, toggleFullscreen, togglePanel]);
+  }, [toggleLeftPanel, toggleRightPanel, toggleFullscreen, toggleSearch, togglePanel]);
 }

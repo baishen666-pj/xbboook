@@ -18,6 +18,7 @@ interface NovelEditorProps {
 
 export function NovelEditor({ content, onUpdate }: NovelEditorProps) {
   const updateContent = useEditorStore((s) => s.updateContent);
+  const setEditor = useEditorStore((s) => s.setEditor);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleUpdate = useCallback(
@@ -59,6 +60,9 @@ export function NovelEditor({ content, onUpdate }: NovelEditorProps) {
     onUpdate: ({ editor: ed }) => {
       handleUpdate(ed.getHTML());
     },
+    onCreate: ({ editor: ed }) => {
+      setEditor(ed);
+    },
     immediatelyRender: false,
   });
 
@@ -83,6 +87,7 @@ export function NovelEditor({ content, onUpdate }: NovelEditorProps) {
   useEffect(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
+      setEditor(null);
     };
   }, []);
 

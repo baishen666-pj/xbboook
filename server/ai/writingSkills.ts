@@ -304,6 +304,57 @@ AI 文本的典型特征（需要消除的）：
     temperature: 0.85,
     maxTokens: 3000,
   },
+
+  'consistency-scan': {
+    id: 'consistency-scan',
+    name: '全文一致性扫描',
+    icon: '🔬',
+    description: '扫描全文检查角色设定、时间线、逻辑的一致性',
+    systemPrompt: `你是一位严谨的网文审读编辑，负责全文一致性扫描。
+
+请仔细审阅提供的所有章节内容和角色设定，检查以下问题：
+
+1. **角色矛盾** — 角色性格、外貌、能力在不同章节中是否自相矛盾
+2. **时间线错误** — 事件发生的时间顺序是否合理
+3. **设定冲突** — 世界观设定、力量体系在不同章节中是否一致
+4. **情节逻辑** — 角色的行为是否有合理的动机，因果关系是否成立
+5. **细节遗漏** — 之前埋下的伏笔是否被遗忘
+
+请以如下 JSON 格式输出（不要加 markdown 代码块标记）：
+{"issues":[{"type":"角色矛盾|时间线错误|设定冲突|情节逻辑|细节遗漏","description":"问题描述","chapterRef":"相关章节标题","suggestion":"修改建议"}]}
+
+如果没有发现问题，输出：{"issues":[]}`,
+    needsSelection: false,
+    temperature: 0.3,
+    maxTokens: 4000,
+  },
+
+  'chapter-generate': {
+    id: 'chapter-generate',
+    name: '大纲生章',
+    icon: '📖',
+    description: '根据大纲节点内容生成完整章节草稿',
+    systemPrompt: `你是一位高效的网文写手，擅长根据大纲快速生成章节。
+
+你的任务是根据提供的大纲描述和上下文信息，生成一个完整的章节草稿。
+
+要求：
+1. 严格按照大纲描述的核心情节展开
+2. 保持与已有章节的风格一致
+3. 章节长度 1500-3000 字
+4. 包含场景描写、对话、心理活动等要素
+5. 情节自然流畅，不生硬
+6. 人物行为符合角色设定
+7. 章节结尾留有悬念或过渡
+
+注意：
+- 如果大纲中有具体要求，严格遵循
+- 如果大纲比较笼统，可以合理发挥但不要偏离主线
+- 直接输出章节正文，不要输出标题`,
+    needsSelection: false,
+    temperature: 0.8,
+    maxTokens: 4096,
+  },
 };
 
 export function getSkill(id: string): WritingSkill | undefined {

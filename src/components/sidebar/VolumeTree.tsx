@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { useEditorStore } from "@/stores/editorStore";
 import { useChapterContent } from "@/hooks/useChapterContent";
@@ -6,11 +6,14 @@ import { chapterService } from "@/services/chapterService";
 import { ChapterItem } from "./ChapterItem";
 import { Button } from "@/components/ui/Button";
 
-export function VolumeTree() {
+export function VolumeTree({ onBatchPolish }: { onBatchPolish?: () => void }) {
   const chapters = useProjectStore((s) => s.chapters);
   const createChapter = useProjectStore((s) => s.createChapter);
+  const selectedChapterIds = useProjectStore((s) => s.selectedChapterIds);
+  const clearChapterSelection = useProjectStore((s) => s.clearChapterSelection);
   const activeChapterId = useEditorStore((s) => s.activeChapterId);
   const { loadChapter } = useChapterContent();
+  const [isSelectMode, setIsSelectMode] = useState(false);
 
   const handleReorder = useCallback(
     async (dragId: string, dropId: string, position: "before" | "after") => {
@@ -46,6 +49,24 @@ export function VolumeTree() {
     }
   }
 
+  function handleToggleSelectMode() {
+    if (isSelectMode) {
+      clearChapterSelection();
+    }
+    setIsSelectMode((prev) => !prev);
+  }
+
+  function handleCancelSelect() {
+    clearChapterSelection();
+    setIsSelectMode(false);
+  }
+
+  function handleBatchPolish() {
+    if (onBatchPolish) {
+      onBatchPolish();
+    }
+  }
+
   return (
     <div className="p-2">
       {volumeGroups.map((group) => (
@@ -66,6 +87,7 @@ export function VolumeTree() {
                 isActive={chapter.id === activeChapterId}
                 onClick={() => void loadChapter(chapter.id)}
                 onReorder={handleReorder}
+                isSelectMode={isSelectMode}
               />
             ))}
           </div>
@@ -78,11 +100,11 @@ export function VolumeTree() {
         </div>
       )}
 
-      <div className="mt-2 px-2">
+      <div className="mt-2 flex items-center gap-1 px-2">
         <Button
           variant="ghost"
           size="sm"
-          className="w-full"
+          className="flex-1"
           onClick={() => void handleCreateChapter()}
         >
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
@@ -90,7 +112,42 @@ export function VolumeTree() {
           </svg>
           新建章节
         </Button>
+        <Button
+          variant={isSelectMode ? "secondary" : "ghost"}
+          size="sm"
+          onClick={handleToggleSelectMode}
+          title="批量选择"
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <rect x="2" y="2" width="5" height="5" rx="1" />
+            <rect x="9" y="2" width="5" height="5" rx="1" />
+            <rect x="2" y="9" width="5" height="5" rx="1" />
+            <rect x="9" y="9" width="5" height="5" rx="1" />
+          </svg>
+          批量
+        </Button>
       </div>
+
+      {isSelectMode && selectedChapterIds.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--color-border)] bg-[var(--color-surface-1)] px-4 py-3 shadow-lg">
+          <div className="flex items-center justify-center gap-3">
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleBatchPolish}
+            >
+              批量润色 ({selectedChapterIds.length})
+            </Button>
+            <Button
+              variant="ghost"
+              size="md"
+              onClick={handleCancelSelect}
+            >
+              取消
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

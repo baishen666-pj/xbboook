@@ -24,6 +24,7 @@ interface ProjectState {
   outlines: Outline[];
   isLoading: boolean;
   error: string | null;
+  selectedChapterIds: string[];
 }
 
 interface ProjectActions {
@@ -39,6 +40,9 @@ interface ProjectActions {
     title?: string
   ) => Promise<Chapter | null>;
   setError: (error: string | null) => void;
+  toggleChapterSelection: (id: string) => void;
+  clearChapterSelection: () => void;
+  setSelectedChapters: (ids: string[]) => void;
 }
 
 export const useProjectStore = create<ProjectState & ProjectActions>(
@@ -54,6 +58,7 @@ export const useProjectStore = create<ProjectState & ProjectActions>(
     outlines: [],
     isLoading: false,
     error: null,
+    selectedChapterIds: [],
 
     loadProjects: async () => {
       set({ isLoading: true, error: null });
@@ -155,5 +160,17 @@ export const useProjectStore = create<ProjectState & ProjectActions>(
     },
 
     setError: (error) => set({ error }),
+
+    toggleChapterSelection: (id) => {
+      const current = get().selectedChapterIds;
+      const next = current.includes(id)
+        ? current.filter((cid) => cid !== id)
+        : [...current, id];
+      set({ selectedChapterIds: next });
+    },
+
+    clearChapterSelection: () => set({ selectedChapterIds: [] }),
+
+    setSelectedChapters: (ids) => set({ selectedChapterIds: ids }),
   })
 );

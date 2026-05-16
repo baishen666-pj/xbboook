@@ -11,6 +11,7 @@ declare module "@tiptap/core" {
       unsetGhostText: () => ReturnType;
       acceptAllGhost: () => ReturnType;
       removeAllGhost: () => ReturnType;
+      insertGhostText: (text: string) => ReturnType;
     };
   }
 }
@@ -91,6 +92,28 @@ export const GhostMark = Mark.create<GhostTextOptions>({
           }
 
           return ranges.length > 0;
+        },
+      insertGhostText:
+        (text: string) =>
+        ({ tr, state }) => {
+          const { from } = state.selection;
+          const markType = state.schema.marks[this.name];
+          const paragraph = state.schema.nodes.paragraph;
+          if (!markType || !paragraph) return false;
+
+          const paragraphs = text.split("\n").filter(Boolean);
+          if (paragraphs.length === 0) return false;
+
+          const nodes = paragraphs.map((p) =>
+            paragraph.create(
+              null,
+              state.schema.text(p, [markType.create()])
+            )
+          );
+
+          const fragment = paragraph.create(null, nodes);
+          tr.insert(from, fragment);
+          return true;
         },
     };
   },

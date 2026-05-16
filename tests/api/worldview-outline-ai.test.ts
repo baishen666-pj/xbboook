@@ -122,14 +122,16 @@ describe('Outlines API', () => {
 });
 
 describe('AI API', () => {
-  it('should list 13 skills', async () => {
+  it('should list 15 skills', async () => {
     const res = await request(BASE).get('/api/ai/skills');
 
     expect(res.status).toBe(200);
-    expect(res.body.data).toHaveLength(13);
+    expect(res.body.data).toHaveLength(15);
     const ids = res.body.data.map((s: any) => s.id);
     expect(ids).toContain('continue');
     expect(ids).toContain('deai');
+    expect(ids).toContain('consistency-scan');
+    expect(ids).toContain('chapter-generate');
   });
 
   it('should list providers', async () => {

@@ -2,6 +2,7 @@ import { useEditorStore } from "@/stores/editorStore";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { NovelEditor } from "./NovelEditor";
 import { WordCounter } from "./WordCounter";
+import { GhostTextToolbar } from "./GhostTextToolbar";
 
 export function EditorArea() {
   const activeChapterId = useEditorStore((s) => s.activeChapterId);
@@ -58,8 +59,9 @@ export function EditorArea() {
       )}
 
       {/* Editor */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden relative">
         <NovelEditor content={content} />
+        <GhostTextToolbar />
       </div>
 
       <WordCounter />

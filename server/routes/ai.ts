@@ -4,6 +4,8 @@ import { setupSSE, sendSSE, sendSSEError, sendSSEDone } from '../middleware/sse.
 import { getConfig } from '../ai/agentFactory.js';
 import { saveConfig, loadStoredConfig } from '../ai/configStore.js';
 import { PROVIDERS, getProvider } from '../ai/providers.js';
+import { findById as findChapterById } from '../db/repositories/chapterRepo.js';
+import { readChapter } from '../services/fileService.js';
 
 const router = Router();
 
@@ -179,6 +181,79 @@ router.post('/stream', async (req, res) => {
       sendSSEError(res, message);
     }
   }
+});
+
+// SSE batch polish endpoint
+router.post('/batch-polish', async (req, res) => {
+  const { projectId, chapterIds } = req.body as { projectId?: string; chapterIds?: string[] };
+
+  if (!projectId || !Array.isArray(chapterIds) || chapterIds.length === 0) {
+    res.status(400).json({ success: false, error: 'projectId and chapterIds are required' });
+    return;
+  }
+
+  const skill = getSkill('polish');
+  if (!skill) {
+    res.status(500).json({ success: false, error: 'Polish skill not found' });
+    return;
+  }
+
+  if (!isConfigured()) {
+    res.status(400).json({ success: false, error: 'AI 未配置，请设置 AI_API_KEY 环境变量' });
+    return;
+  }
+
+  setupSSE(req, res);
+
+  const results: Array<{ chapterId: string; status: string; content?: string; error?: string }> = [];
+
+  for (const chapterId of chapterIds) {
+    const chapter = findChapterById(chapterId);
+    if (!chapter) {
+      sendSSE(res, 'chapter_progress', { chapterId, status: 'error', error: '章节未找到' });
+      results.push({ chapterId, status: 'error', error: '章节未找到' });
+      continue;
+    }
+
+    sendSSE(res, 'chapter_progress', { chapterId, status: 'processing' });
+
+    try {
+      const content = await readChapter(projectId, chapterId);
+      if (!content.trim()) {
+        sendSSE(res, 'chapter_progress', { chapterId, status: 'error', error: '章节内容为空' });
+        results.push({ chapterId, status: 'error', error: '章节内容为空' });
+        continue;
+      }
+
+      let fullContent = '';
+
+      for await (const event of processAiRequest({
+        projectId,
+        skillId: 'polish',
+        chapterId,
+        selectedText: content,
+      })) {
+        if (event.type === 'chunk') {
+          fullContent += event.content;
+        }
+      }
+
+      sendSSE(res, 'chapter_progress', { chapterId, status: 'done', content: fullContent });
+      results.push({ chapterId, status: 'done', content: fullContent });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      sendSSE(res, 'chapter_progress', { chapterId, status: 'error', error: message });
+      results.push({ chapterId, status: 'error', error: message });
+    }
+
+    // Delay between chapters to respect rate limits
+    if (chapterId !== chapterIds[chapterIds.length - 1]) {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+    }
+  }
+
+  sendSSE(res, 'all_done', { results });
+  res.end();
 });
 
 export default router;

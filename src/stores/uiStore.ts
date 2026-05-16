@@ -11,6 +11,7 @@ interface UiState {
   isFullscreen: boolean;
   activeLeftTab: LeftTab;
   theme: Theme;
+  isSearchOpen: boolean;
 }
 
 interface UiActions {
@@ -22,6 +23,8 @@ interface UiActions {
   setRightPanelWidth: (width: number) => void;
   setTheme: (theme: Theme) => void;
   cycleTheme: () => void;
+  toggleSearch: () => void;
+  closeSearch: () => void;
 }
 
 const THEME_CYCLE: Theme[] = ["dark", "light", "sepia"];
@@ -34,6 +37,7 @@ export const useUiStore = create<UiState & UiActions>((set) => ({
   isFullscreen: false,
   activeLeftTab: "chapters",
   theme: "dark",
+  isSearchOpen: false,
 
   toggleLeftPanel: () =>
     set((state) => ({ isLeftPanelOpen: !state.isLeftPanelOpen })),
@@ -58,6 +62,10 @@ export const useUiStore = create<UiState & UiActions>((set) => ({
       const next = THEME_CYCLE[(idx + 1) % THEME_CYCLE.length] as Theme;
       return { theme: next };
     }),
+
+  toggleSearch: () => set((state) => ({ isSearchOpen: !state.isSearchOpen })),
+
+  closeSearch: () => set({ isSearchOpen: false }),
 }));
 
 useUiStore.subscribe((state, prev) => {
