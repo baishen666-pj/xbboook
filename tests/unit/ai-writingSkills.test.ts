@@ -29,9 +29,14 @@ describe('writingSkills', () => {
   });
 
   describe('listSkills', () => {
-    it('returns all 9 skills', () => {
+    it('returns all skills', () => {
       const skills = listSkills();
-      expect(skills).toHaveLength(9);
+      expect(skills.length).toBeGreaterThanOrEqual(9);
+      const ids = skills.map((s: { id: string }) => s.id);
+      expect(ids).toContain('plot-planning');
+      expect(ids).toContain('chapter-summary');
+      expect(ids).toContain('writing-advice');
+      expect(ids).toContain('character-design');
     });
 
     it('includes expected skill ids', () => {

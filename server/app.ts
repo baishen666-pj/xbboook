@@ -16,6 +16,7 @@ import versionsRouter from './routes/versions.js';
 import templatesRouter from './routes/templates.js';
 import usersRouter from './routes/users.js';
 import collabRouter from './routes/collab.js';
+import commentsRouter from './routes/comments.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -46,6 +47,7 @@ app.use('/api/ai', aiLimiter, aiRouter);
 app.use('/api/templates', templatesRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/projects/:projectId/collab', collabRouter);
+app.use('/api/projects/:projectId/chapters/:chapterId/comments', commentsRouter);
 
 app.use(errorHandler);
 

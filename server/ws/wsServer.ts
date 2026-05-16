@@ -1,10 +1,19 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import type { Server } from 'http';
 import * as presenceManager from './presenceManager.js';
+import * as userRepo from '../db/repositories/userRepo.js';
 
 interface WsMessage {
   type: string;
   payload: Record<string, unknown>;
+}
+
+function buildOnlinePayload(projectId: string) {
+  const online = presenceManager.getOnlineUsers(projectId);
+  return online.map((u) => {
+    const user = userRepo.findById(u.userId);
+    return { userId: u.userId, displayName: user?.display_name ?? '未知', avatarColor: user?.avatar_color ?? '#6366f1' };
+  });
 }
 
 export function createWsServer(server: Server): WebSocketServer {
@@ -25,18 +34,29 @@ export function createWsServer(server: Server): WebSocketServer {
 
       switch (msg.type) {
         case 'join': {
-          userId = msg.payload.userId as string;
-          projectId = msg.payload.projectId as string;
-          if (!userId || !projectId) {
-            ws.send(JSON.stringify({ type: 'error', payload: { message: 'Missing userId or projectId' } }));
+          const token = msg.payload.token as string;
+          if (!token) {
+            ws.send(JSON.stringify({ type: 'error', payload: { message: 'Missing token' } }));
             return;
           }
+          const validatedUserId = presenceManager.validateToken(token);
+          if (!validatedUserId) {
+            ws.send(JSON.stringify({ type: 'error', payload: { message: 'Invalid or expired token' } }));
+            return;
+          }
+          const pId = msg.payload.projectId as string;
+          if (!pId) {
+            ws.send(JSON.stringify({ type: 'error', payload: { message: 'Missing projectId' } }));
+            return;
+          }
+          userId = validatedUserId;
+          projectId = pId;
+
           presenceManager.addConnection(ws, userId, projectId);
-          const online = presenceManager.getOnlineUsers(projectId);
           presenceManager.broadcastToProject(projectId, {
             type: 'presence:update',
-            payload: { online: online.map((u) => ({ userId: u.userId })) },
-          }, userId);
+            payload: { online: buildOnlinePayload(projectId) },
+          }, ws);
           ws.send(JSON.stringify({ type: 'joined', payload: { projectId } }));
           break;
         }
@@ -51,10 +71,10 @@ export function createWsServer(server: Server): WebSocketServer {
 
     ws.on('close', () => {
       if (userId && projectId) {
-        presenceManager.removeConnection(userId);
+        presenceManager.removeConnection(ws, userId, projectId);
         presenceManager.broadcastToProject(projectId, {
           type: 'presence:update',
-          payload: { online: presenceManager.getOnlineUsers(projectId).map((u) => ({ userId: u.userId })) },
+          payload: { online: buildOnlinePayload(projectId) },
         });
       }
     });

@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAiStore } from "@/stores/aiStore";
 import { useEditorStore } from "@/stores/editorStore";
+import { useProjectStore } from "@/stores/projectStore";
+import { useCollabStore } from "@/stores/collabStore";
+import { useCommentStore } from "@/stores/commentStore";
 
 interface ContextMenuState {
   visible: boolean;
@@ -64,6 +67,25 @@ export function EditorContextMenu() {
     [setActiveSkill, openPanel]
   );
 
+  const handleAddComment = useCallback(() => {
+    const currentProject = useProjectStore.getState().currentProject;
+    const currentUser = useCollabStore.getState().currentUser;
+    const activeChapterId = useEditorStore.getState().activeChapterId;
+    if (!currentProject || !currentUser || !activeChapterId || !menu.selectedText) return;
+
+    const selection = window.getSelection();
+    const range = selection?.rangeCount ? selection!.getRangeAt(0) : null;
+
+    useCommentStore.getState().addComment(currentProject.id, activeChapterId, {
+      content: `关于「${menu.selectedText.slice(0, 50)}」的批注`,
+      userId: currentUser.id,
+      selectionText: menu.selectedText.slice(0, 200),
+      selectionFrom: range?.startOffset,
+      selectionTo: range?.endOffset,
+    });
+    setMenu((m) => ({ ...m, visible: false }));
+  }, [menu.selectedText]);
+
   if (!menu.visible) return null;
 
   const menuWidth = 180;
@@ -91,6 +113,14 @@ export function EditorContextMenu() {
           <span>{action.label}</span>
         </button>
       ))}
+      <div className="my-1 border-t border-white/5" />
+      <button
+        onClick={handleAddComment}
+        className="flex w-full items-center gap-2 px-3 py-1.5 text-sm text-white/70 hover:bg-white/5 hover:text-white transition-colors"
+      >
+        <span>💬</span>
+        <span>添加批注</span>
+      </button>
     </div>
   );
 }

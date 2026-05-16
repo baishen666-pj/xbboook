@@ -206,4 +206,60 @@ router.get('/docx', async (req, res) => {
   }
 });
 
+// Export as PDF
+router.get('/pdf', async (req, res) => {
+  const { projectId } = req.params as { projectId: string };
+
+  try {
+    const groups = await buildChapterGroups(projectId);
+    if (groups.length === 0 || groups.every((g) => g.chapters.length === 0)) {
+      res.status(404).json({ success: false, error: '没有可导出的章节' });
+      return;
+    }
+
+    const project = findProject(projectId);
+    const projectName = project?.name || 'Novel';
+
+    const PDFDocument = (await import('pdfkit')).default;
+    const doc = new PDFDocument({ size: 'A4', margin: 60, info: { Title: projectName } });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(projectName)}.pdf"`);
+    doc.pipe(res);
+
+    doc.fontSize(24).text(projectName, { align: 'center' });
+    doc.moveDown(2);
+
+    for (const group of groups) {
+      if (group.volumeTitle) {
+        doc.fontSize(18).text(group.volumeTitle, { align: 'center' });
+        doc.moveDown(1);
+      }
+
+      for (const ch of group.chapters) {
+        doc.fontSize(14).text(ch.title);
+        doc.moveDown(0.5);
+
+        const paragraphs = (ch.content || '').split('\n');
+        for (const p of paragraphs) {
+          if (p.trim() === '') {
+            doc.moveDown(0.5);
+          } else {
+            doc.fontSize(11).text(p, { lineGap: 4 });
+          }
+        }
+
+        doc.moveDown(1);
+      }
+    }
+
+    doc.end();
+  } catch (err) {
+    console.error('PDF export error:', err);
+    if (!res.headersSent) {
+      res.status(500).json({ success: false, error: 'PDF 导出失败' });
+    }
+  }
+});
+
 export default router;

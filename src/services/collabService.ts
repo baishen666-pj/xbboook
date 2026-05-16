@@ -3,8 +3,8 @@ import type { CollabUser, OnlineUser, ChapterLock } from "@/types/project";
 import type { ApiResponse } from "@/types/api";
 
 export const collabService = {
-  async identify(data: { username: string; displayName: string; avatarColor?: string }): Promise<ApiResponse<CollabUser>> {
-    return apiClient.post<CollabUser>("/users/identify", data);
+  async identify(data: { username: string; displayName: string; avatarColor?: string }): Promise<ApiResponse<CollabUser & { token: string }>> {
+    return apiClient.post<CollabUser & { token: string }>("/users/identify", data);
   },
 
   async getMe(userId: string): Promise<ApiResponse<CollabUser>> {

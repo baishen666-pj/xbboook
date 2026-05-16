@@ -177,3 +177,19 @@ export interface ChapterLock {
   displayName: string;
   lockedAt: string;
 }
+
+export interface ChapterComment {
+  id: string;
+  chapterId: string;
+  projectId: string;
+  userId: string;
+  content: string;
+  selectionFrom: number | null;
+  selectionTo: number | null;
+  selectionText: string | null;
+  resolved: number;
+  createdAt: string;
+  updatedAt: string;
+  displayName: string;
+  avatarColor: string;
+}

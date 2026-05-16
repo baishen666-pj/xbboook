@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import * as userRepo from '../db/repositories/userRepo.js';
+import * as presenceManager from '../ws/presenceManager.js';
 import { validate } from '../middleware/validate.js';
 
 const router = Router();
@@ -14,19 +15,17 @@ const identifySchema = z.object({
 const COLORS = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316'];
 
 router.post('/identify', validate(identifySchema), (req, res) => {
-  const existing = userRepo.findByUsername(req.body.username);
-  if (existing) {
-    res.json({ success: true, data: existing });
-    return;
+  let user = userRepo.findByUsername(req.body.username);
+  if (!user) {
+    const color = req.body.avatarColor ?? COLORS[Math.floor(Math.random() * COLORS.length)];
+    user = userRepo.create({
+      username: req.body.username,
+      displayName: req.body.displayName,
+      avatarColor: color,
+    });
   }
-
-  const color = req.body.avatarColor ?? COLORS[Math.floor(Math.random() * COLORS.length)];
-  const user = userRepo.create({
-    username: req.body.username,
-    displayName: req.body.displayName,
-    avatarColor: color,
-  });
-  res.json({ success: true, data: user });
+  const token = presenceManager.generateToken(user.id);
+  res.json({ success: true, data: { ...user, token } });
 });
 
 router.get('/me', (req, res) => {

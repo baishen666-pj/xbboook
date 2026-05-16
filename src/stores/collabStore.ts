@@ -15,14 +15,23 @@ interface CollabState {
   removeLock: (chapterId: string) => void;
 }
 
-const STORED_KEY = "xbboook_user_id";
+const STORED_USER_KEY = "xbboook_user_id";
+const STORED_TOKEN_KEY = "xbboook_token";
 
 export function getStoredUserId(): string | null {
-  return localStorage.getItem(STORED_KEY);
+  return localStorage.getItem(STORED_USER_KEY);
 }
 
 export function setStoredUserId(id: string): void {
-  localStorage.setItem(STORED_KEY, id);
+  localStorage.setItem(STORED_USER_KEY, id);
+}
+
+export function getStoredToken(): string | null {
+  return localStorage.getItem(STORED_TOKEN_KEY);
+}
+
+export function setStoredToken(token: string): void {
+  localStorage.setItem(STORED_TOKEN_KEY, token);
 }
 
 export const useCollabStore = create<CollabState>((set) => ({

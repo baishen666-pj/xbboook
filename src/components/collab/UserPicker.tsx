@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { collabService } from "@/services/collabService";
-import { useCollabStore, setStoredUserId } from "@/stores/collabStore";
+import { useCollabStore, setStoredUserId, setStoredToken } from "@/stores/collabStore";
 
 interface Props {
   onComplete: () => void;
@@ -24,6 +24,7 @@ export function UserPicker({ onComplete }: Props) {
     if (res.success && res.data) {
       setCurrentUser(res.data);
       setStoredUserId(res.data.id);
+      if (res.data.token) setStoredToken(res.data.token);
       onComplete();
     } else {
       setError(res.error ?? "创建用户失败");

@@ -2,25 +2,30 @@ import { getDb } from '../db/database.js';
 
 export function acquireLock(chapterId: string, userId: string, ttlMinutes = 30): boolean {
   const db = getDb();
-  clearExpiredLocks();
 
-  const existing = db.prepare('SELECT * FROM chapter_locks WHERE chapter_id = ?').get(chapterId) as
-    | { chapter_id: string; user_id: string; locked_at: string; expires_at: string | null }
-    | undefined;
+  const result = db.transaction(() => {
+    clearExpiredLocks();
 
-  if (existing && existing.user_id !== userId) {
-    return false;
-  }
+    const existing = db.prepare('SELECT user_id FROM chapter_locks WHERE chapter_id = ?').get(chapterId) as
+      | { user_id: string }
+      | undefined;
 
-  const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000).toISOString();
+    if (existing && existing.user_id !== userId) {
+      return false;
+    }
 
-  db.prepare(`
-    INSERT INTO chapter_locks (chapter_id, user_id, locked_at, expires_at)
-    VALUES (?, ?, datetime('now'), ?)
-    ON CONFLICT(chapter_id) DO UPDATE SET user_id = ?, locked_at = datetime('now'), expires_at = ?
-  `).run(chapterId, userId, expiresAt, userId, expiresAt);
+    const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000).toISOString();
 
-  return true;
+    db.prepare(`
+      INSERT INTO chapter_locks (chapter_id, user_id, locked_at, expires_at)
+      VALUES (?, ?, datetime('now'), ?)
+      ON CONFLICT(chapter_id) DO UPDATE SET user_id = excluded.user_id, locked_at = datetime('now'), expires_at = excluded.expires_at
+    `).run(chapterId, userId, expiresAt);
+
+    return true;
+  })();
+
+  return result;
 }
 
 export function releaseLock(chapterId: string, userId: string): boolean {
@@ -50,12 +55,13 @@ export function getLock(chapterId: string): { chapterId: string; userId: string;
 export function getProjectLocks(projectId: string): { chapterId: string; userId: string; lockedAt: string }[] {
   const db = getDb();
   clearExpiredLocks();
-  return db.prepare(`
-    SELECT cl.chapter_id as chapterId, cl.user_id as userId, cl.locked_at as lockedAt
+  const rows = db.prepare(`
+    SELECT cl.chapter_id, cl.user_id, cl.locked_at
     FROM chapter_locks cl
     JOIN chapters c ON c.id = cl.chapter_id
     WHERE c.project_id = ?
-  `).all(projectId) as { chapterId: string; userId: string; lockedAt: string }[];
+  `).all(projectId) as { chapter_id: string; user_id: string; locked_at: string }[];
+  return rows.map((r) => ({ chapterId: r.chapter_id, userId: r.user_id, lockedAt: r.locked_at }));
 }
 
 function clearExpiredLocks(): void {

@@ -47,8 +47,12 @@ router.get('/dashboard', (req, res) => {
 
 router.get('/characters', async (req, res) => {
   const { projectId } = req.params as { projectId: string };
-  const data = await analyticsService.getCharacterAppearances(projectId);
-  res.json({ success: true, data });
+  try {
+    const data = await analyticsService.getCharacterAppearances(projectId);
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err instanceof Error ? err.message : '获取角色数据失败' });
+  }
 });
 
 router.post('/', validate(createStatSchema), (req, res) => {

@@ -185,5 +185,24 @@ export function runMigrations(): void {
       FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS chapter_comments (
+      id TEXT PRIMARY KEY,
+      chapter_id TEXT NOT NULL,
+      project_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      content TEXT NOT NULL,
+      selection_from INTEGER,
+      selection_to INTEGER,
+      selection_text TEXT,
+      resolved INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+      FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_comments_chapter ON chapter_comments(chapter_id, created_at ASC);
   `);
 }

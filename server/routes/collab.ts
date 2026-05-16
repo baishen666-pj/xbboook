@@ -1,11 +1,29 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import * as memberRepo from '../db/repositories/memberRepo.js';
 import * as lockManager from '../ws/lockManager.js';
 import * as presenceManager from '../ws/presenceManager.js';
+import * as presence from '../ws/presenceManager.js';
 import * as userRepo from '../db/repositories/userRepo.js';
 import * as projectRepo from '../db/repositories/projectRepo.js';
+import { validate } from '../middleware/validate.js';
 
 const router = Router({ mergeParams: true });
+
+const addMemberSchema = z.object({
+  userId: z.string().min(1),
+  role: z.enum(['writer', 'viewer']).optional(),
+});
+
+const lockBodySchema = z.object({
+  userId: z.string().min(1),
+});
+
+function verifyToken(req: { headers: { authorization?: string } }): string | null {
+  const auth = req.headers.authorization;
+  if (!auth?.startsWith('Bearer ')) return null;
+  return presence.validateToken(auth.slice(7));
+}
 
 router.get('/members', (req, res) => {
   const { projectId } = req.params as { projectId: string };
@@ -13,12 +31,11 @@ router.get('/members', (req, res) => {
   res.json({ success: true, data: members });
 });
 
-router.post('/members', (req, res) => {
+router.post('/members', validate(addMemberSchema), (req, res) => {
   const { projectId } = req.params as { projectId: string };
-  const { userId, role } = req.body as { userId: string; role?: string };
-
-  if (!userId) {
-    res.status(400).json({ success: false, error: 'userId 必填' });
+  const callerId = verifyToken(req);
+  if (!callerId) {
+    res.status(401).json({ success: false, error: '未认证' });
     return;
   }
 
@@ -30,25 +47,40 @@ router.post('/members', (req, res) => {
 
   const existingCount = memberRepo.getMembers(projectId).length;
   if (existingCount === 0) {
-    memberRepo.addMember(projectId, userId, 'owner');
+    memberRepo.addMember(projectId, req.body.userId, 'owner');
   } else {
-    memberRepo.addMember(projectId, userId, role ?? 'writer');
+    const callerRole = memberRepo.getMemberRole(projectId, callerId);
+    if (callerRole !== 'owner') {
+      res.status(403).json({ success: false, error: '仅项目拥有者可添加成员' });
+      return;
+    }
+    memberRepo.addMember(projectId, req.body.userId, req.body.role ?? 'writer');
   }
 
   presenceManager.broadcastToProject(projectId, {
     type: 'member:joined',
-    payload: { userId },
+    payload: { userId: req.body.userId },
   });
 
-  res.json({ success: true, data: { projectId, userId } });
+  res.json({ success: true, data: { projectId, userId: req.body.userId } });
 });
 
-router.delete('/members/:userId', (req, res) => {
-  const { projectId, userId } = req.params as { projectId: string; userId: string };
-  memberRepo.removeMember(projectId, userId);
+router.delete('/members/:targetUserId', (req, res) => {
+  const { projectId, targetUserId } = req.params as { projectId: string; targetUserId: string };
+  const callerId = verifyToken(req);
+  if (!callerId) {
+    res.status(401).json({ success: false, error: '未认证' });
+    return;
+  }
+  const callerRole = memberRepo.getMemberRole(projectId, callerId);
+  if (callerRole !== 'owner') {
+    res.status(403).json({ success: false, error: '仅项目拥有者可移除成员' });
+    return;
+  }
+  memberRepo.removeMember(projectId, targetUserId);
   presenceManager.broadcastToProject(projectId, {
     type: 'member:left',
-    payload: { userId },
+    payload: { userId: targetUserId },
   });
   res.json({ success: true });
 });
@@ -63,17 +95,20 @@ router.get('/online', (req, res) => {
   res.json({ success: true, data: withNames });
 });
 
-router.post('/lock/:chapterId', (req, res) => {
+router.post('/lock/:chapterId', validate(lockBodySchema), (req, res) => {
   const params = req.params as { projectId: string; chapterId: string };
   const { projectId, chapterId } = params;
-  const { userId } = req.body as { userId: string };
-
-  if (!userId) {
-    res.status(400).json({ success: false, error: 'userId 必填' });
+  const callerId = verifyToken(req);
+  if (!callerId) {
+    res.status(401).json({ success: false, error: '未认证' });
+    return;
+  }
+  if (callerId !== req.body.userId) {
+    res.status(403).json({ success: false, error: '只能为自己获取锁' });
     return;
   }
 
-  const acquired = lockManager.acquireLock(chapterId, userId);
+  const acquired = lockManager.acquireLock(chapterId, req.body.userId);
   if (!acquired) {
     const lock = lockManager.getLock(chapterId);
     const lockUser = lock ? userRepo.findById(lock.userId) : null;
@@ -86,18 +121,22 @@ router.post('/lock/:chapterId', (req, res) => {
 
   presenceManager.broadcastToProject(projectId, {
     type: 'lock:acquired',
-    payload: { chapterId, userId },
+    payload: { chapterId, userId: req.body.userId },
   });
 
-  res.json({ success: true, data: { chapterId, userId } });
+  res.json({ success: true, data: { chapterId, userId: req.body.userId } });
 });
 
 router.delete('/lock/:chapterId', (req, res) => {
   const { projectId, chapterId } = req.params as { projectId: string; chapterId: string };
-  const { userId } = req.query as { userId: string };
-
-  if (!userId) {
-    res.status(400).json({ success: false, error: 'userId 必填' });
+  const callerId = verifyToken(req);
+  if (!callerId) {
+    res.status(401).json({ success: false, error: '未认证' });
+    return;
+  }
+  const userId = (req.query.userId as string) ?? callerId;
+  if (callerId !== userId) {
+    res.status(403).json({ success: false, error: '只能释放自己的锁' });
     return;
   }
 
