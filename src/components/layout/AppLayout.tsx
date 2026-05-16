@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { type ReactNode, useEffect } from "react";
 import { useUiStore } from "@/stores/uiStore";
 import { ChapterSidebar } from "@/components/sidebar/ChapterSidebar";
 import { ResizablePanel } from "./ResizablePanel";
@@ -12,11 +12,42 @@ export function AppLayout({ children, rightPanel }: AppLayoutProps) {
   const isLeftPanelOpen = useUiStore((s) => s.isLeftPanelOpen);
   const isRightPanelOpen = useUiStore((s) => s.isRightPanelOpen);
   const isFullscreen = useUiStore((s) => s.isFullscreen);
+  const isFocusMode = useUiStore((s) => s.isFocusMode);
   const leftPanelWidth = useUiStore((s) => s.leftPanelWidth);
   const rightPanelWidth = useUiStore((s) => s.rightPanelWidth);
   const setLeftPanelWidth = useUiStore((s) => s.setLeftPanelWidth);
   const setRightPanelWidth = useUiStore((s) => s.setRightPanelWidth);
   const activeLeftTab = useUiStore((s) => s.activeLeftTab);
+
+  // ESC to exit focus mode
+  useEffect(() => {
+    if (!isFocusMode) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        useUiStore.getState().exitFocusMode();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [isFocusMode]);
+
+  // Focus mode: editor only, centered
+  if (isFocusMode) {
+    return (
+      <div className="flex flex-1 overflow-hidden bg-[var(--color-surface-0)]">
+        <div className="flex-1 overflow-hidden">
+          <div className="mx-auto h-full" style={{ maxWidth: 720 }}>
+            {children}
+          </div>
+        </div>
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full bg-[var(--color-surface-2)]/80 px-3 py-1.5 text-[var(--text-xs)] text-[var(--color-text-muted)] shadow-[var(--shadow-lg)] backdrop-blur-sm">
+          <span>专注模式</span>
+          <span className="text-[var(--color-text-muted)]">·</span>
+          <span>ESC 退出</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-1 overflow-hidden">

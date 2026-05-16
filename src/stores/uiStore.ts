@@ -9,6 +9,7 @@ interface UiState {
   isLeftPanelOpen: boolean;
   isRightPanelOpen: boolean;
   isFullscreen: boolean;
+  isFocusMode: boolean;
   activeLeftTab: LeftTab;
   theme: Theme;
   isSearchOpen: boolean;
@@ -18,6 +19,9 @@ interface UiActions {
   toggleLeftPanel: () => void;
   toggleRightPanel: () => void;
   toggleFullscreen: () => void;
+  enterFocusMode: () => void;
+  exitFocusMode: () => void;
+  toggleFocusMode: () => void;
   setActiveLeftTab: (tab: LeftTab) => void;
   setLeftPanelWidth: (width: number) => void;
   setRightPanelWidth: (width: number) => void;
@@ -35,6 +39,7 @@ export const useUiStore = create<UiState & UiActions>((set) => ({
   isLeftPanelOpen: true,
   isRightPanelOpen: true,
   isFullscreen: false,
+  isFocusMode: false,
   activeLeftTab: "chapters",
   theme: "dark",
   isSearchOpen: false,
@@ -47,6 +52,13 @@ export const useUiStore = create<UiState & UiActions>((set) => ({
 
   toggleFullscreen: () =>
     set((state) => ({ isFullscreen: !state.isFullscreen })),
+
+  enterFocusMode: () => set({ isFocusMode: true, isLeftPanelOpen: false, isRightPanelOpen: false, isSearchOpen: false }),
+
+  exitFocusMode: () => set({ isFocusMode: false }),
+
+  toggleFocusMode: () =>
+    set((state) => state.isFocusMode ? { isFocusMode: false } : { isFocusMode: true, isLeftPanelOpen: false, isRightPanelOpen: false, isSearchOpen: false }),
 
   setActiveLeftTab: (tab) => set({ activeLeftTab: tab }),
 

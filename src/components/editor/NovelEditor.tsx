@@ -9,6 +9,7 @@ import { Markdown } from "tiptap-markdown";
 import { useEffect, useRef, useCallback } from "react";
 import { GhostMark } from "./GhostMark";
 import { useEditorStore } from "@/stores/editorStore";
+import { useUiStore } from "@/stores/uiStore";
 import "@/styles/editor.css";
 
 interface NovelEditorProps {
@@ -59,6 +60,19 @@ export function NovelEditor({ content, onUpdate }: NovelEditorProps) {
     },
     onUpdate: ({ editor: ed }) => {
       handleUpdate(ed.getHTML());
+      // Typewriter scroll: center cursor vertically in focus mode
+      if (useUiStore.getState().isFocusMode) {
+        requestAnimationFrame(() => {
+          const { from } = ed.state.selection;
+          const coords = ed.view.coordsAtPos(from);
+          const editorEl = ed.view.dom.closest('.overflow-y-auto') as HTMLElement;
+          if (editorEl) {
+            const editorRect = editorEl.getBoundingClientRect();
+            const cursorCenter = coords.top - editorRect.top + editorEl.scrollTop - editorRect.height / 2;
+            editorEl.scrollTo({ top: cursorCenter, behavior: 'smooth' });
+          }
+        });
+      }
     },
     onCreate: ({ editor: ed }) => {
       setEditor(ed);

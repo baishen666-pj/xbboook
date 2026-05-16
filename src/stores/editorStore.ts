@@ -6,6 +6,7 @@ interface EditorState {
   content: string;
   selectedText: string;
   isDirty: boolean;
+  dirtyAt: number | null;
   lastSavedAt: Date | null;
   isSaving: boolean;
   editorInstance: Editor | null;
@@ -27,6 +28,7 @@ export const useEditorStore = create<EditorState & EditorActions>(
     content: "",
     selectedText: "",
     isDirty: false,
+    dirtyAt: null,
     lastSavedAt: null,
     isSaving: false,
     editorInstance: null,
@@ -36,17 +38,22 @@ export const useEditorStore = create<EditorState & EditorActions>(
         activeChapterId: chapterId,
         content,
         isDirty: false,
+        dirtyAt: null,
         selectedText: "",
         lastSavedAt: null,
       });
     },
 
     updateContent: (text) => {
-      set({ content: text, isDirty: true });
+      set((s) => ({
+        content: text,
+        isDirty: true,
+        dirtyAt: s.dirtyAt ?? Date.now(),
+      }));
     },
 
     saveContent: () => {
-      set({ isSaving: true, isDirty: false });
+      set({ isSaving: true, isDirty: false, dirtyAt: null });
     },
 
     setSelectedText: (text) => {
@@ -58,6 +65,7 @@ export const useEditorStore = create<EditorState & EditorActions>(
         activeChapterId: null,
         content: "",
         isDirty: false,
+        dirtyAt: null,
         selectedText: "",
       });
     },

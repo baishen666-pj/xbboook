@@ -19,6 +19,17 @@ export function useAutoSave(): void {
   const periodicRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastVersionTimeRef = useRef<number>(0);
 
+  // Warn before leaving with unsaved changes
+  useEffect(() => {
+    if (!isDirty) return;
+
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
+
   useEffect(() => {
     if (!activeChapterId) return;
 

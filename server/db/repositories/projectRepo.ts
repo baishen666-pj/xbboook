@@ -17,7 +17,7 @@ export function findById(id: string): Project | undefined {
 
 const PROJECT_UPDATE_FIELDS = new Set([
   'name', 'description', 'genre', 'writing_style', 'writing_mode',
-  'target_words', 'status', 'sort_order',
+  'target_words', 'daily_target', 'status', 'sort_order',
 ]);
 
 export async function create(data: {

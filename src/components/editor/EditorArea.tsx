@@ -3,11 +3,14 @@ import { useAutoSave } from "@/hooks/useAutoSave";
 import { NovelEditor } from "./NovelEditor";
 import { WordCounter } from "./WordCounter";
 import { GhostTextToolbar } from "./GhostTextToolbar";
+import { SaveIndicator } from "./SaveIndicator";
+import { WritingTimer } from "./WritingTimer";
 
 export function EditorArea() {
   const activeChapterId = useEditorStore((s) => s.activeChapterId);
   const content = useEditorStore((s) => s.content);
   const isSaving = useEditorStore((s) => s.isSaving);
+  const isDirty = useEditorStore((s) => s.isDirty);
 
   useAutoSave();
 
@@ -50,7 +53,17 @@ export function EditorArea() {
 
   return (
     <div className="flex h-full flex-col bg-[var(--color-surface-0)]">
-      {/* Saving indicator */}
+      {/* Unsaved banner */}
+      {isDirty && !isSaving && (
+        <div className="flex items-center justify-between border-b border-[var(--color-warning)]/20 bg-[var(--color-warning)]/5 px-4 py-1">
+          <SaveIndicator />
+          <span className="text-[var(--text-xs)] text-[var(--color-text-muted)]">
+            Ctrl+S 立即保存
+          </span>
+        </div>
+      )}
+
+      {/* Saving toast */}
       {isSaving && (
         <div className="absolute top-12 right-4 z-10 flex items-center gap-1.5 rounded-[var(--radius-md)] bg-[var(--color-surface-2)] px-2.5 py-1 text-[var(--text-xs)] text-[var(--color-text-muted)] shadow-[var(--shadow-sm)]">
           <span className="inline-block h-2 w-2 rounded-full bg-[var(--color-primary)] animate-[pulse-subtle_1.5s_ease-in-out_infinite]" />
@@ -64,7 +77,11 @@ export function EditorArea() {
         <GhostTextToolbar />
       </div>
 
-      <WordCounter />
+      {/* Bottom bar: word count + writing timer */}
+      <div className="flex items-center justify-between border-t border-[var(--color-border)] bg-[var(--color-surface-1)] px-4 py-1">
+        <WordCounter />
+        <WritingTimer />
+      </div>
     </div>
   );
 }

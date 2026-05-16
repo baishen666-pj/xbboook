@@ -19,6 +19,7 @@ import usersRouter from './routes/users.js';
 import collabRouter from './routes/collab.js';
 import commentsRouter from './routes/comments.js';
 import backupRouter from './routes/backup.js';
+import importRouter from './routes/import.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -51,6 +52,7 @@ app.use('/api/users', usersRouter);
 app.use('/api/projects/:projectId/collab', collabRouter);
 app.use('/api/projects/:projectId/chapters/:chapterId/comments', commentsRouter);
 app.use('/api/backups', backupRouter);
+app.use('/api/projects', importRouter);
 
 app.use(errorHandler);
 

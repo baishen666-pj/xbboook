@@ -7,6 +7,15 @@ export const analyticsService = {
     return apiClient.get<DashboardData>(`/projects/${projectId}/stats/dashboard?days=${days}`);
   },
 
+  async getTodayStats(projectId: string): Promise<ApiResponse<{
+    words: number;
+    durationMs: number;
+    sessions: number;
+    dailyTarget: number;
+  }>> {
+    return apiClient.get(`/projects/${projectId}/stats/today`);
+  },
+
   async getCharacterAppearances(projectId: string): Promise<ApiResponse<CharacterAppearance[]>> {
     return apiClient.get<CharacterAppearance[]>(`/projects/${projectId}/stats/characters`);
   },

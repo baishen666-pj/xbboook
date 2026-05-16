@@ -12,6 +12,7 @@ export interface Project {
   writing_style: string | null;
   writing_mode: string;
   target_words: number | null;
+  daily_target: number;
   status: string;
   sort_order: number;
   created_at: string;

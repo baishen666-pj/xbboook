@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { useAnalyticsStore } from "@/stores/analyticsStore";
-import { WritingVelocityChart } from "./WritingVelocityChart";
+import { AiUsageChart } from "./AiUsageChart";
+import { WritingHeatmap } from "./WritingHeatmap";
 import { ChapterProgressChart } from "./ChapterProgressChart";
 import { CharacterAppearances } from "./CharacterAppearances";
 import { WritingStreak } from "./WritingStreak";
 import { TargetProgress } from "./TargetProgress";
-import { PeakHoursChart } from "./PeakHoursChart";
 
 interface Props {
   onClose?: () => void;
@@ -87,14 +87,14 @@ export function DashboardPanel({ onClose }: Props) {
             </div>
           </div>
 
-          {/* Velocity + Peak hours */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg bg-white/[0.03] p-3">
-              <WritingVelocityChart data={dashboard.velocity} />
-            </div>
-            <div className="rounded-lg bg-white/[0.03] p-3">
-              <PeakHoursChart data={dashboard.peakHours} />
-            </div>
+          {/* Enhanced velocity chart */}
+          <div className="rounded-lg bg-white/[0.03] p-3">
+            <AiUsageChart data={dashboard.velocity} />
+          </div>
+
+          {/* Writing heatmap */}
+          <div className="rounded-lg bg-white/[0.03] p-3">
+            <WritingHeatmap data={dashboard.peakHours} />
           </div>
 
           {/* Chapter status */}

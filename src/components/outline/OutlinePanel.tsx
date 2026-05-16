@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useProjectStore } from "@/stores/projectStore";
+import { useEditorStore } from "@/stores/editorStore";
 import { outlineService } from "@/services/outlineService";
+import { streamAi } from "@/services/aiService";
 import { TemplateGallery } from "@/components/template/TemplateGallery";
 import type { Outline } from "@/types/project";
 
@@ -28,14 +30,17 @@ function buildTree(items: Outline[]): OutlineNode[] {
   return roots;
 }
 
-function OutlineItem({ node, onEdit, onDelete, onCreateChild }: {
+function OutlineItem({ node, onEdit, onDelete, onCreateChild, onGenerate, generatingId }: {
   node: OutlineNode;
   onEdit: (node: OutlineNode) => void;
   onDelete: (id: string) => void;
   onCreateChild: (parentId: string) => void;
+  onGenerate: (node: OutlineNode) => void;
+  generatingId: string | null;
 }) {
   const [expanded, setExpanded] = useState(true);
   const indent = node.level * 16;
+  const isGenerating = generatingId === node.id;
 
   return (
     <div>
@@ -55,6 +60,14 @@ function OutlineItem({ node, onEdit, onDelete, onCreateChild }: {
         )}
         <span className="flex-1 truncate" onClick={() => onEdit(node)}>{node.title}</span>
         <div className="shrink-0 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={(e) => { e.stopPropagation(); onGenerate(node); }}
+            disabled={isGenerating}
+            className="rounded p-0.5 text-white/30 hover:bg-[var(--color-primary)]/10 hover:text-[var(--color-primary)] text-[10px] disabled:opacity-40"
+            title={isGenerating ? "生成中..." : "AI 生成章节"}
+          >
+            {isGenerating ? "⏳" : "📖"}
+          </button>
           <button
             onClick={(e) => { e.stopPropagation(); onCreateChild(node.id); }}
             className="rounded p-0.5 text-white/30 hover:bg-white/5 hover:text-white/60 text-[10px]"
@@ -78,6 +91,8 @@ function OutlineItem({ node, onEdit, onDelete, onCreateChild }: {
           onEdit={onEdit}
           onDelete={onDelete}
           onCreateChild={onCreateChild}
+          onGenerate={onGenerate}
+          generatingId={generatingId}
         />
       ))}
     </div>
@@ -86,6 +101,9 @@ function OutlineItem({ node, onEdit, onDelete, onCreateChild }: {
 
 export function OutlinePanel() {
   const currentProject = useProjectStore((s) => s.currentProject);
+  const activeChapterId = useEditorStore((s) => s.activeChapterId);
+  const updateContent = useEditorStore((s) => s.updateContent);
+  const editorInstance = useEditorStore((s) => s.editorInstance);
   const [items, setItems] = useState<Outline[]>([]);
   const [editing, setEditing] = useState<OutlineNode | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -93,6 +111,9 @@ export function OutlinePanel() {
   const [newTitle, setNewTitle] = useState("");
   const [addingChildOf, setAddingChildOf] = useState<string | null>(null);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const [generatingStatus, setGeneratingStatus] = useState<string>("");
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (!currentProject) return;
@@ -102,6 +123,11 @@ export function OutlinePanel() {
     }).catch(() => {});
     return () => controller.abort();
   }, [currentProject]);
+
+  // Cleanup abort on unmount
+  useEffect(() => {
+    return () => { abortRef.current?.abort(); };
+  }, []);
 
   if (!currentProject) return null;
 
@@ -142,6 +168,73 @@ export function OutlinePanel() {
     }
   };
 
+  const handleGenerate = async (node: OutlineNode) => {
+    if (!activeChapterId || generatingId) return;
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setGeneratingId(node.id);
+    setGeneratingStatus("正在生成...");
+
+    // Collect all ancestor + self content for context
+    const outlineParts: string[] = [];
+    const collectContent = (n: OutlineNode, depth: number) => {
+      const prefix = "#".repeat(depth + 1);
+      outlineParts.push(`${prefix} ${n.title}`);
+      if (n.content) outlineParts.push(n.content);
+      for (const child of n.children) {
+        collectContent(child, depth + 1);
+      }
+    };
+    collectContent(node, 0);
+    const outlineContent = outlineParts.join("\n");
+
+    let fullContent = "";
+
+    try {
+      for await (const event of streamAi({
+        projectId: currentProject.id,
+        skillId: "chapter-generate",
+        chapterId: activeChapterId,
+        outlineContent,
+      }, controller.signal)) {
+        if (controller.signal.aborted) break;
+        if (event.type === "chunk") {
+          fullContent += event.content;
+          setGeneratingStatus(`生成中... ${fullContent.length} 字`);
+        }
+      }
+
+      if (fullContent && !controller.signal.aborted) {
+        // Insert into editor via Tiptap
+        if (editorInstance) {
+          const currentContent = editorInstance.getHTML();
+          const separator = currentContent && currentContent !== "<p></p>" ? "\n\n" : "";
+          editorInstance.commands.setContent(currentContent + separator + fullContent);
+          const html = editorInstance.getHTML();
+          updateContent(html);
+        } else {
+          const currentText = useEditorStore.getState().content;
+          const separator = currentText ? "\n\n" : "";
+          updateContent(currentText + separator + fullContent);
+        }
+        setGeneratingStatus("生成完成");
+      }
+    } catch (err) {
+      if (!controller.signal.aborted) {
+        const message = err instanceof Error ? err.message : "生成失败";
+        setGeneratingStatus(`错误: ${message}`);
+      }
+    } finally {
+      setTimeout(() => {
+        setGeneratingId(null);
+        setGeneratingStatus("");
+      }, 2000);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Add root node */}
@@ -175,6 +268,22 @@ export function OutlinePanel() {
         </button>
       </div>
 
+      {/* Generating status */}
+      {generatingStatus && (
+        <div className="flex items-center gap-2 border-b border-[var(--color-primary)]/10 bg-[var(--color-primary)]/5 px-3 py-1.5 text-[11px] text-[var(--color-primary)]">
+          <span className="inline-block h-2 w-2 rounded-full bg-[var(--color-primary)] animate-[pulse-subtle_1.5s_ease-in-out_infinite]" />
+          {generatingStatus}
+          {generatingId && (
+            <button
+              onClick={() => { abortRef.current?.abort(); setGeneratingId(null); setGeneratingStatus(""); }}
+              className="ml-auto text-white/40 hover:text-white/60"
+            >
+              取消
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Tree or Template Gallery */}
       {showTemplates ? (
         <TemplateGallery
@@ -206,6 +315,8 @@ export function OutlinePanel() {
               setAddingChildOf(parentId);
               setNewTitle("");
             }}
+            onGenerate={handleGenerate}
+            generatingId={generatingId}
           />
         ))}
         </div>

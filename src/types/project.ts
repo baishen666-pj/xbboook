@@ -8,6 +8,7 @@ export interface Project {
   writingMode: WritingMode;
   wordCount: number;
   chapterCount: number;
+  dailyTarget: number;
   createdAt: string;
   updatedAt: string;
 }

@@ -134,7 +134,7 @@ router.post('/test', async (_req, res) => {
 
 // SSE streaming AI request
 router.post('/stream', async (req, res) => {
-  const { projectId, skillId, chapterId, selectedText, targetStyle, question, customInstruction } = req.body;
+  const { projectId, skillId, chapterId, selectedText, targetStyle, question, customInstruction, outlineContent } = req.body;
 
   if (!projectId || !skillId) {
     res.status(400).json({ success: false, error: 'projectId and skillId are required' });
@@ -165,6 +165,7 @@ router.post('/stream', async (req, res) => {
       targetStyle,
       question,
       customInstruction,
+      outlineContent,
     })) {
       if (event.type === 'chunk') {
         fullContent += event.content;

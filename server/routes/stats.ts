@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { getDb } from '../db/database.js';
 import * as statsRepo from '../db/repositories/statsRepo.js';
 import * as sessionRepo from '../db/repositories/sessionRepo.js';
 import * as analyticsService from '../services/analyticsService.js';
@@ -43,6 +44,32 @@ router.get('/dashboard', (req, res) => {
   const days = Math.min(Math.max(Number(req.query.days) || 30, 1), 365);
   const data = analyticsService.getDashboardData(projectId, days);
   res.json({ success: true, data });
+});
+
+router.get('/today', (req, res) => {
+  const { projectId } = req.params as { projectId: string };
+  const today = new Date().toISOString().slice(0, 10);
+  const db = getDb();
+
+  const todayWords = db.prepare(`
+    SELECT COALESCE(SUM(words_end - words_start), 0) as words,
+           COALESCE(SUM(duration_ms), 0) as duration_ms,
+           COUNT(*) as sessions
+    FROM writing_sessions
+    WHERE project_id = ? AND DATE(started_at) = ? AND ended_at IS NOT NULL
+  `).get(projectId, today) as { words: number; duration_ms: number; sessions: number };
+
+  const project = db.prepare('SELECT daily_target FROM projects WHERE id = ?').get(projectId) as { daily_target: number } | undefined;
+
+  res.json({
+    success: true,
+    data: {
+      words: todayWords.words,
+      durationMs: todayWords.duration_ms,
+      sessions: todayWords.sessions,
+      dailyTarget: project?.daily_target ?? 0,
+    },
+  });
 });
 
 router.get('/characters', async (req, res) => {

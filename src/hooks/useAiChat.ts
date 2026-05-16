@@ -12,7 +12,7 @@ export function useAiChat() {
   const abortRef = useRef<AbortController | null>(null);
 
   const send = useCallback(
-    async (userMessage: string) => {
+    async (userMessage: string, extra?: { outlineContent?: string }) => {
       if (!currentProject) return;
 
       abortRef.current?.abort();
@@ -39,6 +39,7 @@ export function useAiChat() {
         chapterId: activeChapterId ?? undefined,
         selectedText: selectedText || undefined,
         question: userMessage,
+        outlineContent: extra?.outlineContent,
       };
 
       try {
@@ -70,7 +71,7 @@ export function useAiChat() {
   );
 
   const quickAction = useCallback(
-    async (skillId: string) => {
+    async (skillId: string, extra?: { outlineContent?: string }) => {
       if (!currentProject) return;
 
       useAiStore.getState().setActiveSkill(skillId);
@@ -85,10 +86,11 @@ export function useAiChat() {
         inspiration: "获取灵感",
         qa: "写作问答",
         deai: "对选中文本去AI味",
+        "chapter-generate": "根据大纲生成章节",
       };
 
       const label = skillLabels[skillId] || skillId;
-      await send(label);
+      await send(label, extra);
     },
     [currentProject, send],
   );

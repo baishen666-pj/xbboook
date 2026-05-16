@@ -12,6 +12,7 @@ export interface AiRequest {
   targetStyle?: string;
   question?: string;
   customInstruction?: string;
+  outlineContent?: string;
 }
 
 export { checkConfigured as isConfigured, listSkills, getSkill };
@@ -32,6 +33,7 @@ export async function* processAiRequest(
     currentChapterId: req.chapterId,
     selectedText: req.selectedText,
     maxTokens: 8000,
+    outlineContent: req.outlineContent,
   };
 
   const sources = await buildContext(contextOptions);

@@ -13,6 +13,7 @@ const createSchema = z.object({
   writing_style: z.string().optional(),
   writing_mode: z.string().optional(),
   target_words: z.number().optional(),
+  daily_target: z.number().optional(),
 });
 
 const updateSchema = z.object({
@@ -22,6 +23,7 @@ const updateSchema = z.object({
   writing_style: z.string().nullable().optional(),
   writing_mode: z.string().optional(),
   target_words: z.number().nullable().optional(),
+  daily_target: z.number().optional(),
   status: z.enum(['active', 'archived', 'completed']).optional(),
   sort_order: z.number().optional(),
 });

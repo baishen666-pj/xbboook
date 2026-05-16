@@ -32,6 +32,7 @@ export interface StreamRequest {
   targetStyle?: string;
   question?: string;
   customInstruction?: string;
+  outlineContent?: string;
 }
 
 export async function fetchSkills(): Promise<AiSkill[]> {

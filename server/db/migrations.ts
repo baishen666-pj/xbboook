@@ -214,4 +214,10 @@ export function runMigrations(): void {
     CREATE INDEX IF NOT EXISTS idx_comments_project ON chapter_comments(project_id);
     CREATE INDEX IF NOT EXISTS idx_versions_project ON chapter_versions(project_id);
   `);
+
+  // Phase 4: Add daily_target to projects
+  const columns = db.prepare("PRAGMA table_info(projects)").all() as { name: string }[];
+  if (!columns.some((c) => c.name === 'daily_target')) {
+    db.exec(`ALTER TABLE projects ADD COLUMN daily_target INTEGER DEFAULT 0`);
+  }
 }

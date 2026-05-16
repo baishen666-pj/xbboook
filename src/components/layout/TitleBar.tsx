@@ -1,26 +1,20 @@
 import { useState, useEffect, useRef } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { useUiStore } from "@/stores/uiStore";
-import { useEditorStore } from "@/stores/editorStore";
+import { SaveIndicator } from "@/components/editor/SaveIndicator";
 
 export function TitleBar() {
   const currentProject = useProjectStore((s) => s.currentProject);
   const toggleFullscreen = useUiStore((s) => s.toggleFullscreen);
   const isFullscreen = useUiStore((s) => s.isFullscreen);
+  const isFocusMode = useUiStore((s) => s.isFocusMode);
+  const toggleFocusMode = useUiStore((s) => s.toggleFocusMode);
   const theme = useUiStore((s) => s.theme);
   const cycleTheme = useUiStore((s) => s.cycleTheme);
-  const lastSavedAt = useEditorStore((s) => s.lastSavedAt);
-  const isDirty = useEditorStore((s) => s.isDirty);
   const [showExport, setShowExport] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
 
   const themeIcon = theme === "dark" ? "🌙" : theme === "light" ? "☀️" : "📖";
-
-  const saveLabel = isDirty
-    ? "编辑中..."
-    : lastSavedAt
-      ? `已保存于 ${lastSavedAt.toLocaleTimeString()}`
-      : "就绪";
 
   useEffect(() => {
     if (!showExport) return;
@@ -51,14 +45,7 @@ export function TitleBar() {
 
       <div className="flex items-center gap-3">
         {/* Save indicator */}
-        <span className="flex items-center gap-1.5 text-[var(--text-xs)] text-[var(--color-text-muted)]">
-          {isDirty ? (
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-warning)]" />
-          ) : (
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-success)]" />
-          )}
-          {saveLabel}
-        </span>
+        <SaveIndicator />
 
         {/* Export */}
         {currentProject && (
@@ -101,6 +88,19 @@ export function TitleBar() {
           title={`主题：${theme === "dark" ? "暗色" : theme === "light" ? "亮色" : "阅读"}（点击切换）`}
         >
           {themeIcon}
+        </button>
+
+        {/* Focus mode toggle */}
+        <button
+          onClick={toggleFocusMode}
+          className={`rounded-[var(--radius-sm)] px-2 py-1 text-[var(--text-xs)] transition-colors ${
+            isFocusMode
+              ? "bg-[var(--color-primary)]/10 text-[var(--color-primary)]"
+              : "text-[var(--color-text-muted)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)]"
+          }`}
+          title={isFocusMode ? "退出专注模式 (ESC)" : "专注模式"}
+        >
+          {isFocusMode ? "退出专注" : "专注"}
         </button>
 
         <button

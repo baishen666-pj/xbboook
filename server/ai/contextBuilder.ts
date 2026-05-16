@@ -14,6 +14,7 @@ export interface BuildContextOptions {
   currentChapterId?: string;
   selectedText?: string;
   maxTokens?: number;
+  outlineContent?: string;
 }
 
 const CHARS_PER_TOKEN = 2.5;
@@ -74,6 +75,7 @@ export async function buildContext(options: BuildContextOptions): Promise<Contex
     currentChapterId,
     selectedText,
     maxTokens = 8000,
+    outlineContent,
   } = options;
 
   const sources: ContextSource[] = [];
@@ -116,6 +118,15 @@ export async function buildContext(options: BuildContextOptions): Promise<Contex
         }
       }
     }
+  }
+
+  // Priority 9: outline content (for chapter-generate skill)
+  if (outlineContent) {
+    sources.push({
+      priority: 9,
+      label: '大纲内容',
+      content: outlineContent,
+    });
   }
 
   // Priority 6: character profiles
