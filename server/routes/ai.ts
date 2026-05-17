@@ -587,4 +587,64 @@ router.delete('/chat-history/:projectId', (req, res) => {
   res.json({ success: true, data: { deleted } });
 });
 
+// Direct text edit endpoint (non-streaming, for quick edits)
+router.post('/edit', async (req, res) => {
+  const { projectId, skillId, selectedText, targetStyle } = req.body as {
+    projectId?: string;
+    skillId?: string;
+    selectedText?: string;
+    targetStyle?: string;
+  };
+
+  const editSkills = ['polish', 'rewrite', 'expand', 'compress', 'deai', 'style', 'check-repetition', 'check-dialogue-style'];
+  if (!skillId || !editSkills.includes(skillId)) {
+    res.status(400).json({ success: false, error: `skillId must be one of: ${editSkills.join(', ')}` });
+    return;
+  }
+  if (!selectedText || selectedText.trim().length === 0) {
+    res.status(400).json({ success: false, error: 'selectedText 必填' });
+    return;
+  }
+  if (!isConfigured()) {
+    res.status(400).json({ success: false, error: 'AI 未配置' });
+    return;
+  }
+
+  try {
+    const prompt = buildPrompt({
+      skillId,
+      sources: [],
+      userMessage: buildUserPromptWithText(skillId, selectedText, targetStyle),
+    });
+
+    const messages = toMessages(prompt);
+    const skill = getSkill(skillId)!;
+
+    let fullContent = '';
+    const { streamChat } = await import('../ai/agentFactory.js');
+    for await (const chunk of streamChat(messages, { temperature: skill.temperature, maxTokens: skill.maxTokens })) {
+      if (chunk.content) fullContent += chunk.content;
+      if (chunk.done) break;
+    }
+
+    res.json({ success: true, data: { result: fullContent, skillId } });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err instanceof Error ? err.message : '编辑失败' });
+  }
+});
+
+function buildUserPromptWithText(skillId: string, text: string, targetStyle?: string): string {
+  switch (skillId) {
+    case 'polish': return `请润色以下文本：\n\n${text}`;
+    case 'rewrite': return `请改写以下文本：\n\n${text}`;
+    case 'expand': return `请扩写以下文本：\n\n${text}`;
+    case 'compress': return `请精简以下文本：\n\n${text}`;
+    case 'deai': return `请对以下文本进行去AI味改写：\n\n${text}`;
+    case 'style': return `请将以下文本转换为「${targetStyle || '指定'}」风格：\n\n${text}`;
+    case 'check-repetition': return `请检查以下文本中的重复表达：\n\n${text}`;
+    case 'check-dialogue-style': return `请检查以下文本中对话的质量和个性化：\n\n${text}`;
+    default: return text;
+  }
+}
+
 export default router;

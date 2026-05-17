@@ -266,6 +266,27 @@ const MIGRATIONS: Migration[] = [
       'CREATE INDEX IF NOT EXISTS idx_publish_targets_project ON publish_targets(project_id)',
     ],
   },
+  {
+    version: 17,
+    name: 'material_box',
+    up: [
+      `CREATE TABLE IF NOT EXISTS material_box (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL DEFAULT '',
+        category TEXT NOT NULL DEFAULT 'other',
+        tags TEXT NOT NULL DEFAULT '[]',
+        source TEXT,
+        metadata TEXT DEFAULT '{}',
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_material_box_project ON material_box(project_id)',
+      'CREATE INDEX IF NOT EXISTS idx_material_box_category ON material_box(project_id, category)',
+    ],
+  },
 ];
 
 // Check if a migration's effects already exist in the database
@@ -338,6 +359,10 @@ function isMigrationApplied(db: ReturnType<typeof getDb>, migration: Migration):
   // Version 16: publish_targets table
   if (migration.version === 16) {
     return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='publish_targets'").get();
+  }
+  // Version 17: material_box table
+  if (migration.version === 17) {
+    return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='material_box'").get();
   }
   return false;
 }

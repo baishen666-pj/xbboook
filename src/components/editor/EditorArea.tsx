@@ -11,6 +11,7 @@ import { SplitPane } from "./SplitPane";
 import { MobileToolbar } from "./MobileToolbar";
 import { CrashRecoveryBanner } from "./CrashRecoveryBanner";
 import { AiEditRollbackBanner } from "./AiEditRollbackBanner";
+import { AiEditFloatingBar } from "./AiEditFloatingBar";
 
 export function EditorArea() {
   const activeChapterId = useEditorStore((s) => s.activeChapterId);
@@ -98,12 +99,14 @@ export function EditorArea() {
           <div className="flex-1 overflow-hidden relative">
             <NovelEditor content={content} />
             <GhostTextToolbar />
+            <AiEditFloatingBar />
           </div>
         </SplitPane>
       ) : (
         <div className="flex-1 overflow-hidden relative">
           <NovelEditor content={content} />
           <GhostTextToolbar />
+          <AiEditFloatingBar />
         </div>
       )}
 

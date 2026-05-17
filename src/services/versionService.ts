@@ -22,4 +22,13 @@ export const versionService = {
   async remove(projectId: string, chapterId: string, versionId: string): Promise<ApiResponse<void>> {
     return apiClient.delete<void>(`/projects/${projectId}/chapters/${chapterId}/versions/${versionId}`);
   },
+
+  async diff(projectId: string, chapterId: string, versionId: string, otherVersionId: string) {
+    return apiClient.get<{
+      left: { id: string; versionNumber: number; label: string | null; createdAt: string };
+      right: { id: string; versionNumber: number; label: string | null; createdAt: string };
+      hunks: Array<{ type: 'add' | 'remove' | 'equal'; lines: string[] }>;
+      stats: { added: number; removed: number; unchanged: number };
+    }>(`/projects/${projectId}/chapters/${chapterId}/versions/${versionId}/diff/${otherVersionId}`);
+  },
 };

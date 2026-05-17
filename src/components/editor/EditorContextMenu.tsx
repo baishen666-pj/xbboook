@@ -14,13 +14,17 @@ interface ContextMenuState {
 
 const AI_ACTIONS = [
   { skillId: "continue", label: "续写", icon: "✍️" },
-  { skillId: "rewrite", label: "改写", icon: "🔄" },
   { skillId: "polish", label: "润色", icon: "✨" },
+  { skillId: "rewrite", label: "改写", icon: "🔄" },
+  { skillId: "expand", label: "扩写", icon: "📝" },
+  { skillId: "compress", label: "缩写", icon: "✂️" },
   { skillId: "style", label: "风格转换", icon: "🎭" },
-  { skillId: "dialogue", label: "生成对话", icon: "💬" },
+  { skillId: "deai", label: "去AI味", icon: "🧹" },
+  { skillId: "check-repetition", label: "重复检测", icon: "🔎" },
+  { skillId: "check-dialogue-style", label: "对话检查", icon: "💬" },
+  { skillId: "dialogue", label: "生成对话", icon: "🗣️" },
   { skillId: "consistency", label: "一致性检查", icon: "🔍" },
   { skillId: "inspiration", label: "灵感", icon: "💡" },
-  { skillId: "deai", label: "去AI味", icon: "🧹" },
 ] as const;
 
 export function EditorContextMenu() {

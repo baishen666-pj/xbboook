@@ -15,6 +15,8 @@ import { StyleProfilePanel } from "./StyleProfilePanel";
 import { MemoryPanel } from "./MemoryPanel";
 import { AutoContinueSuggestion } from "./AutoContinueSuggestion";
 import { AnalysisPanel } from "./AnalysisPanel";
+import { InspirationPanel } from "./InspirationPanel";
+import { MaterialPanel } from "./MaterialPanel";
 
 export function AiPanel() {
   const activeSkillId = useAiStore((s) => s.activeSkillId);
@@ -27,6 +29,8 @@ export function AiPanel() {
   const [showStyleProfile, setShowStyleProfile] = useState(false);
   const [showMemory, setShowMemory] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
+  const [showInspiration, setShowInspiration] = useState(false);
+  const [showMaterials, setShowMaterials] = useState(false);
 
   const autoContinue = useAutoContinue(currentProject?.id, activeChapterId ?? undefined);
 
@@ -97,6 +101,27 @@ export function AiPanel() {
               <circle cx="8" cy="8" r="1.5" />
             </svg>
           </button>
+          <button
+            onClick={() => setShowInspiration(!showInspiration)}
+            className={`rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors ${showInspiration ? "bg-[var(--color-primary-subtle)] text-[var(--color-primary)]" : ""}`}
+            title="灵感生成器"
+            aria-label="灵感生成器"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M8 1l2 4 4.5.5-3.25 3L12.5 13 8 10.5 3.5 13l1.25-4.5L1.5 5.5 6 5z" />
+            </svg>
+          </button>
+          <button
+            onClick={() => setShowMaterials(!showMaterials)}
+            className={`rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors ${showMaterials ? "bg-[var(--color-primary-subtle)] text-[var(--color-primary)]" : ""}`}
+            title="素材收集库"
+            aria-label="素材收集库"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <rect x="2" y="2" width="12" height="12" rx="2" />
+              <path d="M5 2v12M2 7h12" />
+            </svg>
+          </button>
           <AiSettingsPanel />
         </div>
       </div>
@@ -132,6 +157,20 @@ export function AiPanel() {
       {showAnalysis && currentProject && (
         <div className="border-b border-[var(--color-border)] max-h-96 overflow-y-auto">
           <AnalysisPanel projectId={currentProject.id} />
+        </div>
+      )}
+
+      {/* Inspiration panel (collapsible) */}
+      {showInspiration && currentProject && (
+        <div className="border-b border-[var(--color-border)] max-h-96 overflow-y-auto">
+          <InspirationPanel projectId={currentProject.id} />
+        </div>
+      )}
+
+      {/* Material panel (collapsible) */}
+      {showMaterials && currentProject && (
+        <div className="border-b border-[var(--color-border)] max-h-96 overflow-y-auto">
+          <MaterialPanel projectId={currentProject.id} />
         </div>
       )}
 

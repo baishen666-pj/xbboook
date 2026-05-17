@@ -194,3 +194,19 @@ export async function fetchChatSummary(
   if (!res.success || !res.data) throw new Error(res.error || '摘要生成失败');
   return res.data;
 }
+
+export async function fetchTextEdit(
+  projectId: string,
+  skillId: string,
+  selectedText: string,
+  targetStyle?: string,
+): Promise<string> {
+  const res = await apiClient.post<{ result: string }>('/ai/edit', {
+    projectId,
+    skillId,
+    selectedText,
+    targetStyle,
+  });
+  if (!res.success || !res.data) throw new Error(res.error || '编辑失败');
+  return res.data.result;
+}

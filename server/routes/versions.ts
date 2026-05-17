@@ -75,4 +75,84 @@ router.delete('/:versionId', async (req: Request<VersionParams>, res) => {
   res.json({ success: true });
 });
 
+// Diff between two versions
+router.get('/:versionId/diff/:otherVersionId', async (req: Request<VersionParams & { otherVersionId: string }>, res) => {
+  const { projectId, chapterId, versionId, otherVersionId } = req.params;
+
+  const v1 = versionService.getVersion(versionId);
+  const v2 = versionService.getVersion(otherVersionId);
+  if (!v1 || !v2 || v1.chapter_id !== chapterId || v2.chapter_id !== chapterId) {
+    res.status(404).json({ success: false, error: '版本不存在' });
+    return;
+  }
+
+  const content1 = await versionService.getVersionContent(projectId, chapterId, v1.version_number);
+  const content2 = await versionService.getVersionContent(projectId, chapterId, v2.version_number);
+
+  const hunks = computeDiff(content1, content2);
+
+  res.json({
+    success: true,
+    data: {
+      left: { id: v1.id, versionNumber: v1.version_number, label: v1.label, createdAt: v1.created_at },
+      right: { id: v2.id, versionNumber: v2.version_number, label: v2.label, createdAt: v2.created_at },
+      hunks,
+      stats: { added: hunks.filter(h => h.type === 'add').reduce((s, h) => s + h.lines.length, 0), removed: hunks.filter(h => h.type === 'remove').reduce((s, h) => s + h.lines.length, 0), unchanged: hunks.filter(h => h.type === 'equal').reduce((s, h) => s + h.lines.length, 0) },
+    },
+  });
+});
+
+interface DiffHunk {
+  type: 'add' | 'remove' | 'equal';
+  lines: string[];
+}
+
+function computeDiff(oldText: string, newText: string): DiffHunk[] {
+  const oldLines = oldText.split('\n');
+  const newLines = newText.split('\n');
+  const hunks: DiffHunk[] = [];
+
+  const maxLen = Math.max(oldLines.length, newLines.length);
+  let i = 0;
+
+  while (i < maxLen) {
+    const oldLine = i < oldLines.length ? oldLines[i] : undefined;
+    const newLine = i < newLines.length ? newLines[i] : undefined;
+
+    if (oldLine === newLine) {
+      hunks.push({ type: 'equal', lines: [oldLine!] });
+      i++;
+    } else {
+      const added: string[] = [];
+      const removed: string[] = [];
+      let oi = i;
+      let ni = i;
+
+      while (oi < oldLines.length && ni < newLines.length && oldLines[oi] !== newLines[ni]) {
+        if (ni < newLines.length) { added.push(newLines[ni]); ni++; }
+        if (oi < oldLines.length && (ni >= newLines.length || oldLines[oi] !== newLines[Math.min(ni, newLines.length - 1)])) {
+          removed.push(oldLines[oi]); oi++;
+        }
+      }
+
+      if (removed.length > 0) hunks.push({ type: 'remove', lines: removed });
+      if (added.length > 0) hunks.push({ type: 'add', lines: added });
+      i = Math.max(oi, ni);
+    }
+  }
+
+  // Merge adjacent same-type hunks
+  const merged: DiffHunk[] = [];
+  for (const hunk of hunks) {
+    const last = merged[merged.length - 1];
+    if (last && last.type === hunk.type) {
+      last.lines.push(...hunk.lines);
+    } else {
+      merged.push({ ...hunk, lines: [...hunk.lines] });
+    }
+  }
+
+  return merged;
+}
+
 export default router;

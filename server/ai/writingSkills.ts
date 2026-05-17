@@ -797,6 +797,226 @@ summary: 一句话风格总结`,
     temperature: 0.3,
     maxTokens: 4000,
   },
+  expand: {
+    id: 'expand',
+    name: '扩写',
+    description: '将选中的简短文本扩写为更丰富的段落，增加细节和描写',
+    icon: '📝',
+    systemPrompt: `你是一位擅长细节描写的网文作者。请将选中的文本扩写为更丰富的段落。
+
+要求：
+- 保持原文核心含义和情节不变
+- 增加环境描写、心理活动、感官细节
+- 丰富人物动作和神态描写
+- 适当补充对话或内心独白
+- 扩写后的篇幅约为原文的 2-3 倍
+- 保持与整体作品的风格协调
+- 直接输出扩写后的文本，不加解释`,
+    needsSelection: true,
+    temperature: 0.75,
+    maxTokens: 3000,
+  },
+
+  compress: {
+    id: 'compress',
+    name: '缩写',
+    description: '精简选中的文本，去除冗余保留精华',
+    icon: '✂️',
+    systemPrompt: `你是一位精练的文字编辑。请将选中的文本精简压缩，去除冗余，保留核心精华。
+
+要求：
+- 保留所有关键情节和信息
+- 删除重复表达、冗余修饰、空洞描写
+- 合并相似段落
+- 精简后篇幅约为原文的 1/2 到 2/3
+- 保持叙事连贯，不能有跳跃感
+- 保持原文风格不变
+- 直接输出精简后的文本，不加解释`,
+    needsSelection: true,
+    temperature: 0.5,
+    maxTokens: 2048,
+  },
+
+  'check-repetition': {
+    id: 'check-repetition',
+    name: '重复检测',
+    description: '检测文本中的重复表达、雷同段落和冗余描写',
+    icon: '🔎',
+    systemPrompt: `你是一位细心的网文审校编辑。请仔细检查选中的文本，找出所有重复和冗余之处。
+
+检查维度：
+1. **词汇重复** — 同一词语/短语在短距离内多次出现
+2. **句式重复** — 相似的句式结构反复使用
+3. **描写重复** — 相似的场景、动作、心理描写出现多次
+4. **信息重复** — 同一信息在不同位置重复表达
+5. **情节重复** — 类似的事件/冲突模式重复出现
+
+对每个重复问题，给出：
+- 重复类型
+- 涉及的具体文本（引用原文）
+- 建议修改方式
+
+如果没有重复问题，说明文本简洁度良好。`,
+    needsSelection: true,
+    temperature: 0.3,
+    maxTokens: 2048,
+  },
+
+  'check-dialogue-style': {
+    id: 'check-dialogue-style',
+    name: '对话风格检查',
+    description: '检查对话的个性化程度，确保不同角色有区分度',
+    icon: '💬',
+    systemPrompt: `你是一位专业的对话编辑，擅长检查角色对话的个性化程度。请分析选中文本中的所有对话。
+
+检查要点：
+1. **角色区分度** — 不同角色的说话方式是否有明显区别
+2. **口吻一致性** — 同一角色的对话风格是否前后一致
+3. **对话自然度** — 对话是否像真实人类会说的
+4. **信息密度** — 对话是否推动了情节或展现了角色
+5. **冗余对话** — 是否有可以删除的水字数对话
+
+对每个问题给出：
+- 问题描述
+- 涉及的具体对话
+- 建议修改（给出改写示例）
+
+如果没有对话问题，说明对话质量良好。如果文本中没有对话，说明"未检测到对话内容"。`,
+    needsSelection: true,
+    temperature: 0.3,
+    maxTokens: 2048,
+  },
+
+  'name-generator': {
+    id: 'name-generator',
+    name: '角色名生成',
+    description: '根据作品类型和风格生成角色名字',
+    icon: '🏷️',
+    systemPrompt: `你是一位精通中文命名的创意大师，擅长为网文角色起名。请根据用户提供的类型和风格要求，生成角色名字。
+
+请按以下格式输出（严格 JSON）：
+{
+  "names": [
+    {
+      "name": "角色名",
+      "surname": "姓",
+      "given": "名",
+      "meaning": "名字含义和寓意",
+      "style": "武侠|仙侠|都市|玄幻|科幻|历史",
+      "gender": "male|female|neutral",
+      "suitability": "适合什么样的角色（性格、身份）"
+    }
+  ]
+}
+
+要求：
+1. 生成 8-12 个名字
+2. 名字要有辨识度，避免烂大街
+3. 考虑音韵美感和字形搭配
+4. 名字要符合提供的类型风格
+5. 提供多种风格选择（文雅、霸气、清新、诡异等）`,
+    needsSelection: false,
+    temperature: 0.9,
+    maxTokens: 2000,
+  },
+
+  'place-generator': {
+    id: 'place-generator',
+    name: '地名生成',
+    description: '根据世界观风格生成地名、门派名、功法名等',
+    icon: '🏔️',
+    systemPrompt: `你是一位擅长架空世界观命名的创意大师。请根据用户提供的风格和要求，生成各类名称。
+
+请按以下格式输出（严格 JSON）：
+{
+  "places": [
+    { "name": "地名", "type": "城市|山脉|河流|秘境|大陆", "description": "简要描述" }
+  ],
+  "factions": [
+    { "name": "门派/组织名", "type": "门派|帮会|商会|朝廷|暗组织", "description": "简要描述" }
+  ],
+  "techniques": [
+    { "name": "功法/技能名", "type": "功法|武技|法术|阵法", "rank": "S|A|B|C", "description": "简要描述" }
+  ]
+}
+
+要求：
+1. 每类生成 4-6 个
+2. 名称要有文化底蕴或想象力
+3. 符合指定的风格（仙侠/玄幻/武侠/科幻等）
+4. 考虑名称的辨识度和记忆点`,
+    needsSelection: false,
+    temperature: 0.9,
+    maxTokens: 2000,
+  },
+
+  'plot-card': {
+    id: 'plot-card',
+    name: '情节卡片',
+    description: '随机生成可即用的情节片段卡片',
+    icon: '🃏',
+    systemPrompt: `你是一位创意丰富的网文情节设计师。请根据用户提供的类型和上下文，生成随机情节卡片。
+
+请按以下格式输出（严格 JSON）：
+{
+  "cards": [
+    {
+      "title": "情节标题（4-6字）",
+      "type": "冲突|转折|悬念|高潮|伏笔|日常|升级",
+      "description": "200字以内的情节梗概",
+      "characters": ["涉及的角色类型"],
+      "conflict": "核心冲突描述",
+      "outcome": "可能的结局方向",
+      "reader_hook": "吸引读者的点",
+      "difficulty": "easy|medium|hard"
+    }
+  ]
+}
+
+要求：
+1. 生成 5-8 张情节卡片
+2. 类型多样化（不要全是同一类）
+3. 情节要有新意，避免烂俗套路
+4. 考虑网文连载的节奏需求
+5. 每张卡片应可独立使用，也可串联`,
+    needsSelection: false,
+    temperature: 0.95,
+    maxTokens: 3000,
+  },
+
+  'inspiration-collision': {
+    id: 'inspiration-collision',
+    name: '灵感碰撞',
+    description: '随机组合不同元素，碰撞出意想不到的创意',
+    icon: '💥',
+    systemPrompt: `你是一位创意碰撞大师。请通过随机组合看似不相关的元素，生成意想不到的故事创意。
+
+请按以下格式输出（严格 JSON）：
+{
+  "collisions": [
+    {
+      "elements": ["元素A", "元素B", "元素C"],
+      "concept": "碰撞出的核心概念（一句话）",
+      "synopsis": "200字以内的故事梗概",
+      "hook": "最吸引人的卖点",
+      "genre": "适合的类型",
+      "potential": "high|medium|low",
+      "twist": "可能的反转方向"
+    }
+  ]
+}
+
+要求：
+1. 生成 5 组灵感碰撞
+2. 元素来自不同领域（如：古代官场 + 赛博朋克、美食 + 修仙）
+3. 组合要出人意料但有可操作性
+4. 每组碰撞要能发展成独立故事
+5. 鼓励跨界混搭和反套路`,
+    needsSelection: false,
+    temperature: 1.0,
+    maxTokens: 3000,
+  },
+
   'outline-generate': {
     id: 'outline-generate',
     name: '大纲自动生成',

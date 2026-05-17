@@ -33,6 +33,7 @@ import { consistencyRouter } from './routes/consistency.js';
 import memoryRouter from './routes/memory.js';
 import publishRouter from './routes/publish.js';
 import analysisRouter from './routes/analysis.js';
+import materialsRouter from './routes/materials.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestIdMiddleware, requestLogger } from './middleware/logger.js';
 
@@ -104,6 +105,7 @@ app.use('/api/consistency/:projectId', consistencyRouter);
 app.use('/api/projects/:projectId/memory', memoryRouter);
 app.use('/api/projects/:projectId/publish', publishRouter);
 app.use('/api/projects/:projectId/analysis', analysisRouter);
+app.use('/api/projects/:projectId/materials', materialsRouter);
 
 app.use(errorHandler);
 

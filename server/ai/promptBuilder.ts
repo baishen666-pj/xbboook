@@ -161,6 +161,30 @@ export function buildUserPrompt(skillId: string, params: {
     case 'outline-generate':
       return '请根据以下章节内容，反向生成结构化的故事大纲（严格按 JSON 格式输出）';
 
+    case 'expand':
+      return `请将以下选中的文本扩写为更丰富、更有细节的段落：\n\n${params.selectedText || ''}`;
+
+    case 'compress':
+      return `请将以下选中的文本精简压缩，去除冗余：\n\n${params.selectedText || ''}`;
+
+    case 'check-repetition':
+      return `请检查以下文本中的重复表达和冗余之处：\n\n${params.selectedText || ''}`;
+
+    case 'check-dialogue-style':
+      return `请检查以下文本中对话的个性化程度和质量：\n\n${params.selectedText || ''}`;
+
+    case 'name-generator':
+      return params.question || '请生成适合网文的角色名字（请指定类型风格，如仙侠、都市、玄幻等）';
+
+    case 'place-generator':
+      return params.question || '请生成架空世界观的各类名称（地名、门派名、功法名等）';
+
+    case 'plot-card':
+      return params.question || '请生成随机情节卡片（请指定类型，如玄幻、都市、悬疑等）';
+
+    case 'inspiration-collision':
+      return params.question || '请进行灵感碰撞，随机组合不同领域元素生成创意';
+
     default:
       return params.question || '请协助创作';
   }
