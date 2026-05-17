@@ -50,6 +50,7 @@ import insightsRouter from './routes/insights.js';
 import scenesRouter from './routes/scenes.js';
 import qualityRouter from './routes/quality.js';
 import chapterDepsRouter from './routes/chapterDependencies.js';
+import outlineEnhanceRouter from './routes/outlineEnhance.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestIdMiddleware, requestLogger } from './middleware/logger.js';
 
@@ -146,6 +147,7 @@ app.use('/api/projects/:projectId/insights', insightsRouter);
 app.use('/api/projects/:projectId/scenes', scenesRouter);
 app.use('/api/projects/:projectId/quality', qualityRouter);
 app.use('/api/projects/:projectId/dependencies', chapterDepsRouter);
+app.use('/api/projects/:projectId/outline-enhance', aiLimiter, outlineEnhanceRouter);
 
 app.use(errorHandler);
 

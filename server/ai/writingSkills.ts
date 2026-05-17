@@ -1188,6 +1188,131 @@ summary: 一句话风格总结`,
     temperature: 0.3,
     maxTokens: 4000,
   },
+
+  'outline-expand': {
+    id: 'outline-expand',
+    name: '大纲扩写',
+    description: '将一个大纲节点扩展为详细的子大纲',
+    icon: '🌳',
+    systemPrompt: `你是一位专业的小说大纲编辑。用户会给你一个大纲节点（标题+描述），请将其扩展为更详细的子大纲。
+
+请按以下格式输出（严格 JSON）：
+{
+  "children": [
+    {
+      "title": "子节点标题",
+      "summary": "内容概要（30-60字）",
+      "key_events": ["关键事件"],
+      "emotional_tone": "情感基调",
+      "estimated_words": 3000
+    }
+  ],
+  "expansion_notes": "扩写说明"
+}
+
+要求：
+- 每个大纲节点扩展为 3-8 个子节点
+- 子节点之间有明确的因果关系和递进关系
+- 包含起承转合的节奏感
+- 保留原节点的核心意图
+- 为每个子节点预估合理的字数`,
+    needsSelection: false,
+    temperature: 0.5,
+    maxTokens: 3000,
+  },
+
+  'outline-template': {
+    id: 'outline-template',
+    name: '大纲模板生成',
+    description: '根据题材和风格生成完整大纲模板',
+    icon: '📋',
+    systemPrompt: `你是一位经验丰富的网文大纲策划师。用户会描述他们想写的故事类型、风格偏好和基本设定，请生成一份完整的大纲模板。
+
+请按以下格式输出（严格 JSON）：
+{
+  "title": "建议书名",
+  "genre": "类型",
+  "logline": "一句话简介",
+  "themes": ["主题1", "主题2"],
+  "structure": {
+    "act1": {
+      "title": "第一幕：开篇",
+      "chapters_range": "第1-20章",
+      "goal": "本幕目标",
+      "beats": [
+        {"title": "节拍标题", "description": "概要", "chapters": "1-3"}
+      ]
+    },
+    "act2": {
+      "title": "第二幕：发展",
+      "chapters_range": "第21-60章",
+      "goal": "本幕目标",
+      "beats": [
+        {"title": "节拍标题", "description": "概要", "chapters": "21-25"}
+      ]
+    },
+    "act3": {
+      "title": "第三幕：高潮与结局",
+      "chapters_range": "第61-80章",
+      "goal": "本幕目标",
+      "beats": [
+        {"title": "节拍标题", "description": "概要", "chapters": "61-65"}
+      ]
+    }
+  },
+  "key_characters": [
+    {"name": "角色名", "role": "定位", "arc": "成长弧线"}
+  ],
+  "climax_design": "高潮设计说明",
+  "ending_type": "结局类型（HE/BE/OE）"
+}`,
+    needsSelection: false,
+    temperature: 0.7,
+    maxTokens: 4000,
+  },
+
+  'outline-analysis': {
+    id: 'outline-analysis',
+    name: '大纲分析',
+    description: '分析大纲的完整性、节奏和结构质量',
+    icon: '🔍',
+    systemPrompt: `你是一位资深的故事结构分析师。请分析用户提供的大纲，评估其结构质量。
+
+请按以下格式输出（严格 JSON）：
+{
+  "overall_score": 85,
+  "completeness": {
+    "score": 90,
+    "analysis": "完整性分析"
+  },
+  "pacing": {
+    "score": 80,
+    "analysis": "节奏分析",
+    "slow_sections": ["可能拖沓的部分"],
+    "fast_sections": ["可能过快的部分"]
+  },
+  "conflict_density": {
+    "score": 75,
+    "analysis": "冲突密度分析"
+  },
+  "character_arcs": {
+    "score": 85,
+    "analysis": "角色弧线分析",
+    "missing_arcs": ["缺失的角色发展"]
+  },
+  "foreshadowing": {
+    "score": 70,
+    "analysis": "伏笔分析",
+    "opportunities": ["可以添加伏笔的地方"]
+  },
+  "structure_issues": ["问题1", "问题2"],
+  "suggestions": ["建议1", "建议2", "建议3"],
+  "strengths": ["优点1", "优点2"]
+}`,
+    needsSelection: false,
+    temperature: 0.3,
+    maxTokens: 3000,
+  },
 };
 
 export function getSkill(id: string): WritingSkill | undefined {
