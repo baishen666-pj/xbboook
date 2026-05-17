@@ -1,5 +1,6 @@
 import { Router, type Request } from 'express';
 import { z } from 'zod';
+import { getDb } from '../db/database.js';
 import * as chapterRepo from '../db/repositories/chapterRepo.js';
 import { readChapter } from '../services/fileService.js';
 import { validate } from '../middleware/validate.js';
@@ -89,6 +90,69 @@ router.patch('/:id/publish-status', validate(publishStatusSchema), (req: Request
     return;
   }
   res.json({ success: true, data: chapter });
+});
+
+const batchScheduleSchema = z.object({
+  chapterIds: z.array(z.string()).min(1).max(50),
+  startDate: z.string(),
+  intervalHours: z.number().min(1).max(168).default(24),
+  authorNote: z.string().optional(),
+});
+
+router.post('/batch-schedule', validate(batchScheduleSchema), (req: Request<ChapterParams>, res) => {
+  const { projectId } = req.params;
+  const { chapterIds, startDate, intervalHours } = req.body;
+
+  const chapters = chapterRepo.findByProject(projectId);
+  const chapterMap = new Map(chapters.map((c) => [c.id, c]));
+  const start = new Date(startDate);
+
+  const scheduled: Array<{ id: string; title: string; scheduledAt: string }> = [];
+  const errors: Array<{ id: string; error: string }> = [];
+
+  for (let i = 0; i < chapterIds.length; i++) {
+    const id = chapterIds[i];
+    const ch = chapterMap.get(id);
+    if (!ch) {
+      errors.push({ id, error: '章节不存在' });
+      continue;
+    }
+
+    const scheduledAt = new Date(start.getTime() + i * intervalHours * 3600_000);
+    const updated = chapterRepo.update(id, {
+      publish_status: 'scheduled',
+      scheduled_at: scheduledAt.toISOString(),
+    });
+
+    if (updated) {
+      scheduled.push({ id, title: ch.title, scheduledAt: scheduledAt.toISOString() });
+    } else {
+      errors.push({ id, error: '更新失败' });
+    }
+  }
+
+  res.json({ success: true, data: { scheduled, errors } });
+});
+
+router.post('/publish-due', (req: Request<ChapterParams>, res) => {
+  const { projectId } = req.params;
+  const now = new Date().toISOString();
+  const db = getDb();
+
+  const due = db.prepare(`
+    SELECT id, title, scheduled_at
+    FROM chapters
+    WHERE project_id = ? AND publish_status = 'scheduled' AND scheduled_at <= ?
+    ORDER BY scheduled_at ASC
+  `).all(projectId, now) as Array<{ id: string; title: string; scheduled_at: string }>;
+
+  const published: string[] = [];
+  for (const ch of due) {
+    chapterRepo.update(ch.id, { publish_status: 'published' });
+    published.push(ch.id);
+  }
+
+  res.json({ success: true, data: { published, count: published.length } });
 });
 
 router.get('/:id', async (req, res) => {

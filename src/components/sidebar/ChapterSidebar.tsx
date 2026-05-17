@@ -18,14 +18,16 @@ const StoryArcPanel = lazy(() => import("@/components/story-arcs/StoryArcPanel")
 const SnippetPanel = lazy(() => import("@/components/snippets/SnippetPanel").then(m => ({ default: m.SnippetPanel })));
 const ConsistencyPanel = lazy(() => import("@/components/consistency/ConsistencyPanel").then(m => ({ default: m.ConsistencyPanel })));
 const TimelinePanel = lazy(() => import("@/components/timeline/TimelinePanel").then(m => ({ default: m.TimelinePanel })));
+const OutlineBoard = lazy(() => import("@/components/outline/OutlineBoard").then(m => ({ default: m.OutlineBoard })));
 
-type Tab = "chapters" | "characters" | "worldview" | "outline" | "versions" | "schedule" | "foreshadowing" | "snippets" | "arcs" | "consistency" | "timeline";
+type Tab = "chapters" | "characters" | "worldview" | "outline" | "versions" | "schedule" | "foreshadowing" | "snippets" | "arcs" | "consistency" | "timeline" | "board";
 
 const TABS: Array<{ key: Tab; label: string }> = [
   { key: "chapters", label: "章节" },
   { key: "characters", label: "角色" },
   { key: "worldview", label: "世界观" },
   { key: "outline", label: "大纲" },
+  { key: "board", label: "看板" },
   { key: "foreshadowing", label: "伏笔" },
   { key: "arcs", label: "弧线" },
   { key: "timeline", label: "时间线" },
@@ -189,6 +191,7 @@ export function ChapterSidebar() {
                   {activeLeftTab === "characters" && <div id="tabpanel-characters" role="tabpanel" aria-label="角色列表"><CharacterList /></div>}
                   {activeLeftTab === "worldview" && <div id="tabpanel-worldview" role="tabpanel" aria-label="世界观"><WorldviewList /></div>}
                   {activeLeftTab === "outline" && <div id="tabpanel-outline" role="tabpanel" aria-label="大纲"><OutlinePanel /></div>}
+                  {activeLeftTab === "board" && <div id="tabpanel-board" role="tabpanel" aria-label="看板"><OutlineBoard /></div>}
                   {activeLeftTab === "foreshadowing" && <div id="tabpanel-foreshadowing" role="tabpanel" aria-label="伏笔"><ForeshadowingPanel /></div>}
                   {activeLeftTab === "arcs" && <div id="tabpanel-arcs" role="tabpanel" aria-label="故事弧线"><StoryArcPanel /></div>}
                   {activeLeftTab === "snippets" && <div id="tabpanel-snippets" role="tabpanel" aria-label="片段"><SnippetPanel /></div>}

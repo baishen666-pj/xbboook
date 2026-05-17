@@ -11,7 +11,9 @@ export function TitleBar() {
   const toggleFullscreen = useUiStore((s) => s.toggleFullscreen);
   const isFullscreen = useUiStore((s) => s.isFullscreen);
   const isFocusMode = useUiStore((s) => s.isFocusMode);
+  const isReaderMode = useUiStore((s) => s.isReaderMode);
   const toggleFocusMode = useUiStore((s) => s.toggleFocusMode);
+  const toggleReaderMode = useUiStore((s) => s.toggleReaderMode);
   const theme = useUiStore((s) => s.theme);
   const cycleTheme = useUiStore((s) => s.cycleTheme);
   const [showExport, setShowExport] = useState(false);
@@ -108,6 +110,21 @@ export function TitleBar() {
           aria-pressed={isFocusMode}
         >
           {isFocusMode ? "退出专注" : "专注"}
+        </button>
+
+        {/* Reader mode toggle */}
+        <button
+          onClick={toggleReaderMode}
+          className={`rounded-[var(--radius-sm)] px-2 py-1 text-[var(--text-xs)] transition-colors btn-hover-scale ${
+            isReaderMode
+              ? "bg-amber-500/10 text-amber-500"
+              : "text-[var(--color-text-muted)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)]"
+          }`}
+          title={isReaderMode ? "退出阅读模式 (Esc)" : "阅读模式 (Ctrl+Shift+R)"}
+          aria-label={isReaderMode ? "退出阅读模式" : "进入阅读模式"}
+          aria-pressed={isReaderMode}
+        >
+          阅读
         </button>
 
         <button

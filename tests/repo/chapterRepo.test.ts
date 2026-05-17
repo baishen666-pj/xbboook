@@ -45,6 +45,14 @@ function setupTables(): void {
       FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
       FOREIGN KEY (volume_id) REFERENCES volumes(id) ON DELETE SET NULL
     );
+    CREATE TABLE chapter_search_cache (
+      chapter_id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL,
+      plain_text TEXT NOT NULL DEFAULT '',
+      updated_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+      FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
+    );
   `);
 }
 

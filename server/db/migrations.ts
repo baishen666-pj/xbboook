@@ -178,6 +178,21 @@ const MIGRATIONS: Migration[] = [
       'CREATE INDEX IF NOT EXISTS idx_consistency_issues_project ON consistency_issues(project_id, status)',
     ],
   },
+  {
+    version: 13,
+    name: 'search_cache',
+    up: [
+      `CREATE TABLE IF NOT EXISTS chapter_search_cache (
+        chapter_id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        plain_text TEXT NOT NULL DEFAULT '',
+        updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+        FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_search_cache_project ON chapter_search_cache(project_id)',
+    ],
+  },
 ];
 
 // Check if a migration's effects already exist in the database
@@ -234,6 +249,10 @@ function isMigrationApplied(db: ReturnType<typeof getDb>, migration: Migration):
   // Version 12: consistency_issues table
   if (migration.version === 12) {
     return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='consistency_issues'").get();
+  }
+  // Version 13: chapter_search_cache table
+  if (migration.version === 13) {
+    return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='chapter_search_cache'").get();
   }
   return false;
 }

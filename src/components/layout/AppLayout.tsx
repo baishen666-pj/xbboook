@@ -4,6 +4,7 @@ import { ChapterSidebar } from "@/components/sidebar/ChapterSidebar";
 import { ResizablePanel } from "./ResizablePanel";
 import { FocusToolbar } from "@/components/editor/FocusToolbar";
 import { FocusProgressBar } from "@/components/editor/FocusProgressBar";
+import { ReaderView } from "@/components/editor/ReaderView";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -15,6 +16,7 @@ export function AppLayout({ children, rightPanel }: AppLayoutProps) {
   const isRightPanelOpen = useUiStore((s) => s.isRightPanelOpen);
   const isFullscreen = useUiStore((s) => s.isFullscreen);
   const isFocusMode = useUiStore((s) => s.isFocusMode);
+  const isReaderMode = useUiStore((s) => s.isReaderMode);
   const leftPanelWidth = useUiStore((s) => s.leftPanelWidth);
   const rightPanelWidth = useUiStore((s) => s.rightPanelWidth);
   const setLeftPanelWidth = useUiStore((s) => s.setLeftPanelWidth);
@@ -65,6 +67,23 @@ export function AppLayout({ children, rightPanel }: AppLayoutProps) {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [isFocusMode]);
+
+  // ESC to exit reader mode
+  useEffect(() => {
+    if (!isReaderMode) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        useUiStore.getState().exitReaderMode();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [isReaderMode]);
+
+  // Reader mode: book-like reading experience
+  if (isReaderMode) {
+    return <ReaderView />;
+  }
 
   // Focus mode: editor only, centered with progress bar and toolbar
   if (isFocusMode) {

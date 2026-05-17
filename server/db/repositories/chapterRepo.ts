@@ -1,6 +1,7 @@
 import { v4 as uuid } from 'uuid';
 import { getDb } from '../database.js';
 import { writeChapter, deleteChapter } from '../../services/fileService.js';
+import * as searchCacheRepo from './searchCacheRepo.js';
 import type { Chapter } from '../../types/index.js';
 
 export function findByProject(projectId: string): Chapter[] {
@@ -110,6 +111,9 @@ export async function updateContent(id: string, content: string): Promise<Chapte
     "UPDATE chapters SET word_count = ?, updated_at = datetime('now') WHERE id = ?",
   ).run(charCount, id);
 
+  const plainText = content.replace(/<[^>]+>/g, '').replace(/&[^;]+;/g, ' ').replace(/\s+/g, ' ').trim();
+  searchCacheRepo.upsert(id, existing.project_id, plainText);
+
   return findById(id);
 }
 
@@ -119,6 +123,7 @@ export async function deleteById(id: string): Promise<boolean> {
   if (!existing) return false;
 
   await deleteChapter(existing.project_id, id);
+  searchCacheRepo.removeByChapter(id);
   db.prepare('DELETE FROM chapters WHERE id = ?').run(id);
   return true;
 }

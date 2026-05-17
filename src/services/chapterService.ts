@@ -54,4 +54,19 @@ export const chapterService = {
   ): Promise<ApiResponse<Chapter>> {
     return apiClient.patch<Chapter>(`/projects/${projectId}/chapters/${chapterId}/publish-status`, data);
   },
+
+  async batchSchedule(
+    projectId: string,
+    data: {
+      chapterIds: string[];
+      startDate: string;
+      intervalHours?: number;
+    }
+  ): Promise<ApiResponse<{ scheduled: Array<{ id: string; title: string; scheduledAt: string }>; errors: Array<{ id: string; error: string }> }>> {
+    return apiClient.post(`/projects/${projectId}/chapters/batch-schedule`, data);
+  },
+
+  async publishDue(projectId: string): Promise<ApiResponse<{ published: string[]; count: number }>> {
+    return apiClient.post(`/projects/${projectId}/chapters/publish-due`, {});
+  },
 };

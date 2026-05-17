@@ -355,6 +355,17 @@ CREATE TABLE IF NOT EXISTS project_templates (
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS chapter_search_cache (
+  chapter_id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL,
+  plain_text TEXT NOT NULL DEFAULT '',
+  updated_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+  FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_search_cache_project ON chapter_search_cache(project_id);
 `;
 
 /**

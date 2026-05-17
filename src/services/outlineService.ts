@@ -12,6 +12,7 @@ export const outlineService = {
     level?: number;
     parentId?: string;
     content?: string;
+    targetRefId?: string;
   }): Promise<ApiResponse<Outline>> {
     return apiClient.post<Outline>(`/projects/${projectId}/outlines`, data);
   },

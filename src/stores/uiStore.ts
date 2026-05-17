@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-type LeftTab = "chapters" | "characters" | "worldview" | "outline" | "versions" | "schedule" | "foreshadowing" | "snippets" | "arcs" | "consistency" | "timeline";
+type LeftTab = "chapters" | "characters" | "worldview" | "outline" | "versions" | "schedule" | "foreshadowing" | "snippets" | "arcs" | "consistency" | "timeline" | "board";
 type Theme = "dark" | "light" | "sepia";
 
 interface UiState {
@@ -10,6 +10,7 @@ interface UiState {
   isRightPanelOpen: boolean;
   isFullscreen: boolean;
   isFocusMode: boolean;
+  isReaderMode: boolean;
   activeLeftTab: LeftTab;
   theme: Theme;
   isSearchOpen: boolean;
@@ -28,6 +29,9 @@ interface UiActions {
   enterFocusMode: () => void;
   exitFocusMode: () => void;
   toggleFocusMode: () => void;
+  enterReaderMode: () => void;
+  exitReaderMode: () => void;
+  toggleReaderMode: () => void;
   setActiveLeftTab: (tab: LeftTab) => void;
   setLeftPanelWidth: (width: number) => void;
   setRightPanelWidth: (width: number) => void;
@@ -53,6 +57,7 @@ export const useUiStore = create<UiState & UiActions>((set) => ({
   isRightPanelOpen: true,
   isFullscreen: false,
   isFocusMode: false,
+  isReaderMode: false,
   activeLeftTab: "chapters",
   theme: "dark",
   isSearchOpen: false,
@@ -78,6 +83,11 @@ export const useUiStore = create<UiState & UiActions>((set) => ({
 
   toggleFocusMode: () =>
     set((state) => state.isFocusMode ? { isFocusMode: false } : { isFocusMode: true, isLeftPanelOpen: false, isRightPanelOpen: false, isSearchOpen: false }),
+
+  enterReaderMode: () => set({ isReaderMode: true, isFocusMode: false, isLeftPanelOpen: false, isRightPanelOpen: false, isSearchOpen: false }),
+  exitReaderMode: () => set({ isReaderMode: false }),
+  toggleReaderMode: () =>
+    set((state) => state.isReaderMode ? { isReaderMode: false } : { isReaderMode: true, isFocusMode: false, isLeftPanelOpen: false, isRightPanelOpen: false, isSearchOpen: false }),
 
   setActiveLeftTab: (tab) => set({ activeLeftTab: tab }),
 

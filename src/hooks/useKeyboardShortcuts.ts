@@ -11,6 +11,7 @@ export function useKeyboardShortcuts() {
   const toggleRightPanel = useUiStore((s) => s.toggleRightPanel);
   const toggleFullscreen = useUiStore((s) => s.toggleFullscreen);
   const toggleFocusMode = useUiStore((s) => s.toggleFocusMode);
+  const toggleReaderMode = useUiStore((s) => s.toggleReaderMode);
   const toggleSearch = useUiStore((s) => s.toggleSearch);
   const toggleCommandPalette = useUiStore((s) => s.toggleCommandPalette);
   const togglePanel = useAiStore((s) => s.togglePanel);
@@ -70,6 +71,13 @@ export function useKeyboardShortcuts() {
         return;
       }
 
+      // Ctrl+Shift+R — toggle reader mode
+      if (mod && e.shiftKey && (e.key === "r" || e.key === "R")) {
+        e.preventDefault();
+        toggleReaderMode();
+        return;
+      }
+
       // Ctrl+B — toggle left sidebar
       if (mod && e.key === "b" && !e.shiftKey) {
         e.preventDefault();
@@ -96,5 +104,5 @@ export function useKeyboardShortcuts() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [toggleLeftPanel, toggleRightPanel, toggleFullscreen, toggleFocusMode, toggleSearch, toggleCommandPalette, togglePanel]);
+  }, [toggleLeftPanel, toggleRightPanel, toggleFullscreen, toggleFocusMode, toggleReaderMode, toggleSearch, toggleCommandPalette, togglePanel]);
 }
