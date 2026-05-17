@@ -91,7 +91,125 @@
   color-scheme: light;
 }
 
-/* Shared tokens (all themes) */
+/* Midnight Blue Theme */
+[data-theme="midnight"] {
+  --color-primary: oklch(70% 0.18 250);
+  --color-primary-hover: oklch(63% 0.20 250);
+  --color-primary-active: oklch(56% 0.22 250);
+  --color-primary-subtle: oklch(70% 0.18 250 / 0.15);
+
+  --color-surface-0: oklch(13% 0.03 250);
+  --color-surface-1: oklch(16% 0.03 250);
+  --color-surface-2: oklch(20% 0.04 250);
+  --color-surface-3: oklch(25% 0.04 250);
+
+  --color-text-primary: oklch(92% 0.01 250);
+  --color-text-secondary: oklch(72% 0.02 250);
+  --color-text-muted: oklch(52% 0.02 250);
+
+  --color-success: oklch(70% 0.18 155);
+  --color-warning: oklch(75% 0.15 75);
+  --color-error: oklch(63% 0.20 25);
+
+  --color-border: oklch(35% 0.03 250);
+  --color-border-subtle: oklch(28% 0.03 250);
+
+  --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.35);
+  --shadow-md: 0 4px 12px oklch(0% 0 0 / 0.45);
+  --shadow-lg: 0 8px 24px oklch(0% 0 0 / 0.55);
+
+  color-scheme: dark;
+}
+
+/* Forest Green Theme */
+[data-theme="forest"] {
+  --color-primary: oklch(65% 0.15 155);
+  --color-primary-hover: oklch(58% 0.17 155);
+  --color-primary-active: oklch(50% 0.18 155);
+  --color-primary-subtle: oklch(65% 0.15 155 / 0.15);
+
+  --color-surface-0: oklch(14% 0.03 155);
+  --color-surface-1: oklch(17% 0.03 155);
+  --color-surface-2: oklch(21% 0.04 155);
+  --color-surface-3: oklch(26% 0.04 155);
+
+  --color-text-primary: oklch(92% 0.01 155);
+  --color-text-secondary: oklch(73% 0.02 155);
+  --color-text-muted: oklch(53% 0.02 155);
+
+  --color-success: oklch(70% 0.18 155);
+  --color-warning: oklch(75% 0.15 75);
+  --color-error: oklch(63% 0.20 25);
+
+  --color-border: oklch(36% 0.03 155);
+  --color-border-subtle: oklch(28% 0.03 155);
+
+  --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.35);
+  --shadow-md: 0 4px 12px oklch(0% 0 0 / 0.45);
+  --shadow-lg: 0 8px 24px oklch(0% 0 0 / 0.55);
+
+  color-scheme: dark;
+}
+
+/* Rose Theme */
+[data-theme="rose"] {
+  --color-primary: oklch(65% 0.20 350);
+  --color-primary-hover: oklch(58% 0.22 350);
+  --color-primary-active: oklch(50% 0.23 350);
+  --color-primary-subtle: oklch(65% 0.20 350 / 0.15);
+
+  --color-surface-0: oklch(14% 0.02 350);
+  --color-surface-1: oklch(18% 0.02 350);
+  --color-surface-2: oklch(22% 0.03 350);
+  --color-surface-3: oklch(27% 0.03 350);
+
+  --color-text-primary: oklch(93% 0.01 350);
+  --color-text-secondary: oklch(74% 0.02 350);
+  --color-text-muted: oklch(54% 0.02 350);
+
+  --color-success: oklch(70% 0.18 155);
+  --color-warning: oklch(75% 0.15 75);
+  --color-error: oklch(65% 0.22 25);
+
+  --color-border: oklch(38% 0.02 350);
+  --color-border-subtle: oklch(30% 0.02 350);
+
+  --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.3);
+  --shadow-md: 0 4px 12px oklch(0% 0 0 / 0.4);
+  --shadow-lg: 0 8px 24px oklch(0% 0 0 / 0.5);
+
+  color-scheme: dark;
+}
+
+/* Cyberpunk Theme */
+[data-theme="cyberpunk"] {
+  --color-primary: oklch(75% 0.25 310);
+  --color-primary-hover: oklch(68% 0.27 310);
+  --color-primary-active: oklch(60% 0.28 310);
+  --color-primary-subtle: oklch(75% 0.25 310 / 0.2);
+
+  --color-surface-0: oklch(10% 0.04 300);
+  --color-surface-1: oklch(14% 0.05 300);
+  --color-surface-2: oklch(18% 0.06 300);
+  --color-surface-3: oklch(23% 0.06 300);
+
+  --color-text-primary: oklch(95% 0.02 300);
+  --color-text-secondary: oklch(78% 0.04 300);
+  --color-text-muted: oklch(58% 0.04 300);
+
+  --color-success: oklch(75% 0.25 165);
+  --color-warning: oklch(78% 0.20 85);
+  --color-error: oklch(65% 0.28 25);
+
+  --color-border: oklch(35% 0.06 300);
+  --color-border-subtle: oklch(28% 0.05 300);
+
+  --shadow-sm: 0 1px 2px oklch(0% 0 0 / 0.4);
+  --shadow-md: 0 4px 12px oklch(0% 0 0 / 0.5);
+  --shadow-lg: 0 8px 24px oklch(0% 0 0 / 0.6);
+
+  color-scheme: dark;
+}
 :root {
   /* ---- Typography ---- */
   --text-xs: 0.75rem;

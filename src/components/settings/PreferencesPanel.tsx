@@ -2,13 +2,12 @@ import { useState } from "react";
 import { usePreferenceStore } from "@/stores/preferenceStore";
 import { useUiStore } from "@/stores/uiStore";
 import { BackupPanel } from "./BackupPanel";
+import { ThemeEditor } from "./ThemeEditor";
 
 export function PreferencesPanel() {
   const [showBackup, setShowBackup] = useState(false);
   const preferences = usePreferenceStore((s) => s.preferences);
   const setPreference = usePreferenceStore((s) => s.setPreference);
-  const theme = useUiStore((s) => s.theme);
-  const setTheme = useUiStore((s) => s.setTheme);
   const focusEditorWidth = useUiStore((s) => s.focusEditorWidth);
   const setFocusEditorWidth = useUiStore((s) => s.setFocusEditorWidth);
   const focusFontSizeMultiplier = useUiStore((s) => s.focusFontSizeMultiplier);
@@ -91,19 +90,7 @@ export function PreferencesPanel() {
       {/* Appearance */}
       <section className="space-y-3">
         <h3 className="text-xs font-medium text-[var(--color-text-muted)]">外观</h3>
-
-        <label className="flex items-center justify-between gap-4">
-          <span className="text-xs text-[var(--color-text-secondary)]">主题</span>
-          <select
-            value={theme}
-            onChange={(e) => setTheme(e.target.value as "dark" | "light" | "sepia")}
-            className="rounded border border-[var(--color-border)] bg-[var(--color-surface-2)] px-2 py-1 text-xs text-[var(--color-text-secondary)]"
-          >
-            <option value="dark">深色</option>
-            <option value="light">浅色</option>
-            <option value="sepia">护眼</option>
-          </select>
-        </label>
+        <ThemeEditor />
       </section>
 
       {/* Backup */}

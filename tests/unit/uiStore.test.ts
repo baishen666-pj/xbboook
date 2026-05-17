@@ -58,12 +58,20 @@ describe('uiStore', () => {
   });
 
   describe('cycleTheme', () => {
-    it('cycles through themes dark→light→sepia→dark', () => {
+    it('cycles through themes dark→light→sepia→midnight→forest→rose→cyberpunk→dark', () => {
       expect(useUiStore.getState().theme).toBe('dark');
       useUiStore.getState().cycleTheme();
       expect(useUiStore.getState().theme).toBe('light');
       useUiStore.getState().cycleTheme();
       expect(useUiStore.getState().theme).toBe('sepia');
+      useUiStore.getState().cycleTheme();
+      expect(useUiStore.getState().theme).toBe('midnight');
+      useUiStore.getState().cycleTheme();
+      expect(useUiStore.getState().theme).toBe('forest');
+      useUiStore.getState().cycleTheme();
+      expect(useUiStore.getState().theme).toBe('rose');
+      useUiStore.getState().cycleTheme();
+      expect(useUiStore.getState().theme).toBe('cyberpunk');
       useUiStore.getState().cycleTheme();
       expect(useUiStore.getState().theme).toBe('dark');
     });

@@ -482,6 +482,38 @@ const MIGRATIONS: Migration[] = [
       'CREATE INDEX IF NOT EXISTS idx_batch_jobs_project ON batch_jobs(project_id, status)',
     ],
   },
+  {
+    version: 24,
+    name: 'scenes',
+    up: [
+      `CREATE TABLE IF NOT EXISTS scenes (
+        id TEXT PRIMARY KEY,
+        chapter_id TEXT NOT NULL,
+        project_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        summary TEXT DEFAULT '',
+        content_start_offset INTEGER DEFAULT 0,
+        content_end_offset INTEGER DEFAULT 0,
+        tags TEXT DEFAULT '[]',
+        mood TEXT DEFAULT '',
+        location TEXT DEFAULT '',
+        time_of_day TEXT DEFAULT '',
+        pov_character_id TEXT,
+        sort_order INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'draft' CHECK(status IN ('draft','writing','revising','done')),
+        word_count INTEGER DEFAULT 0,
+        notes TEXT DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE,
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+        FOREIGN KEY (pov_character_id) REFERENCES characters(id) ON DELETE SET NULL
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_scenes_chapter ON scenes(chapter_id, sort_order)',
+      'CREATE INDEX IF NOT EXISTS idx_scenes_project ON scenes(project_id, status)',
+      'CREATE INDEX IF NOT EXISTS idx_scenes_pov ON scenes(pov_character_id)',
+    ],
+  },
 ];
 
 // Check if a migration's effects already exist in the database
@@ -582,6 +614,10 @@ function isMigrationApplied(db: ReturnType<typeof getDb>, migration: Migration):
   // Version 23: batch_jobs
   if (migration.version === 23) {
     return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='batch_jobs'").get();
+  }
+  // Version 24: scenes
+  if (migration.version === 24) {
+    return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='scenes'").get();
   }
   return false;
 }

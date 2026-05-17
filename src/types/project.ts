@@ -264,3 +264,37 @@ export interface SnippetTemplate {
   sortOrder: number;
   createdAt: string;
 }
+
+export type SceneStatus = 'draft' | 'writing' | 'revising' | 'done';
+
+export interface Scene {
+  id: string;
+  chapterId: string;
+  projectId: string;
+  title: string;
+  summary: string;
+  contentStartOffset: number;
+  contentEndOffset: number;
+  tags: string[];
+  mood: string;
+  location: string;
+  timeOfDay: string;
+  povCharacterId: string | null;
+  sortOrder: number;
+  status: SceneStatus;
+  wordCount: number;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SceneWithPov extends Scene {
+  povName: string | null;
+}
+
+export interface SceneStats {
+  total: number;
+  byStatus: Record<string, number>;
+  totalWords: number;
+  byMood: Record<string, number>;
+}
