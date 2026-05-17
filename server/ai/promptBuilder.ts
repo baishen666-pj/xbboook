@@ -185,6 +185,9 @@ export function buildUserPrompt(skillId: string, params: {
     case 'inspiration-collision':
       return params.question || '请进行灵感碰撞，随机组合不同领域元素生成创意';
 
+    case 'reader-simulate':
+      return params.question || '请从「爽文爱好者」的视角评价以下内容（可指定其他读者类型）';
+
     default:
       return params.question || '请协助创作';
   }

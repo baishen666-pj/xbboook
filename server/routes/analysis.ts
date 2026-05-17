@@ -21,7 +21,7 @@ router.post('/', async (req: Request<ProjectParams>, res) => {
     return;
   }
 
-  const validTypes = ['story-analysis', 'pacing-analysis', 'emotion-arc', 'character-arc', 'outline-generate'];
+  const validTypes = ['story-analysis', 'pacing-analysis', 'emotion-arc', 'character-arc', 'outline-generate', 'reader-simulate'];
   if (!validTypes.includes(analysisType)) {
     res.status(400).json({ success: false, error: `不支持的分析类型: ${analysisType}` });
     return;

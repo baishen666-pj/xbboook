@@ -11,6 +11,8 @@ import { CheckInPanel } from "./CheckInPanel";
 import { AchievementPanel } from "./AchievementPanel";
 import { WritingCalendar } from "./WritingCalendar";
 import { ContentInsightPanel } from "./ContentInsightPanel";
+import { CharacterGraph } from "./CharacterGraph";
+import { PlotTimeline } from "./PlotTimeline";
 
 interface Props {
   onClose?: () => void;
@@ -123,6 +125,18 @@ export function DashboardPanel({ onClose }: Props) {
 
           {/* Writing calendar */}
           <WritingCalendar />
+
+          {/* Character relationship graph */}
+          <div className="rounded-lg bg-white/[0.03] p-3">
+            <div className="text-xs text-white/40 mb-2">角色关系图谱</div>
+            <CharacterGraph projectId={currentProject.id} />
+          </div>
+
+          {/* Plot timeline */}
+          <div className="rounded-lg bg-white/[0.03] p-3">
+            <div className="text-xs text-white/40 mb-2">情节时间线</div>
+            <PlotTimeline projectId={currentProject.id} />
+          </div>
 
           {/* Content insight */}
           <div className="rounded-lg bg-white/[0.03] p-3">

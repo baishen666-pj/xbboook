@@ -17,6 +17,8 @@ import { AutoContinueSuggestion } from "./AutoContinueSuggestion";
 import { AnalysisPanel } from "./AnalysisPanel";
 import { InspirationPanel } from "./InspirationPanel";
 import { MaterialPanel } from "./MaterialPanel";
+import { ReaderSimulator } from "./ReaderSimulator";
+import { OrchestratorPanel } from "./OrchestratorPanel";
 
 export function AiPanel() {
   const activeSkillId = useAiStore((s) => s.activeSkillId);
@@ -31,6 +33,8 @@ export function AiPanel() {
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [showInspiration, setShowInspiration] = useState(false);
   const [showMaterials, setShowMaterials] = useState(false);
+  const [showReaderSim, setShowReaderSim] = useState(false);
+  const [showOrchestrator, setShowOrchestrator] = useState(false);
 
   const autoContinue = useAutoContinue(currentProject?.id, activeChapterId ?? undefined);
 
@@ -122,6 +126,28 @@ export function AiPanel() {
               <path d="M5 2v12M2 7h12" />
             </svg>
           </button>
+          <button
+            onClick={() => setShowReaderSim(!showReaderSim)}
+            className={`rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors ${showReaderSim ? "bg-[var(--color-primary-subtle)] text-[var(--color-primary)]" : ""}`}
+            title="读者模拟"
+            aria-label="读者模拟"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="8" cy="5" r="3" />
+              <path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" />
+            </svg>
+          </button>
+          <button
+            onClick={() => setShowOrchestrator(!showOrchestrator)}
+            className={`rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors ${showOrchestrator ? "bg-[var(--color-primary-subtle)] text-[var(--color-primary)]" : ""}`}
+            title="AI写作编排"
+            aria-label="AI写作编排"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" />
+              <circle cx="8" cy="8" r="3" />
+            </svg>
+          </button>
           <AiSettingsPanel />
         </div>
       </div>
@@ -171,6 +197,20 @@ export function AiPanel() {
       {showMaterials && currentProject && (
         <div className="border-b border-[var(--color-border)] max-h-96 overflow-y-auto">
           <MaterialPanel projectId={currentProject.id} />
+        </div>
+      )}
+
+      {/* Reader simulator (collapsible) */}
+      {showReaderSim && currentProject && (
+        <div className="border-b border-[var(--color-border)] max-h-96 overflow-y-auto">
+          <ReaderSimulator projectId={currentProject.id} />
+        </div>
+      )}
+
+      {/* Orchestrator (collapsible) */}
+      {showOrchestrator && currentProject && (
+        <div className="border-b border-[var(--color-border)] max-h-96 overflow-y-auto">
+          <OrchestratorPanel projectId={currentProject.id} />
         </div>
       )}
 

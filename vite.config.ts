@@ -39,9 +39,14 @@ export default defineConfig({
             if (id.includes('@dnd-kit')) {
               return 'vendor-dnd';
             }
+            if (id.includes('zod') || id.includes('express')) {
+              return 'vendor-utils';
+            }
           }
         },
       },
     },
+    target: 'es2020',
+    cssMinify: true,
   },
 })

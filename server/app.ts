@@ -34,6 +34,7 @@ import memoryRouter from './routes/memory.js';
 import publishRouter from './routes/publish.js';
 import analysisRouter from './routes/analysis.js';
 import materialsRouter from './routes/materials.js';
+import orchestratorRouter from './routes/orchestrator.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestIdMiddleware, requestLogger } from './middleware/logger.js';
 
@@ -49,9 +50,17 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", 'data:'],
       fontSrc: ["'self'"],
-      connectSrc: ["'self'", isDev ? 'http://localhost:*' : "'self'"],
+      connectSrc: ["'self'", 'ws:', isDev ? 'http://localhost:*' : "'self'"],
+      mediaSrc: ["'none'"],
+      objectSrc: ["'none'"],
+      frameSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
     },
   },
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: 'same-site' },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
 app.use(cors({
   origin: process.env.CORS_ORIGIN || (isDev ? 'http://localhost:5210' : false),
@@ -106,6 +115,7 @@ app.use('/api/projects/:projectId/memory', memoryRouter);
 app.use('/api/projects/:projectId/publish', publishRouter);
 app.use('/api/projects/:projectId/analysis', analysisRouter);
 app.use('/api/projects/:projectId/materials', materialsRouter);
+app.use('/api/projects/:projectId/orchestrator', orchestratorRouter);
 
 app.use(errorHandler);
 
