@@ -59,6 +59,9 @@ import consistencyCheckRouter from './routes/consistencyCheck.js';
 import characterTimelineRouter from './routes/characterTimelines.js';
 import smartCompleteRouter from './routes/smartComplete.js';
 import loreGeneratorRouter from './routes/loreGenerator.js';
+import chapterTagsRouter from './routes/chapterTags.js';
+import voiceStyleRouter from './routes/voiceStyle.js';
+import autoBackupRouter from './routes/autoBackup.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestIdMiddleware, requestLogger } from './middleware/logger.js';
 
@@ -164,6 +167,9 @@ app.use('/api/projects/:projectId/consistency', aiLimiter, consistencyCheckRoute
 app.use('/api/projects/:projectId/timelines', characterTimelineRouter);
 app.use('/api/projects/:projectId/smart-complete', aiLimiter, smartCompleteRouter);
 app.use('/api/projects/:projectId/lore-generator', aiLimiter, loreGeneratorRouter);
+app.use('/api/projects/:projectId/chapter-tags', chapterTagsRouter);
+app.use('/api/projects/:projectId/voice-style', aiLimiter, voiceStyleRouter);
+app.use('/api/projects/:projectId/auto-backup', autoBackupRouter);
 
 app.use(errorHandler);
 
