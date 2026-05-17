@@ -51,6 +51,9 @@ import scenesRouter from './routes/scenes.js';
 import qualityRouter from './routes/quality.js';
 import chapterDepsRouter from './routes/chapterDependencies.js';
 import outlineEnhanceRouter from './routes/outlineEnhance.js';
+import characterDialogueRouter from './routes/characterDialogue.js';
+import chapterOperationsRouter from './routes/chapterOperations.js';
+import aiPolishRouter from './routes/aiPolish.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestIdMiddleware, requestLogger } from './middleware/logger.js';
 
@@ -148,6 +151,9 @@ app.use('/api/projects/:projectId/scenes', scenesRouter);
 app.use('/api/projects/:projectId/quality', qualityRouter);
 app.use('/api/projects/:projectId/dependencies', chapterDepsRouter);
 app.use('/api/projects/:projectId/outline-enhance', aiLimiter, outlineEnhanceRouter);
+app.use('/api/projects/:projectId/character-dialogue', aiLimiter, characterDialogueRouter);
+app.use('/api/projects/:projectId/chapter-ops', chapterOperationsRouter);
+app.use('/api/projects/:projectId/ai-polish', aiLimiter, aiPolishRouter);
 
 app.use(errorHandler);
 

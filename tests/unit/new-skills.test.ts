@@ -60,8 +60,8 @@ describe('Phase 47-53 new skills', () => {
     expect(prompt5).toContain('爽文视角');
   });
 
-  it('total skill count should be 51', () => {
+  it('total skill count should be 52', () => {
     const skills = listSkills();
-    expect(skills.length).toBe(51);
+    expect(skills.length).toBe(52);
   });
 });

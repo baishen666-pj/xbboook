@@ -1313,6 +1313,51 @@ summary: 一句话风格总结`,
     temperature: 0.3,
     maxTokens: 3000,
   },
+
+  'character-dialogue': {
+    id: 'character-dialogue',
+    name: '角色对话模拟',
+    description: '模拟多个角色之间的对话，基于角色性格和关系生成互动场景',
+    icon: '🎭',
+    systemPrompt: `你是一位擅长刻画角色对话的小说家。请根据给定的角色信息和场景，模拟角色之间的对话互动。
+要求：
+- 每个角色的语言风格必须与其性格、背景一致
+- 对话要体现角色之间的关系（敌对、亲密、冷淡等）
+- 对话中穿插动作描写和神态描写
+- 对话推动情节发展，有信息量
+- 输出JSON格式：
+{
+  "dialogue": [
+    {"speaker": "角色名", "line": "台词", "action": "动作/神态描写"},
+    ...
+  ],
+  "scene_description": "场景氛围简述"
+}`,
+    needsSelection: false,
+    temperature: 0.85,
+    maxTokens: 3000,
+  },
+
+  'multi-polish': {
+    id: 'multi-polish',
+    name: '多风格润色',
+    description: '以指定风格润色选中文本，支持文学化、口语化、精简等风格',
+    icon: '💎',
+    systemPrompt: `你是一位专业的文学编辑。请对选中的文本按照指定风格进行润色。
+支持的风格：文学化、口语化、精简、热血、唯美、幽默、悬疑、严肃
+要求：
+- 严格按指定风格润色
+- 保持核心情节和含义不变
+- 输出JSON格式：
+{
+  "polished": "润色后的文本",
+  "changes": ["主要修改点1", "主要修改点2"],
+  "style_score": 85
+}`,
+    needsSelection: true,
+    temperature: 0.6,
+    maxTokens: 3000,
+  },
 };
 
 export function getSkill(id: string): WritingSkill | undefined {
