@@ -95,6 +95,11 @@ import worldConsistencyRouter from './routes/worldConsistency.js';
 import suspenseOptimizerRouter from './routes/suspenseOptimizer.js';
 import productivityAnalyzerRouter from './routes/productivityAnalyzer.js';
 import dialogueConsistencyRoutes from './routes/dialogueConsistency.js';
+import relationshipEvolutionRouter from './routes/relationshipEvolution.js';
+import infoDensityRouter from './routes/infoDensity.js';
+import themeAnalysisRouter from './routes/themeAnalysis.js';
+import readerPsychologyRouter from './routes/readerPsychology.js';
+import chapterTransitionRouter from './routes/chapterTransition.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestIdMiddleware, requestLogger } from './middleware/logger.js';
 
@@ -236,6 +241,11 @@ app.use('/api/projects/:projectId/world-consistency', aiLimiter, worldConsistenc
 app.use('/api/projects/:projectId/suspense-optimizer', aiLimiter, suspenseOptimizerRouter);
 app.use('/api/projects/:projectId/productivity-analyzer', aiLimiter, productivityAnalyzerRouter);
 app.use('/api/projects/:projectId/dialogue-consistency', aiLimiter, dialogueConsistencyRoutes);
+app.use('/api/projects/:projectId/relationship-evolution', aiLimiter, relationshipEvolutionRouter);
+app.use('/api/projects/:projectId/info-density', aiLimiter, infoDensityRouter);
+app.use('/api/projects/:projectId/theme-analysis', aiLimiter, themeAnalysisRouter);
+app.use('/api/projects/:projectId/reader-psychology', aiLimiter, readerPsychologyRouter);
+app.use('/api/projects/:projectId/chapter-transition', aiLimiter, chapterTransitionRouter);
 
 app.use(errorHandler);
 
