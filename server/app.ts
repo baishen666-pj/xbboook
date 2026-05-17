@@ -54,6 +54,8 @@ import outlineEnhanceRouter from './routes/outlineEnhance.js';
 import characterDialogueRouter from './routes/characterDialogue.js';
 import chapterOperationsRouter from './routes/chapterOperations.js';
 import aiPolishRouter from './routes/aiPolish.js';
+import turningPointsRouter from './routes/turningPoints.js';
+import consistencyCheckRouter from './routes/consistencyCheck.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestIdMiddleware, requestLogger } from './middleware/logger.js';
 
@@ -154,6 +156,8 @@ app.use('/api/projects/:projectId/outline-enhance', aiLimiter, outlineEnhanceRou
 app.use('/api/projects/:projectId/character-dialogue', aiLimiter, characterDialogueRouter);
 app.use('/api/projects/:projectId/chapter-ops', chapterOperationsRouter);
 app.use('/api/projects/:projectId/ai-polish', aiLimiter, aiPolishRouter);
+app.use('/api/projects/:projectId/turning-points', turningPointsRouter);
+app.use('/api/projects/:projectId/consistency', aiLimiter, consistencyCheckRouter);
 
 app.use(errorHandler);
 
