@@ -70,13 +70,19 @@ interface ChapterGroup {
   chapters: Array<{ title: string; content: string }>;
 }
 
-async function buildChapterGroups(projectId: string): Promise<ChapterGroup[]> {
+async function buildChapterGroups(
+  projectId: string,
+  chapterIds?: Set<string>
+): Promise<ChapterGroup[]> {
   const chapters = findChapters(projectId);
+  const filtered = chapterIds
+    ? chapters.filter((ch) => chapterIds.has(ch.id))
+    : chapters;
   const volumes = findVolumes(projectId);
   const volumeMap = new Map(volumes.map((v) => [v.id, v.title]));
 
   const readResults = await Promise.all(
-    chapters.map(async (ch) => {
+    filtered.map(async (ch) => {
       const content = await readChapter(projectId, ch.id);
       return { ch, content };
     }),
@@ -109,11 +115,26 @@ async function buildChapterGroups(projectId: string): Promise<ChapterGroup[]> {
   return groups;
 }
 
+function parseExportOptions(query: Record<string, unknown>): {
+  chapterIds: Set<string> | undefined;
+  includeToc: boolean;
+  includeCover: boolean;
+} {
+  const chaptersParam = query.chapters as string | undefined;
+  const chapterIds = chaptersParam
+    ? new Set(chaptersParam.split(',').filter(Boolean))
+    : undefined;
+  const includeToc = query.includeToc !== 'false';
+  const includeCover = query.includeCover !== 'false';
+  return { chapterIds, includeToc, includeCover };
+}
+
 // Export as TXT
 router.get('/txt', async (req, res) => {
   const { projectId } = req.params as { projectId: string };
 
-  const groups = await buildChapterGroups(projectId);
+  const opts = parseExportOptions(req.query as Record<string, unknown>);
+  const groups = await buildChapterGroups(projectId, opts.chapterIds);
   if (groups.length === 0 || groups.every((g) => g.chapters.length === 0)) {
     res.status(404).json({ success: false, error: '没有可导出的章节' });
     return;
@@ -139,7 +160,8 @@ router.get('/txt', async (req, res) => {
 router.get('/md', async (req, res) => {
   const { projectId } = req.params as { projectId: string };
 
-  const groups = await buildChapterGroups(projectId);
+  const opts = parseExportOptions(req.query as Record<string, unknown>);
+  const groups = await buildChapterGroups(projectId, opts.chapterIds);
   if (groups.length === 0 || groups.every((g) => g.chapters.length === 0)) {
     res.status(404).json({ success: false, error: '没有可导出的章节' });
     return;
@@ -177,7 +199,8 @@ router.get('/epub', async (req, res) => {
   const { projectId } = req.params as { projectId: string };
 
   try {
-    const groups = await buildChapterGroups(projectId);
+    const opts = parseExportOptions(req.query as Record<string, unknown>);
+  const groups = await buildChapterGroups(projectId, opts.chapterIds);
     if (groups.length === 0 || groups.every((g) => g.chapters.length === 0)) {
       res.status(404).json({ success: false, error: '没有可导出的章节' });
       return;
@@ -229,7 +252,8 @@ router.get('/docx', async (req, res) => {
   const { projectId } = req.params as { projectId: string };
 
   try {
-    const groups = await buildChapterGroups(projectId);
+    const opts = parseExportOptions(req.query as Record<string, unknown>);
+  const groups = await buildChapterGroups(projectId, opts.chapterIds);
     if (groups.length === 0 || groups.every((g) => g.chapters.length === 0)) {
       res.status(404).json({ success: false, error: '没有可导出的章节' });
       return;
@@ -294,7 +318,8 @@ router.get('/pdf', async (req, res) => {
   const { projectId } = req.params as { projectId: string };
 
   try {
-    const groups = await buildChapterGroups(projectId);
+    const opts = parseExportOptions(req.query as Record<string, unknown>);
+  const groups = await buildChapterGroups(projectId, opts.chapterIds);
     if (groups.length === 0 || groups.every((g) => g.chapters.length === 0)) {
       res.status(404).json({ success: false, error: '没有可导出的章节' });
       return;

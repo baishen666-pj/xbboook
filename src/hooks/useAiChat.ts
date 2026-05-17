@@ -1,8 +1,9 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useAiStore, type AiMessage } from "@/stores/aiStore";
 import { useEditorStore } from "@/stores/editorStore";
 import { useProjectStore } from "@/stores/projectStore";
 import { streamAi, type StreamRequest, type HistoryMessage } from "@/services/aiService";
+import { chatHistoryService } from "@/services/chatHistoryService";
 
 function buildHistoryFromMessages(messages: AiMessage[]): HistoryMessage[] {
   return messages
@@ -19,6 +20,13 @@ export function useAiChat() {
   const selectedText = useEditorStore((s) => s.selectedText);
   const currentProject = useProjectStore((s) => s.currentProject);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Load chat history when project/chapter changes
+  useEffect(() => {
+    if (currentProject) {
+      useAiStore.getState().loadHistory(currentProject.id, activeChapterId ?? undefined);
+    }
+  }, [currentProject?.id, activeChapterId]);
 
   const send = useCallback(
     async (userMessage: string, extra?: { outlineContent?: string; character1Id?: string; character2Id?: string }) => {
@@ -56,14 +64,18 @@ export function useAiChat() {
         character2Id: extra?.character2Id,
       };
 
+      let responseContent = "";
+
       try {
         for await (const event of streamAi(req, controller.signal)) {
           if (controller.signal.aborted) break;
           const s = useAiStore.getState();
           if (event.type === "chunk") {
+            responseContent += event.content;
             s.appendToMessage(assistantId, event.content);
             s.appendStreamContent(event.content);
           } else if (event.type === "done") {
+            responseContent = event.content || responseContent;
             s.finalizeMessage(assistantId);
           }
         }
@@ -78,6 +90,17 @@ export function useAiChat() {
           const s = useAiStore.getState();
           s.setStreaming(false);
           s.clearStreamContent();
+        }
+
+        // Persist messages (fire-and-forget)
+        const chapterId = activeChapterId ?? undefined;
+        if (userMessage && responseContent) {
+          chatHistoryService
+            .saveMessages(currentProject.id, [
+              { chapterId, role: "user", content: userMessage, skillId: activeSkillId },
+              { chapterId, role: "assistant", content: responseContent, skillId: activeSkillId },
+            ])
+            .catch(() => {});
         }
       }
     },
@@ -105,6 +128,8 @@ export function useAiChat() {
         "style-analysis": "分析选中文本风格",
         "plot-suggest": "获取情节建议",
         "foreshadowing-track": "追踪伏笔线索",
+        "style-profile": "分析写作风格档案",
+        "voice-design": "生成角色语音特征",
       };
 
       const label = skillLabels[skillId] || skillId;

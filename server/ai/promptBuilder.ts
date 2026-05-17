@@ -134,6 +134,12 @@ export function buildUserPrompt(skillId: string, params: {
     case 'foreshadowing-track':
       return '请扫描当前内容，识别与已有伏笔相关的段落';
 
+    case 'style-profile':
+      return '请分析以下文本并生成结构化风格档案（严格按 JSON 格式输出）：';
+
+    case 'voice-design':
+      return '请根据角色设定，生成个性化的语音特征档案（严格按 JSON 格式输出）：';
+
     default:
       return params.question || '请协助创作';
   }

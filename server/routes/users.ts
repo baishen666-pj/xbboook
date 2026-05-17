@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import * as userRepo from '../db/repositories/userRepo.js';
 import * as presenceManager from '../ws/presenceManager.js';
+import * as userPreferenceRepo from '../db/repositories/userPreferenceRepo.js';
 import { validate } from '../middleware/validate.js';
 
 const router = Router();
@@ -45,6 +46,34 @@ router.get('/me', (req, res) => {
 router.get('/', (_req, res) => {
   const users = userRepo.getAll();
   res.json({ success: true, data: users });
+});
+
+// Get user preferences
+router.get('/:userId/preferences', (req, res) => {
+  const { userId } = req.params;
+  const rows = userPreferenceRepo.getAll(userId);
+  const preferences: Record<string, string> = {};
+  for (const row of rows) {
+    preferences[row.key] = row.value;
+  }
+  res.json({ success: true, data: preferences });
+});
+
+// Update user preferences (batch)
+const preferencesSchema = z.object({
+  preferences: z.record(z.string(), z.string()),
+});
+
+router.patch('/:userId/preferences', validate(preferencesSchema), (req, res) => {
+  const { userId } = req.params;
+  const { preferences } = req.body as { preferences: Record<string, string> };
+  userPreferenceRepo.setBatch(userId, preferences);
+  const rows = userPreferenceRepo.getAll(userId);
+  const result: Record<string, string> = {};
+  for (const row of rows) {
+    result[row.key] = row.value;
+  }
+  res.json({ success: true, data: result });
 });
 
 export default router;

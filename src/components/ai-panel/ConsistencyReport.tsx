@@ -1,4 +1,7 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState, useCallback } from "react";
+import { useProjectStore } from "@/stores/projectStore";
+import { consistencyService } from "@/services/consistencyService";
+import type { ConsistencyIssueType } from "@/types/project";
 
 interface ConsistencyIssue {
   type: string;
@@ -10,6 +13,14 @@ interface ConsistencyIssue {
 interface Props {
   content: string;
 }
+
+const TYPE_MAP: Record<string, string> = {
+  "角色矛盾": "character_conflict",
+  "时间线错误": "timeline_error",
+  "设定冲突": "setting_conflict",
+  "情节逻辑": "plot_logic",
+  "细节遗漏": "detail_omission",
+};
 
 const TYPE_COLORS: Record<string, string> = {
   "角色矛盾": "bg-amber-500/15 text-amber-400 border-amber-500/20",
@@ -34,6 +45,31 @@ function parseIssues(content: string): ConsistencyIssue[] {
 
 export const ConsistencyReport = memo(function ConsistencyReport({ content }: Props) {
   const issues = useMemo(() => parseIssues(content), [content]);
+  const currentProject = useProjectStore((s) => s.currentProject);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = useCallback(async () => {
+    if (!currentProject || issues.length === 0) return;
+    setSaving(true);
+    try {
+      await consistencyService.bulkCreate(
+        currentProject.id,
+        issues.map((i) => ({
+          type: (TYPE_MAP[i.type] ?? "plot_logic") as ConsistencyIssueType,
+          severity: "medium" as const,
+          title: i.description.slice(0, 100),
+          description: i.description,
+          suggestion: i.suggestion,
+        })),
+      );
+      setSaved(true);
+    } catch {
+      // save failed silently
+    } finally {
+      setSaving(false);
+    }
+  }, [currentProject, issues]);
 
   if (issues.length === 0) {
     return (
@@ -45,7 +81,22 @@ export const ConsistencyReport = memo(function ConsistencyReport({ content }: Pr
 
   return (
     <div className="space-y-2">
-      <div className="text-xs text-white/40 px-1">发现 {issues.length} 个潜在问题</div>
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-white/40 px-1">发现 {issues.length} 个潜在问题</span>
+        {currentProject && (
+          <button
+            onClick={handleSave}
+            disabled={saving || saved}
+            className={`rounded px-2 py-1 text-[10px] transition-colors ${
+              saved
+                ? "bg-emerald-500/20 text-emerald-400"
+                : "bg-white/10 text-white/60 hover:bg-white/20"
+            }`}
+          >
+            {saved ? "已保存" : saving ? "保存中..." : "保存到问题列表"}
+          </button>
+        )}
+      </div>
       {issues.map((issue, i) => (
         <div
           key={i}

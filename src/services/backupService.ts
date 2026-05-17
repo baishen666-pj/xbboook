@@ -35,4 +35,8 @@ export const backupService = {
   async updateConfig(patch: Partial<BackupConfig>): Promise<ApiResponse<BackupConfig>> {
     return apiClient.patch<BackupConfig>(`${PATH}/config`, patch);
   },
+
+  async restoreBackup(id: string): Promise<ApiResponse<{ message: string }>> {
+    return apiClient.post<{ message: string }>(`${PATH}/${id}/restore`, {});
+  },
 };

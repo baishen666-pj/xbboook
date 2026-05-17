@@ -10,6 +10,7 @@ import { TargetProgress } from "./TargetProgress";
 import { CheckInPanel } from "./CheckInPanel";
 import { AchievementPanel } from "./AchievementPanel";
 import { WritingCalendar } from "./WritingCalendar";
+import { ContentInsightPanel } from "./ContentInsightPanel";
 
 interface Props {
   onClose?: () => void;
@@ -65,7 +66,7 @@ export function DashboardPanel({ onClose }: Props) {
       {dashboard && (
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* Summary cards */}
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="rounded-lg bg-white/[0.03] p-3">
               <div className="text-[10px] text-white/30">总字数</div>
               <div className="text-lg font-bold text-white/80">{dashboard.summary.totalWords.toLocaleString()}</div>
@@ -122,6 +123,12 @@ export function DashboardPanel({ onClose }: Props) {
 
           {/* Writing calendar */}
           <WritingCalendar />
+
+          {/* Content insight */}
+          <div className="rounded-lg bg-white/[0.03] p-3">
+            <div className="text-xs text-white/40 mb-2">写作洞察</div>
+            <ContentInsightPanel />
+          </div>
         </div>
       )}
     </div>

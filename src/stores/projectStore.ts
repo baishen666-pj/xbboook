@@ -11,6 +11,7 @@ import { projectService } from "@/services/projectService";
 import { chapterService } from "@/services/chapterService";
 import { characterService } from "@/services/characterService";
 import { worldviewService } from "@/services/worldviewService";
+import { offlineDb } from "@/services/offlineDb";
 
 interface ProjectState {
   projects: Project[];
@@ -42,6 +43,9 @@ interface ProjectActions {
   reorderChapters: (
     items: Array<{ id: string; volumeId?: string | null; sortOrder: number }>
   ) => Promise<void>;
+  reorderVolumes: (
+    items: Array<{ id: string; sortOrder: number }>
+  ) => Promise<void>;
   setError: (error: string | null) => void;
   toggleChapterSelection: (id: string) => void;
   clearChapterSelection: () => void;
@@ -68,7 +72,15 @@ export const useProjectStore = create<ProjectState & ProjectActions>(
       const res = await projectService.list();
       if (res.success && res.data) {
         set({ projects: res.data, isLoading: false });
+        Promise.all(res.data.map((p) => offlineDb.putProject(p as unknown as Record<string, unknown>))).catch(() => {});
       } else {
+        if (!navigator.onLine) {
+          const cached = await offlineDb.getAllProjects();
+          if (cached.length > 0) {
+            set({ projects: cached as unknown as Project[], isLoading: false });
+            return;
+          }
+        }
         set({ error: res.error ?? "加载作品列表失败", isLoading: false });
       }
     },
@@ -124,6 +136,11 @@ export const useProjectStore = create<ProjectState & ProjectActions>(
         outlines: [],
         isLoading: false,
       });
+
+      offlineDb.putProject(projectRes.data as unknown as Record<string, unknown>).catch(() => {});
+      Promise.all(chapters.map((ch) => offlineDb.putChapter(ch as unknown as Record<string, unknown>))).catch(() => {});
+      Promise.all(characters.map((c) => offlineDb.putCharacter(c as unknown as Record<string, unknown>))).catch(() => {});
+      Promise.all(worldviews.map((w) => offlineDb.putWorldview(w as unknown as Record<string, unknown>))).catch(() => {});
     },
 
     setCurrentProject: (project) => {
@@ -136,7 +153,12 @@ export const useProjectStore = create<ProjectState & ProjectActions>(
 
       const res = await chapterService.getById(project.id, chapterId);
       if (res.success && res.data) {
+        offlineDb.putChapter(res.data as unknown as Record<string, unknown>).catch(() => {});
         return res.data;
+      }
+      if (!navigator.onLine) {
+        const cached = await offlineDb.getChapter(chapterId);
+        if (cached) return cached as unknown as Chapter;
       }
       set({ error: res.error ?? "打开章节失败" });
       return null;
@@ -183,6 +205,24 @@ export const useProjectStore = create<ProjectState & ProjectActions>(
       const res = await chapterService.reorder(project.id, items);
       if (!res.success) {
         set({ chapters: prevChapters, error: res.error ?? "排序失败" });
+      }
+    },
+
+    reorderVolumes: async (items) => {
+      const project = get().currentProject;
+      if (!project) return;
+
+      const prevVolumes = get().volumes;
+      const updatedVolumes = prevVolumes.map((v) => {
+        const move = items.find((m) => m.id === v.id);
+        if (!move) return v;
+        return { ...v, sortOrder: move.sortOrder };
+      });
+      set({ volumes: updatedVolumes });
+
+      const res = await projectService.reorderVolumes(project.id, items);
+      if (!res.success) {
+        set({ volumes: prevVolumes, error: res.error ?? "排序失败" });
       }
     },
 

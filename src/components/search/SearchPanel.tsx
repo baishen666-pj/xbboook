@@ -1,7 +1,11 @@
-import { useState, useRef, useCallback } from "react";
-import { searchChapters, type SearchResult } from "@/services/searchService";
+import { useState, useRef, useCallback, useMemo } from "react";
+import { searchAll, getCategoryLabel, type SearchResult } from "@/services/searchService";
 import { useProjectStore } from "@/stores/projectStore";
 import { useChapterContent } from "@/hooks/useChapterContent";
+
+const CATEGORY_ORDER: SearchResult["category"][] = [
+  "chapters", "characters", "worldviews", "outlines", "foreshadowing",
+];
 
 export function SearchPanel({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState("");
@@ -22,7 +26,7 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
       timerRef.current = setTimeout(async () => {
         setLoading(true);
         try {
-          const res = await searchChapters(currentProject.id, value);
+          const res = await searchAll(currentProject.id, value);
           setResults(res);
         } catch {
           setResults([]);
@@ -30,11 +34,25 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
         setLoading(false);
       }, 300);
     },
-    [currentProject, loadChapter]
+    [currentProject]
   );
 
+  const grouped = useMemo(() => {
+    const map = new Map<SearchResult["category"], SearchResult[]>();
+    for (const r of results) {
+      const list = map.get(r.category) ?? [];
+      list.push(r);
+      map.set(r.category, list);
+    }
+    return CATEGORY_ORDER
+      .filter((c) => map.has(c))
+      .map((c) => ({ category: c, items: map.get(c)! }));
+  }, [results]);
+
   const handleClick = (r: SearchResult) => {
-    loadChapter(r.chapterId);
+    if (r.category === "chapters") {
+      loadChapter(r.chapterId);
+    }
     onClose();
   };
 
@@ -50,7 +68,7 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
           type="text"
           value={query}
           onChange={(e) => handleSearch(e.target.value)}
-          placeholder="搜索所有章节..."
+          placeholder="搜索章节、角色、世界观..."
           className="flex-1 bg-transparent text-xs text-white outline-none placeholder:text-white/20"
         />
         {loading && (
@@ -69,20 +87,29 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
         )}
         {query.length < 2 && (
           <div className="px-3 py-6 text-center text-xs text-white/25">
-            输入关键词搜索所有章节
+            输入关键词搜索章节、角色、世界观等
           </div>
         )}
-        {results.map((r, i) => (
-          <button
-            key={`${r.chapterId}-${i}`}
-            onClick={() => handleClick(r)}
-            className="w-full text-left px-3 py-2 hover:bg-white/5 border-b border-white/3 transition-colors"
-          >
-            <div className="text-xs font-medium text-white/70 truncate">{r.chapterTitle}</div>
-            <div className="mt-0.5 text-[11px] text-white/35 line-clamp-2">
-              {r.snippet}
+        {grouped.map((group) => (
+          <div key={group.category}>
+            <div className="px-3 py-1.5 text-[10px] font-medium text-white/25 uppercase tracking-wider border-t border-white/5">
+              {getCategoryLabel(group.category)}
             </div>
-          </button>
+            {group.items.map((r, i) => (
+              <button
+                key={`${r.category}-${"id" in r ? r.id : "chapterId" in r ? r.chapterId : ""}-${i}`}
+                onClick={() => handleClick(r)}
+                className="w-full text-left px-3 py-2 hover:bg-white/5 border-b border-white/3 transition-colors"
+              >
+                <div className="text-xs font-medium text-white/70 truncate">
+                  {"chapterTitle" in r ? r.chapterTitle : r.title}
+                </div>
+                <div className="mt-0.5 text-[11px] text-white/35 line-clamp-2">
+                  {r.snippet}
+                </div>
+              </button>
+            ))}
+          </div>
         ))}
       </div>
     </div>

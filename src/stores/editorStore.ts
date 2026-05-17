@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { Editor } from "@tiptap/react";
+import { editorSnapshot, type EditorSnapshot } from "@/services/editorSnapshot";
 
 interface EditorState {
   activeChapterId: string | null;
@@ -10,6 +11,10 @@ interface EditorState {
   lastSavedAt: Date | null;
   isSaving: boolean;
   editorInstance: Editor | null;
+  crashSnapshot: EditorSnapshot | null;
+  isCheckingCrash: boolean;
+  aiEditSnapshotVersionId: string | null;
+  aiEditSnapshotAt: number | null;
 }
 
 interface EditorActions {
@@ -20,6 +25,11 @@ interface EditorActions {
   clearChapter: () => void;
   markSaved: () => void;
   setEditor: (editor: Editor | null) => void;
+  checkCrashRecovery: (chapterId: string, currentContent: string) => Promise<void>;
+  recoverFromCrash: () => void;
+  dismissCrashRecovery: () => void;
+  setAiEditSnapshot: (versionId: string | null) => void;
+  clearAiEditSnapshot: () => void;
 }
 
 export const useEditorStore = create<EditorState & EditorActions>(
@@ -32,6 +42,10 @@ export const useEditorStore = create<EditorState & EditorActions>(
     lastSavedAt: null,
     isSaving: false,
     editorInstance: null,
+    crashSnapshot: null,
+    isCheckingCrash: false,
+    aiEditSnapshotVersionId: null,
+    aiEditSnapshotAt: null,
 
     openChapter: (chapterId, content) => {
       set({
@@ -41,6 +55,8 @@ export const useEditorStore = create<EditorState & EditorActions>(
         dirtyAt: null,
         selectedText: "",
         lastSavedAt: null,
+        aiEditSnapshotVersionId: null,
+        aiEditSnapshotAt: null,
       });
     },
 
@@ -49,6 +65,8 @@ export const useEditorStore = create<EditorState & EditorActions>(
         content: text,
         isDirty: true,
         dirtyAt: s.dirtyAt ?? Date.now(),
+        aiEditSnapshotVersionId: null,
+        aiEditSnapshotAt: null,
       }));
     },
 
@@ -76,6 +94,35 @@ export const useEditorStore = create<EditorState & EditorActions>(
 
     setEditor: (editor) => {
       set({ editorInstance: editor });
+    },
+
+    checkCrashRecovery: async (chapterId, currentContent) => {
+      set({ isCheckingCrash: true });
+      const snapshot = await editorSnapshot.load(chapterId);
+      if (snapshot && snapshot.content !== currentContent && snapshot.content.length > 0) {
+        set({ crashSnapshot: snapshot, isCheckingCrash: false });
+      } else {
+        set({ crashSnapshot: null, isCheckingCrash: false });
+      }
+    },
+
+    recoverFromCrash: () => {
+      const { crashSnapshot } = useEditorStore.getState();
+      if (crashSnapshot) {
+        set({ content: crashSnapshot.content, isDirty: true, dirtyAt: Date.now(), crashSnapshot: null });
+      }
+    },
+
+    dismissCrashRecovery: () => {
+      set({ crashSnapshot: null });
+    },
+
+    setAiEditSnapshot: (versionId) => {
+      set({ aiEditSnapshotVersionId: versionId, aiEditSnapshotAt: versionId ? Date.now() : null });
+    },
+
+    clearAiEditSnapshot: () => {
+      set({ aiEditSnapshotVersionId: null, aiEditSnapshotAt: null });
     },
   })
 );

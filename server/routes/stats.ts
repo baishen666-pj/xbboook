@@ -4,6 +4,8 @@ import { getDb } from '../db/database.js';
 import * as statsRepo from '../db/repositories/statsRepo.js';
 import * as sessionRepo from '../db/repositories/sessionRepo.js';
 import * as analyticsService from '../services/analyticsService.js';
+import { analyzeContent } from '../services/contentAnalysis.js';
+import { readChapter } from '../services/fileService.js';
 import { validate } from '../middleware/validate.js';
 
 const router = Router({ mergeParams: true });
@@ -114,6 +116,60 @@ router.put('/session/:sessionId', validate(endSessionSchema), (req, res) => {
     return;
   }
   res.json({ success: true, data: session });
+});
+
+router.get('/sessions', (req, res) => {
+  const { projectId } = req.params as { projectId: string };
+  const limit = Math.min(Math.max(Number(req.query.limit) || 20, 1), 100);
+  const sessions = sessionRepo.getRecentSessions(projectId, limit);
+
+  const db = getDb();
+  const enriched = sessions.map((s) => {
+    const chapter = db.prepare('SELECT title FROM chapters WHERE id = ?').get(s.chapter_id) as { title: string } | undefined;
+    return {
+      ...s,
+      chapterTitle: chapter?.title ?? '未知章节',
+      wordsDelta: s.words_end - s.words_start,
+    };
+  });
+
+  res.json({ success: true, data: enriched });
+});
+
+router.get('/content-analysis', async (req, res) => {
+  const { projectId } = req.params as { projectId: string };
+  const chapterId = req.query.chapterId as string | undefined;
+
+  const db = getDb();
+
+  if (chapterId) {
+    try {
+      const content = await readChapter(projectId, chapterId);
+      const analysis = analyzeContent(content);
+      res.json({ success: true, data: analysis });
+    } catch {
+      res.json({ success: true, data: analyzeContent('') });
+    }
+    return;
+  }
+
+  // Analyze all chapters
+  const chapters = db.prepare(
+    'SELECT id FROM chapters WHERE project_id = ? ORDER BY sort_order'
+  ).all(projectId) as Array<{ id: string }>;
+
+  const allContent: string[] = [];
+  for (const ch of chapters) {
+    try {
+      const content = await readChapter(projectId, ch.id);
+      allContent.push(content);
+    } catch {
+      // skip unreadable chapters
+    }
+  }
+
+  const analysis = analyzeContent(allContent.join('\n\n'));
+  res.json({ success: true, data: analysis });
 });
 
 export default router;

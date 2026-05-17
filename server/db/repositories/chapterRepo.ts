@@ -19,7 +19,7 @@ export function findById(id: string): Chapter | undefined {
 
 const CHAPTER_UPDATE_FIELDS = new Set([
   'title', 'volume_id', 'summary', 'status', 'sort_order',
-  'publish_status', 'scheduled_at',
+  'publish_status', 'scheduled_at', 'tags',
 ]);
 
 export async function create(data: {

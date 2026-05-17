@@ -13,6 +13,9 @@ export function useCollabPresence() {
   const removeLock = useCollabStore((s) => s.removeLock);
   const setWs = useCollabStore((s) => s.setWs);
   const pingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const reconnectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const attemptsRef = useRef(0);
+  const manualCloseRef = useRef(false);
 
   useEffect(() => {
     if (!currentProject || !currentUser) return;
@@ -20,58 +23,79 @@ export function useCollabPresence() {
     const token = getStoredToken();
     if (!token) return;
 
-    const ws = createCollabWs();
-    if (!ws) return;
-    setWs(ws);
+    manualCloseRef.current = false;
 
-    ws.onopen = () => {
-      ws.send(JSON.stringify({ type: "join", payload: { token, projectId: currentProject.id } }));
+    function connect() {
+      const ws = createCollabWs();
+      if (!ws) return;
+      setWs(ws);
 
-      pingRef.current = setInterval(() => {
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: "ping", payload: {} }));
+      ws.onopen = () => {
+        attemptsRef.current = 0;
+        ws.send(JSON.stringify({ type: "join", payload: { token, projectId: currentProject!.id } }));
+
+        pingRef.current = setInterval(() => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: "ping", payload: {} }));
+          }
+        }, 30000);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data as string) as { type: string; payload: Record<string, unknown> };
+
+          if (msg.type === "presence:update") {
+            const online = (msg.payload.online ?? []) as OnlineUser[];
+            setOnlineUsers(online);
+          }
+
+          if (msg.type === "lock:acquired") {
+            addLock({
+              chapterId: msg.payload.chapterId as string,
+              userId: msg.payload.userId as string,
+              displayName: "",
+              lockedAt: new Date().toISOString(),
+            });
+          }
+
+          if (msg.type === "lock:released") {
+            removeLock(msg.payload.chapterId as string);
+          }
+        } catch {
+          // ignore malformed messages
         }
-      }, 30000);
-    };
+      };
 
-    ws.onmessage = (event) => {
-      try {
-        const msg = JSON.parse(event.data as string) as { type: string; payload: Record<string, unknown> };
+      ws.onclose = () => {
+        if (pingRef.current) clearInterval(pingRef.current);
+        setWs(null);
+        scheduleReconnect();
+      };
+    }
 
-        if (msg.type === "presence:update") {
-          const online = (msg.payload.online ?? []) as OnlineUser[];
-          setOnlineUsers(online);
-        }
+    function scheduleReconnect() {
+      if (manualCloseRef.current) return;
+      const base = Math.min(1000 * Math.pow(2, attemptsRef.current), 30000);
+      const jitter = base * (0.5 + Math.random() * 0.5);
+      reconnectRef.current = setTimeout(() => {
+        attemptsRef.current++;
+        connect();
+      }, jitter);
+    }
 
-        if (msg.type === "lock:acquired") {
-          addLock({
-            chapterId: msg.payload.chapterId as string,
-            userId: msg.payload.userId as string,
-            displayName: "",
-            lockedAt: new Date().toISOString(),
-          });
-        }
-
-        if (msg.type === "lock:released") {
-          removeLock(msg.payload.chapterId as string);
-        }
-      } catch {
-        // ignore malformed messages
-      }
-    };
-
-    ws.onclose = () => {
-      if (pingRef.current) clearInterval(pingRef.current);
-      setWs(null);
-    };
+    connect();
 
     collabService.getLocks(currentProject.id).then((res) => {
       if (res.success && res.data) setLocks(res.data);
     });
 
     return () => {
+      manualCloseRef.current = true;
       if (pingRef.current) clearInterval(pingRef.current);
-      ws.close();
+      if (reconnectRef.current) clearTimeout(reconnectRef.current);
+      const { ws } = useCollabStore.getState();
+      if (ws) ws.close();
     };
   }, [currentProject, currentUser, setOnlineUsers, setLocks, addLock, removeLock, setWs]);
 }

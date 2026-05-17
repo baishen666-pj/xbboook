@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useEditorStore } from "@/stores/editorStore";
 import { useUiStore } from "@/stores/uiStore";
 import { useAutoSave } from "@/hooks/useAutoSave";
@@ -7,6 +8,9 @@ import { GhostTextToolbar } from "./GhostTextToolbar";
 import { SaveIndicator } from "./SaveIndicator";
 import { WritingTimer } from "./WritingTimer";
 import { SplitPane } from "./SplitPane";
+import { MobileToolbar } from "./MobileToolbar";
+import { CrashRecoveryBanner } from "./CrashRecoveryBanner";
+import { AiEditRollbackBanner } from "./AiEditRollbackBanner";
 
 export function EditorArea() {
   const activeChapterId = useEditorStore((s) => s.activeChapterId);
@@ -15,8 +19,17 @@ export function EditorArea() {
   const isDirty = useEditorStore((s) => s.isDirty);
   const splitPane = useUiStore((s) => s.splitPane);
   const toggleSplitPane = useUiStore((s) => s.toggleSplitPane);
+  const checkCrashRecovery = useEditorStore((s) => s.checkCrashRecovery);
+  const crashCheckedRef = useRef<string | null>(null);
 
   useAutoSave();
+
+  useEffect(() => {
+    if (activeChapterId && crashCheckedRef.current !== activeChapterId) {
+      crashCheckedRef.current = activeChapterId;
+      void checkCrashRecovery(activeChapterId, content);
+    }
+  }, [activeChapterId]);
 
   if (!activeChapterId) {
     return (
@@ -58,6 +71,9 @@ export function EditorArea() {
 
   return (
     <div className="flex h-full flex-col bg-[var(--color-surface-0)]" id="main-content">
+      <CrashRecoveryBanner />
+      <AiEditRollbackBanner />
+
       {/* Unsaved banner */}
       {isDirty && !isSaving && (
         <div className="flex items-center justify-between border-b border-[var(--color-warning)]/20 bg-[var(--color-warning)]/5 px-4 py-1">
@@ -90,6 +106,9 @@ export function EditorArea() {
           <GhostTextToolbar />
         </div>
       )}
+
+      {/* Mobile formatting toolbar */}
+      <MobileToolbar />
 
       {/* Bottom bar: word count + writing timer + split toggle */}
       <div className="flex items-center justify-between border-t border-[var(--color-border)] bg-[var(--color-surface-1)] px-4 py-1">

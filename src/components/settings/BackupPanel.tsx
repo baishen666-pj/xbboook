@@ -32,6 +32,8 @@ export function BackupPanel() {
   });
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [restoreTarget, setRestoreTarget] = useState<string | null>(null);
+  const [restoring, setRestoring] = useState(false);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -91,6 +93,18 @@ export function BackupPanel() {
       flash(false, res.error || "保存配置失败");
       setConfig(config);
     }
+  };
+
+  const handleRestore = async (id: string) => {
+    setRestoring(true);
+    const res = await backupService.restoreBackup(id);
+    if (res.success) {
+      flash(true, res.data?.message || "恢复成功，建议刷新页面");
+      setRestoreTarget(null);
+    } else {
+      flash(false, res.error || "恢复失败");
+    }
+    setRestoring(false);
   };
 
   if (loading) {
@@ -207,6 +221,13 @@ export function BackupPanel() {
                   </div>
                 </div>
                 <button
+                  onClick={() => setRestoreTarget(backup.id)}
+                  disabled={restoring}
+                  className="flex-shrink-0 rounded px-2 py-1 text-[10px] text-white/30 hover:text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 border border-transparent hover:border-[var(--color-primary)]/20 disabled:opacity-30 transition-colors"
+                >
+                  恢复
+                </button>
+                <button
                   onClick={() => void handleDelete(backup.id)}
                   disabled={deletingId === backup.id}
                   className="flex-shrink-0 rounded px-2 py-1 text-[10px] text-white/30 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 disabled:opacity-30 transition-colors"
@@ -218,6 +239,33 @@ export function BackupPanel() {
           </div>
         )}
       </div>
+
+      {/* Restore confirmation dialog */}
+      {restoreTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="w-80 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-1)] p-5 shadow-2xl">
+            <h3 className="text-sm font-medium text-[var(--color-text-primary)]">确认恢复</h3>
+            <p className="mt-2 text-xs text-[var(--color-text-secondary)]">
+              恢复此备份将<strong className="text-[var(--color-error)]">覆盖当前所有数据</strong>。系统会先创建安全快照。
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={() => setRestoreTarget(null)}
+                className="rounded px-3 py-1.5 text-xs text-[var(--color-text-muted)] hover:bg-[var(--color-surface-2)]"
+              >
+                取消
+              </button>
+              <button
+                onClick={() => void handleRestore(restoreTarget)}
+                disabled={restoring}
+                className="rounded bg-[var(--color-error)] px-3 py-1.5 text-xs text-white hover:brightness-110 disabled:opacity-50"
+              >
+                {restoring ? "恢复中..." : "确认恢复"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

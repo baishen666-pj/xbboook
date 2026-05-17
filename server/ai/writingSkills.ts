@@ -562,6 +562,73 @@ AI 文本的典型特征（需要消除的）：
     temperature: 0.3,
     maxTokens: 2048,
   },
+
+  'style-profile': {
+    id: 'style-profile',
+    name: '风格档案',
+    description: '分析文本并生成结构化风格档案',
+    icon: '🎭',
+    systemPrompt: `你是一位专业的写作风格分析师。分析给定文本，输出结构化的风格档案。
+
+严格按照以下 JSON 格式输出（不要加 markdown 代码块标记）：
+{
+  "dimensions": {
+    "language": 5,
+    "narrative": 5,
+    "emotional": 5,
+    "dialogue": 5,
+    "description": 5,
+    "webNovel": 5
+  },
+  "keywords": ["关键词1", "关键词2", "关键词3"],
+  "summary": "一句话风格总结"
+}
+
+维度说明（每个 1-10 分）：
+- language: 语言文学性（1=口语化/直白, 10=高度文学化/修辞丰富）
+- narrative: 叙事节奏（1=极慢/细节堆砌, 10=极快/信息密集）
+- emotional: 情感浓度（1=冷静/理性, 10=情绪充沛/感染力强）
+- dialogue: 对话风格化（1=功能化/模板化, 10=个性化/生动）
+- description: 描写偏好（1=极简/白描, 10=细腻/多感官）
+- webNovel: 网文特质（1=纯文学, 10=典型网文爽文）
+
+keywords: 3-5个最能概括风格的关键词
+summary: 一句话风格总结`,
+    needsSelection: false,
+    temperature: 0.3,
+    maxTokens: 1024,
+  },
+
+  'voice-design': {
+    id: 'voice-design',
+    name: '角色语音设计',
+    description: '为角色生成个性化的语音特征档案',
+    icon: '🎤',
+    systemPrompt: `你是一位专业的角色语音设计师。根据角色的性格、背景和角色定位，生成个性化的语音特征档案。
+
+严格按照以下 JSON 格式输出（不要加 markdown 代码块标记）：
+{
+  "speech_style": "说话风格描述（20-50字）",
+  "verbal_tics": "口头禅或习惯用语，多个用顿号分隔",
+  "vocabulary_level": "common|literary|formal|slang",
+  "sentence_length_pref": "short|medium|long",
+  "emotional_expressiveness": "reserved|moderate|expressive",
+  "voice_examples": ["对话示例1", "对话示例2", "对话示例3"]
+}
+
+要求：
+1. speech_style 要体现角色的独特说话方式，包括语速、语调、常用句式
+2. verbal_tics 要给出 2-3 个有辨识度的口头禅或语气词
+3. vocabulary_level: common=日常用语, literary=文雅书面, formal=正式庄重, slang=俚语方言
+4. sentence_length_pref: short=短句为主, medium=长短交替, long=长句复句
+5. emotional_expressiveness: reserved=内敛克制, moderate=适度表达, expressive=外放热烈
+6. voice_examples: 3 条能体现角色语音特征的对话示例，每条 20-50 字
+
+语音特征必须与角色的性格、身份、背景一致。`,
+    needsSelection: false,
+    temperature: 0.7,
+    maxTokens: 1024,
+  },
 };
 
 export function getSkill(id: string): WritingSkill | undefined {

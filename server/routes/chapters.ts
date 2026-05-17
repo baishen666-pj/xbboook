@@ -22,6 +22,7 @@ const updateSchema = z.object({
   sort_order: z.number().optional(),
   publish_status: z.enum(['draft', 'scheduled', 'published', 'archived']).optional(),
   scheduled_at: z.string().nullable().optional(),
+  tags: z.array(z.string()).optional(),
 });
 
 const contentSchema = z.object({
@@ -42,6 +43,21 @@ router.get('/', (req: Request<ChapterParams>, res) => {
   const { projectId } = req.params;
   const chapters = chapterRepo.findByProject(projectId);
   res.json({ success: true, data: chapters });
+});
+
+router.get('/tags', (req: Request<ChapterParams>, res) => {
+  const { projectId } = req.params;
+  const chapters = chapterRepo.findByProject(projectId);
+  const tagSet = new Set<string>();
+  for (const ch of chapters) {
+    try {
+      const tags = JSON.parse((ch as Record<string, unknown>).tags as string || '[]') as string[];
+      for (const t of tags) tagSet.add(t);
+    } catch {
+      // skip invalid tags
+    }
+  }
+  res.json({ success: true, data: [...tagSet].sort() });
 });
 
 router.get('/schedule', (req: Request<ChapterParams>, res) => {
@@ -97,7 +113,11 @@ router.put('/reorder', validate(reorderSchema), (req, res) => {
 });
 
 router.put('/:id', validate(updateSchema), (req: Request<ChapterParams>, res) => {
-  const chapter = chapterRepo.update(req.params.id, req.body);
+  const body = { ...req.body };
+  if (body.tags !== undefined) {
+    body.tags = JSON.stringify(body.tags);
+  }
+  const chapter = chapterRepo.update(req.params.id, body);
   if (!chapter) {
     res.status(404).json({ success: false, error: '章节不存在' });
     return;

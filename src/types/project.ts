@@ -34,6 +34,7 @@ export interface Chapter {
   status: "draft" | "writing" | "revised" | "done";
   publishStatus: PublishStatus;
   scheduledAt: string | null;
+  tags: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -54,6 +55,12 @@ export interface Character {
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
+  speechStyle: string | null;
+  verbalTics: string | null;
+  vocabularyLevel: string;
+  sentenceLengthPref: string;
+  emotionalExpressiveness: string;
+  voiceExamples: string | null;
 }
 
 export interface CharacterRelation {
@@ -221,6 +228,26 @@ export interface Foreshadowing {
   actualHarvestChapterId: string | null;
   status: ForeshadowingStatus;
   importance: ForeshadowingImportance;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type ConsistencyIssueType = 'character_conflict' | 'timeline_error' | 'setting_conflict' | 'plot_logic' | 'detail_omission' | 'foreshadowing_conflict' | 'name_mismatch';
+export type ConsistencySeverity = 'critical' | 'high' | 'medium' | 'low';
+export type ConsistencyStatus = 'open' | 'acknowledged' | 'fixed' | 'dismissed';
+export type ConsistencySource = 'ai' | 'name_scanner' | 'manual';
+
+export interface ConsistencyIssue {
+  id: string;
+  projectId: string;
+  chapterId: string | null;
+  type: ConsistencyIssueType;
+  severity: ConsistencySeverity;
+  title: string;
+  description: string;
+  suggestion: string;
+  status: ConsistencyStatus;
+  source: ConsistencySource;
   createdAt: string;
   updatedAt: string;
 }

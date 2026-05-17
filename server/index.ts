@@ -5,7 +5,10 @@ import app from './app.js';
 import { runMigrations } from './db/migrations.js';
 import { seedBuiltins } from './db/repositories/templateRepo.js';
 import { seedBuiltinSnippets } from './db/seedSnippets.js';
+import { seedProjectTemplateBuiltins } from './db/seedProjectTemplates.js';
 import { createWsServer } from './ws/wsServer.js';
+import { recoverJobs } from './ai/chapterPipeline.js';
+import { seedExampleProject } from './db/seedOnboarding.js';
 import {
   getBackupConfig,
   createBackup,
@@ -28,6 +31,9 @@ if (!fs.existsSync(logsDir)) {
 runMigrations();
 seedBuiltins();
 seedBuiltinSnippets();
+seedProjectTemplateBuiltins();
+seedExampleProject();
+recoverJobs();
 
 const server = http.createServer(app);
 createWsServer(server);

@@ -4,8 +4,17 @@ import { useProjectStore } from "@/stores/projectStore";
 import { chapterService } from "@/services/chapterService";
 import { versionService } from "@/services/versionService";
 import { toast } from "@/stores/toastStore";
+import { usePreferenceStore } from "@/stores/preferenceStore";
+import { useOfflineStore } from "@/stores/offlineStore";
+import { offlineQueue } from "@/services/offlineQueue";
+import { editorSnapshot } from "@/services/editorSnapshot";
 
-const DEBOUNCE_MS = 1000;
+function getDebounceMs(): number {
+  const val = usePreferenceStore.getState().getPreference("autoSaveInterval") ?? "1000";
+  const parsed = parseInt(val, 10);
+  return Number.isFinite(parsed) ? parsed : 1000;
+}
+
 const PERIODIC_MS = 30_000;
 const MIN_VERSION_INTERVAL_MS = 5 * 60 * 1000;
 
@@ -56,7 +65,7 @@ export function useAutoSave(): void {
       if (state.activeChapterId && state.isDirty && !state.isSaving) {
         void saveContent(state.activeChapterId, state.content);
       }
-    }, DEBOUNCE_MS);
+    }, getDebounceMs());
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
@@ -70,6 +79,7 @@ export function useAutoSave(): void {
     const res = await chapterService.saveContent(projectId, chapterId, text);
     if (res.success) {
       markSaved();
+      editorSnapshot.save(chapterId, text).catch(() => {});
 
       const now = Date.now();
       if (now - lastVersionTimeRef.current >= MIN_VERSION_INTERVAL_MS) {
@@ -79,8 +89,20 @@ export function useAutoSave(): void {
         });
       }
     } else {
-      useEditorStore.setState({ isSaving: false, isDirty: true });
-      toast("error", "保存失败，请重试");
+      const isOffline = !useOfflineStore.getState().isOnline;
+      if (isOffline) {
+        await offlineQueue.enqueue({
+          type: "saveContent",
+          projectId,
+          targetId: chapterId,
+          payload: { content: text },
+          version: Date.now(),
+        });
+        markSaved();
+      } else {
+        useEditorStore.setState({ isSaving: false, isDirty: true });
+        toast("error", "保存失败，请重试");
+      }
     }
   }
 }

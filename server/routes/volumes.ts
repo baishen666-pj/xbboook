@@ -48,4 +48,13 @@ router.delete('/:id', (req, res) => {
   res.json({ success: true });
 });
 
+const reorderSchema = z.object({
+  items: z.array(z.object({ id: z.string(), sortOrder: z.number() })),
+});
+
+router.put('/reorder', validate(reorderSchema), (req, res) => {
+  volumeRepo.reorder(req.body.items);
+  res.json({ success: true });
+});
+
 export default router;

@@ -1,4 +1,5 @@
 import type { ApiResponse } from "@/types/api";
+import { offlineDb } from "./offlineDb";
 
 const BASE_URL = "/api";
 
@@ -56,14 +57,30 @@ async function request<T>(
 
     const json = await response.json();
     if (json.success !== undefined && json.data !== undefined) {
-      return {
+      const result = {
         success: json.success,
         data: transformKeys(json.data) as T,
         error: json.error ?? null,
       };
+      if (method === "GET") {
+        offlineDb.setMeta(`cache:${path}`, result).catch(() => {});
+      }
+      return result;
     }
-    return { success: true, data: transformKeys(json) as T, error: null };
+    const result = { success: true, data: transformKeys(json) as T, error: null };
+    if (method === "GET") {
+      offlineDb.setMeta(`cache:${path}`, result).catch(() => {});
+    }
+    return result;
   } catch (err) {
+    if (method === "GET" && typeof navigator !== "undefined" && !navigator.onLine) {
+      try {
+        const cached = await offlineDb.getMeta<ApiResponse<T>>(`cache:${path}`);
+        if (cached) return cached;
+      } catch {
+        // IndexedDB unavailable, fall through
+      }
+    }
     const message =
       err instanceof Error ? err.message : "网络请求失败";
     return { success: false, data: null, error: message };

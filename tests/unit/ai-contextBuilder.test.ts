@@ -18,6 +18,30 @@ vi.mock('../../server/db/repositories/characterRepo.js', () => ({
   ]),
 }));
 
+vi.mock('../../server/db/repositories/projectRepo.js', () => ({
+  findById: vi.fn().mockReturnValue(undefined),
+}));
+
+vi.mock('../../server/db/repositories/storyArcRepo.js', () => ({
+  findByProject: vi.fn().mockReturnValue([]),
+}));
+
+vi.mock('../../server/db/repositories/plotThreadRepo.js', () => ({
+  findByProject: vi.fn().mockReturnValue([]),
+}));
+
+vi.mock('../../server/db/repositories/foreshadowingRepo.js', () => ({
+  findAll: vi.fn().mockReturnValue([]),
+}));
+
+vi.mock('../../server/db/repositories/outlineRepo.js', () => ({
+  findByProject: vi.fn().mockReturnValue([]),
+}));
+
+vi.mock('../../server/db/repositories/worldviewRepo.js', () => ({
+  findByProject: vi.fn().mockReturnValue([]),
+}));
+
 import { buildContext, contextToString } from '../../server/ai/contextBuilder.js';
 
 describe('contextBuilder', () => {

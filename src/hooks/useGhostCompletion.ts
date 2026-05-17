@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useEditorStore } from '@/stores/editorStore';
 import { useProjectStore } from '@/stores/projectStore';
 import { fetchCompletion } from '@/services/aiService';
+import { versionService } from '@/services/versionService';
 
 const DEBOUNCE_MS = 1500;
 const CURSOR_CONTEXT_CHARS = 300;
@@ -87,6 +88,18 @@ export function useGhostCompletion() {
 
       if (event.key === 'Tab') {
         event.preventDefault();
+        // Create pre-AI snapshot before accepting ghost text
+        const pid = useProjectStore.getState().currentProject?.id;
+        const cid = useEditorStore.getState().activeChapterId;
+        if (pid && cid) {
+          versionService.create(pid, cid, { label: 'AI编辑前快照' })
+            .then((res) => {
+              if (res.success && res.data) {
+                useEditorStore.getState().setAiEditSnapshot(res.data.id);
+              }
+            })
+            .catch(() => {});
+        }
         editor.commands.acceptAllGhost();
       } else if (event.key === 'Escape') {
         event.preventDefault();

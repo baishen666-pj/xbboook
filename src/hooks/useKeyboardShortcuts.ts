@@ -10,12 +10,21 @@ export function useKeyboardShortcuts() {
   const toggleLeftPanel = useUiStore((s) => s.toggleLeftPanel);
   const toggleRightPanel = useUiStore((s) => s.toggleRightPanel);
   const toggleFullscreen = useUiStore((s) => s.toggleFullscreen);
+  const toggleFocusMode = useUiStore((s) => s.toggleFocusMode);
   const toggleSearch = useUiStore((s) => s.toggleSearch);
+  const toggleCommandPalette = useUiStore((s) => s.toggleCommandPalette);
   const togglePanel = useAiStore((s) => s.togglePanel);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       const mod = e.ctrlKey || e.metaKey;
+
+      // Ctrl+K — command palette
+      if (mod && e.key === "k") {
+        e.preventDefault();
+        toggleCommandPalette();
+        return;
+      }
 
       // Ctrl+S — save current chapter
       if (mod && e.key === "s") {
@@ -54,6 +63,13 @@ export function useKeyboardShortcuts() {
         return;
       }
 
+      // F11 or Ctrl+Shift+Z — toggle focus mode
+      if (e.key === "F11" || (mod && e.shiftKey && (e.key === "z" || e.key === "Z"))) {
+        e.preventDefault();
+        toggleFocusMode();
+        return;
+      }
+
       // Ctrl+B — toggle left sidebar
       if (mod && e.key === "b" && !e.shiftKey) {
         e.preventDefault();
@@ -80,5 +96,5 @@ export function useKeyboardShortcuts() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [toggleLeftPanel, toggleRightPanel, toggleFullscreen, toggleSearch, togglePanel]);
+  }, [toggleLeftPanel, toggleRightPanel, toggleFullscreen, toggleFocusMode, toggleSearch, toggleCommandPalette, togglePanel]);
 }

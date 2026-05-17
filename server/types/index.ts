@@ -168,6 +168,21 @@ export interface SnippetTemplate {
   created_at: string;
 }
 
+export interface ConsistencyIssue {
+  id: string;
+  projectId: string;
+  chapterId: string | null;
+  type: 'character_conflict' | 'timeline_error' | 'setting_conflict' | 'plot_logic' | 'detail_omission' | 'foreshadowing_conflict' | 'name_mismatch';
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  title: string;
+  description: string;
+  suggestion: string;
+  status: 'open' | 'acknowledged' | 'fixed' | 'dismissed';
+  source: 'ai' | 'name_scanner' | 'manual';
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface StoryArc {
   id: string;
   project_id: string;

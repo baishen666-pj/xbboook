@@ -9,6 +9,10 @@ const TYPE_BADGES: Record<string, { label: string; color: string }> = {
   rollback: { label: "回滚", color: "bg-amber-500/10 text-amber-400" },
 };
 
+function isAiSnapshot(version: ChapterVersion): boolean {
+  return !!version.label?.includes("AI编辑前");
+}
+
 function formatTime(dateStr: string): string {
   const d = new Date(dateStr);
   return d.toLocaleString("zh-CN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -54,13 +58,14 @@ export function VersionList() {
       {versions.map((version) => {
         const badge = TYPE_BADGES[version.snapshotType] ?? TYPE_BADGES["auto"]!;
         const isSelected = previewVersion?.id === version.id;
+        const aiSnap = isAiSnapshot(version);
 
         return (
           <div
             key={version.id}
             className={[
               "group flex items-start gap-2 border-b border-white/5 px-3 py-2.5 cursor-pointer transition-colors",
-              isSelected ? "bg-[var(--color-primary)]/5" : "hover:bg-white/[0.02]",
+              isSelected ? "bg-[var(--color-primary)]/5" : aiSnap ? "bg-amber-500/[0.03]" : "hover:bg-white/[0.02]",
             ].join(" ")}
             onClick={() => setPreviewVersion(version)}
           >
@@ -73,6 +78,11 @@ export function VersionList() {
                 <span className={`rounded px-1 py-px text-[10px] ${badge.color}`}>
                   {badge.label}
                 </span>
+                {aiSnap && (
+                  <span className="rounded px-1 py-px text-[10px] bg-amber-500/15 text-amber-400">
+                    AI
+                  </span>
+                )}
               </div>
               {version.label && (
                 <div className="mt-0.5 truncate text-[11px] text-white/40">{version.label}</div>

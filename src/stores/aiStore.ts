@@ -39,6 +39,7 @@ interface AiActions {
   clearMessages: () => void;
   setDialogueCharacter1: (id: string | null) => void;
   setDialogueCharacter2: (id: string | null) => void;
+  loadHistory: (projectId: string, chapterId?: string) => Promise<void>;
 }
 
 function nextMsgId(): string {
@@ -94,4 +95,18 @@ export const useAiStore = create<AiState & AiActions>((set) => ({
   clearMessages: () => set({ messages: [], currentStreamContent: "" }),
   setDialogueCharacter1: (id) => set({ dialogueCharacter1Id: id }),
   setDialogueCharacter2: (id) => set({ dialogueCharacter2Id: id }),
+
+  loadHistory: async (projectId, chapterId) => {
+    const { chatHistoryService } = await import("@/services/chatHistoryService");
+    const messages = await chatHistoryService.getHistory(projectId, chapterId);
+    set({
+      messages: messages.map((m) => ({
+        id: m.id,
+        role: m.role as "user" | "assistant",
+        content: m.content,
+        skillId: m.skillId,
+        timestamp: new Date(m.createdAt).getTime(),
+      })),
+    });
+  },
 }));

@@ -81,6 +81,103 @@ const MIGRATIONS: Migration[] = [
       'ALTER TABLE chapters ADD COLUMN ai_summary TEXT DEFAULT \'\'',
     ],
   },
+  {
+    version: 7,
+    name: 'chat_messages',
+    up: [
+      `CREATE TABLE IF NOT EXISTS chat_messages (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        chapter_id TEXT,
+        role TEXT NOT NULL CHECK(role IN ('user','assistant','system')),
+        content TEXT NOT NULL,
+        skill_id TEXT DEFAULT '',
+        token_usage INTEGER,
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+        FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_chat_messages_project ON chat_messages(project_id, created_at ASC)',
+      'CREATE INDEX IF NOT EXISTS idx_chat_messages_chapter ON chat_messages(chapter_id, created_at ASC)',
+    ],
+  },
+  {
+    version: 8,
+    name: 'pipeline_jobs',
+    up: [
+      `CREATE TABLE IF NOT EXISTS pipeline_jobs (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        chapter_ids TEXT NOT NULL,
+        current_step INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'pending' CHECK(status IN ('pending','running','paused','completed','failed')),
+        error TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+      )`,
+    ],
+  },
+  {
+    version: 9,
+    name: 'user_preferences',
+    up: [
+      `CREATE TABLE IF NOT EXISTS user_preferences (
+        user_id TEXT NOT NULL,
+        key TEXT NOT NULL,
+        value TEXT NOT NULL,
+        updated_at TEXT DEFAULT (datetime('now')),
+        PRIMARY KEY (user_id, key),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )`,
+    ],
+  },
+  {
+    version: 10,
+    name: 'chapter_tags',
+    up: [
+      `ALTER TABLE chapters ADD COLUMN tags TEXT DEFAULT '[]'`,
+    ],
+  },
+  {
+    version: 11,
+    name: 'project_templates',
+    up: [
+      `CREATE TABLE IF NOT EXISTS project_templates (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        genre TEXT,
+        description TEXT,
+        is_builtin INTEGER DEFAULT 0,
+        structure TEXT NOT NULL DEFAULT '{}',
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      )`,
+    ],
+  },
+  {
+    version: 12,
+    name: 'consistency_issues',
+    up: [
+      `CREATE TABLE IF NOT EXISTS consistency_issues (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        chapter_id TEXT,
+        type TEXT NOT NULL CHECK(type IN ('character_conflict','timeline_error','setting_conflict','plot_logic','detail_omission','foreshadowing_conflict','name_mismatch')),
+        severity TEXT DEFAULT 'medium' CHECK(severity IN ('critical','high','medium','low')),
+        title TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        suggestion TEXT DEFAULT '',
+        status TEXT DEFAULT 'open' CHECK(status IN ('open','acknowledged','fixed','dismissed')),
+        source TEXT DEFAULT 'ai' CHECK(source IN ('ai','name_scanner','manual')),
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+        FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE SET NULL
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_consistency_issues_project ON consistency_issues(project_id, status)',
+    ],
+  },
 ];
 
 // Check if a migration's effects already exist in the database
@@ -112,6 +209,31 @@ function isMigrationApplied(db: ReturnType<typeof getDb>, migration: Migration):
   if (migration.version === 6) {
     const cols = (db.prepare('PRAGMA table_info(chapters)').all() as { name: string }[]).map(c => c.name);
     return cols.includes('ai_summary');
+  }
+  // Version 7: chat_messages table
+  if (migration.version === 7) {
+    return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='chat_messages'").get();
+  }
+  // Version 8: pipeline_jobs table
+  if (migration.version === 8) {
+    return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='pipeline_jobs'").get();
+  }
+  // Version 9: user_preferences table
+  if (migration.version === 9) {
+    return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='user_preferences'").get();
+  }
+  // Version 10: tags column on chapters
+  if (migration.version === 10) {
+    const cols = (db.prepare('PRAGMA table_info(chapters)').all() as { name: string }[]).map(c => c.name);
+    return cols.includes('tags');
+  }
+  // Version 11: project_templates table
+  if (migration.version === 11) {
+    return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='project_templates'").get();
+  }
+  // Version 12: consistency_issues table
+  if (migration.version === 12) {
+    return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='consistency_issues'").get();
   }
   return false;
 }

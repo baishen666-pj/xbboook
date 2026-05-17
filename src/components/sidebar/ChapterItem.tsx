@@ -4,6 +4,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { Chapter } from "@/types/project";
 import { LockIndicator } from "@/components/collab/LockIndicator";
 import { useProjectStore } from "@/stores/projectStore";
+import { ChapterTags } from "./ChapterTags";
 
 interface ChapterItemProps {
   chapter: Chapter;
@@ -18,6 +19,11 @@ const STATUS_DOT: Record<string, string> = {
   revised: "bg-[var(--color-primary)]",
   done: "bg-[var(--color-success)]",
 };
+
+function parseTags(tags: string[] | string): string[] {
+  if (Array.isArray(tags)) return tags;
+  try { return JSON.parse(tags); } catch { return []; }
+}
 
 export const ChapterItem = memo(function ChapterItem({ chapter, isActive, onChapterClick, isSelectMode }: ChapterItemProps) {
   const {
@@ -104,8 +110,13 @@ export const ChapterItem = memo(function ChapterItem({ chapter, isActive, onChap
             STATUS_DOT[chapter.status] ?? STATUS_DOT.draft,
           ].join(" ")}
         />
-        <span className="flex-1 truncate text-[var(--text-sm)]">
-          {chapter.title}
+        <span className="flex-1 min-w-0">
+          <span className="block truncate text-[var(--text-sm)]">
+            {chapter.title}
+          </span>
+          {chapter.tags && parseTags(chapter.tags).length > 0 && (
+            <ChapterTags tags={parseTags(chapter.tags)} allTags={[]} onChange={() => {}} compact />
+          )}
         </span>
         <LockIndicator chapterId={chapter.id} />
         <span className="text-[var(--text-xs)] text-[var(--color-text-muted)] opacity-0 group-hover:opacity-100 transition-opacity">

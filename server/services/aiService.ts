@@ -18,6 +18,7 @@ export interface AiRequest {
   historyMessages?: HistoryMessage[];
   character1Id?: string;
   character2Id?: string;
+  pipelinePreviousChapter?: string;
 }
 
 export { checkConfigured as isConfigured, listSkills, getSkill };
@@ -46,6 +47,7 @@ export async function* processAiRequest(
     maxTokens: 10000,
     outlineContent: req.outlineContent,
     skillId: req.skillId,
+    pipelinePreviousChapter: req.pipelinePreviousChapter,
   };
 
   const sources = await buildContext(contextOptions);

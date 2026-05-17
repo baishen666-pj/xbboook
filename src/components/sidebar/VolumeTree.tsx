@@ -15,7 +15,9 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
+  useSortable,
 } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useProjectStore } from "@/stores/projectStore";
 import { useEditorStore } from "@/stores/editorStore";
 import { useChapterContent } from "@/hooks/useChapterContent";
@@ -53,20 +55,89 @@ function groupByVolume(chapters: Chapter[]): VolumeGroup[] {
   }));
 }
 
+function SortableVolumeHeader({ group }: { group: VolumeGroup }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: `vol-${group.volumeId}`,
+    data: { volumeGroup: group },
+  });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center justify-between px-2 py-1 group"
+    >
+      <div className="flex items-center gap-1">
+        <span
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing text-[var(--color-text-muted)] opacity-0 group-hover:opacity-100 transition-opacity"
+          aria-label="拖拽排序卷"
+        >
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+            <circle cx="3" cy="2" r="1" /><circle cx="7" cy="2" r="1" />
+            <circle cx="3" cy="5" r="1" /><circle cx="7" cy="5" r="1" />
+            <circle cx="3" cy="8" r="1" /><circle cx="7" cy="8" r="1" />
+          </svg>
+        </span>
+        <span className="text-[var(--text-xs)] font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
+          {group.volumeTitle}
+        </span>
+      </div>
+      <span className="text-[var(--text-xs)] text-[var(--color-text-muted)]">
+        {group.chapters.length}
+      </span>
+    </div>
+  );
+}
+
 export function VolumeTree({ onBatchPolish }: { onBatchPolish?: () => void }) {
   const currentProject = useProjectStore((s) => s.currentProject);
   const chapters = useProjectStore((s) => s.chapters);
   const createChapter = useProjectStore((s) => s.createChapter);
   const reorderChapters = useProjectStore((s) => s.reorderChapters);
+  const reorderVolumes = useProjectStore((s) => s.reorderVolumes);
   const selectedChapterIds = useProjectStore((s) => s.selectedChapterIds);
   const clearChapterSelection = useProjectStore((s) => s.clearChapterSelection);
   const activeChapterId = useEditorStore((s) => s.activeChapterId);
   const { loadChapter } = useChapterContent();
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [activeChapter, setActiveChapter] = useState<Chapter | null>(null);
+  const [activeVolumeTitle, setActiveVolumeTitle] = useState<string | null>(null);
   const [polishStatus, setPolishStatus] = useState<string | null>(null);
+  const [filterTag, setFilterTag] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<"order" | "words" | "updated">("order");
 
-  const volumeGroups = groupByVolume(chapters);
+  const allTags = Array.from(
+    new Set(
+      chapters.flatMap((ch) => {
+        const t = (ch as unknown as Record<string, unknown>).tags;
+        if (Array.isArray(t)) return t as string[];
+        if (typeof t === "string") { try { return JSON.parse(t) as string[]; } catch { return []; } }
+        return [];
+      })
+    )
+  ).sort();
+
+  const filteredChapters = chapters.filter((ch) => {
+    if (!filterTag) return true;
+    const t = (ch as unknown as Record<string, unknown>).tags;
+    const tags: string[] = Array.isArray(t) ? t : typeof t === "string" ? (() => { try { return JSON.parse(t); } catch { return []; } })() : [];
+    return tags.includes(filterTag);
+  });
+
+  const sortedChapters = [...filteredChapters].sort((a, b) => {
+    if (sortBy === "words") return (b.wordCount ?? 0) - (a.wordCount ?? 0);
+    if (sortBy === "updated") return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    return (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
+  });
+
+  const volumeGroups = groupByVolume(sortedChapters);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -170,6 +241,34 @@ export function VolumeTree({ onBatchPolish }: { onBatchPolish?: () => void }) {
     setActiveChapter(null);
   }, []);
 
+  const handleVolumeDragStart = useCallback((event: DragStartEvent) => {
+    const group = event.active.data.current?.volumeGroup as VolumeGroup | undefined;
+    if (group) setActiveVolumeTitle(group.volumeTitle);
+  }, []);
+
+  const handleVolumeDragEnd = useCallback((event: DragEndEvent) => {
+    setActiveVolumeTitle(null);
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const activeGroup = active.data.current?.volumeGroup as VolumeGroup | undefined;
+    const overGroup = over.data.current?.volumeGroup as VolumeGroup | undefined;
+    if (!activeGroup || !overGroup) return;
+
+    const volumeIds = volumeGroups.map((g) => g.volumeId);
+    const oldIndex = volumeIds.indexOf(activeGroup.volumeId);
+    const newIndex = volumeIds.indexOf(overGroup.volumeId);
+    if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
+
+    const reordered = [...volumeGroups];
+    const [moved] = reordered.splice(oldIndex, 1);
+    if (!moved) return;
+    reordered.splice(newIndex, 0, moved);
+
+    const items = reordered.map((g, i) => ({ id: g.volumeId, sortOrder: i }));
+    void reorderVolumes(items);
+  }, [volumeGroups, reorderVolumes]);
+
   async function handleCreateChapter() {
     const chapter = await createChapter("default", undefined);
     if (chapter) {
@@ -232,47 +331,88 @@ export function VolumeTree({ onBatchPolish }: { onBatchPolish?: () => void }) {
 
   return (
     <div className="p-2">
+      {/* Filter & Sort bar */}
+      {allTags.length > 0 && (
+        <div className="flex items-center gap-1.5 px-2 pb-2 flex-wrap">
+          <select
+            value={filterTag ?? ""}
+            onChange={(e) => setFilterTag(e.target.value || null)}
+            className="rounded border border-[var(--color-border)] bg-[var(--color-surface-2)] px-1.5 py-0.5 text-[10px] text-[var(--color-text-secondary)] outline-none"
+          >
+            <option value="">全部标签</option>
+            {allTags.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as "order" | "words" | "updated")}
+            className="rounded border border-[var(--color-border)] bg-[var(--color-surface-2)] px-1.5 py-0.5 text-[10px] text-[var(--color-text-secondary)] outline-none"
+          >
+            <option value="order">默认排序</option>
+            <option value="words">按字数</option>
+            <option value="updated">按更新</option>
+          </select>
+        </div>
+      )}
+
+      {/* Volume-level DnD context */}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
-        onDragCancel={handleDragCancel}
+        onDragStart={handleVolumeDragStart}
+        onDragEnd={handleVolumeDragEnd}
+        onDragCancel={() => setActiveVolumeTitle(null)}
       >
-        {volumeGroups.map((group) => (
-          <div key={group.volumeId} className="mb-3">
-            <div className="flex items-center justify-between px-2 py-1">
-              <span className="text-[var(--text-xs)] font-medium uppercase tracking-wider text-[var(--color-text-muted)]">
-                {group.volumeTitle}
-              </span>
-              <span className="text-[var(--text-xs)] text-[var(--color-text-muted)]">
-                {group.chapters.length}
-              </span>
+        <SortableContext
+          items={volumeGroups.map((g) => `vol-${g.volumeId}`)}
+          strategy={verticalListSortingStrategy}
+        >
+          {volumeGroups.map((group) => (
+            <div key={group.volumeId} className="mb-3">
+              <SortableVolumeHeader group={group} />
+              {/* Chapter-level DnD context */}
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDragEnd={handleDragEnd}
+                onDragCancel={handleDragCancel}
+              >
+                <SortableContext
+                  items={group.chapters.map((c) => c.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="flex flex-col gap-0.5">
+                    {group.chapters.map((chapter) => (
+                      <ChapterItem
+                        key={chapter.id}
+                        chapter={chapter}
+                        isActive={chapter.id === activeChapterId}
+                        onChapterClick={loadChapter}
+                        isSelectMode={isSelectMode}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+
+                <DragOverlay>
+                  {activeChapter ? (
+                    <div className="rounded-lg bg-[var(--color-surface-2)] px-3 py-2 text-[var(--text-sm)] text-[var(--color-text-primary)] shadow-xl border border-[var(--color-primary)]/30 ring-1 ring-[var(--color-primary)]/10 max-w-[200px] truncate">
+                      {activeChapter.title}
+                    </div>
+                  ) : null}
+                </DragOverlay>
+              </DndContext>
             </div>
-            <SortableContext
-              items={group.chapters.map((c) => c.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              <div className="flex flex-col gap-0.5">
-                {group.chapters.map((chapter) => (
-                  <ChapterItem
-                    key={chapter.id}
-                    chapter={chapter}
-                    isActive={chapter.id === activeChapterId}
-                    onChapterClick={loadChapter}
-                    isSelectMode={isSelectMode}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          </div>
-        ))}
+          ))}
+        </SortableContext>
 
         <DragOverlay>
-          {activeChapter ? (
-            <div className="rounded-[var(--radius-sm)] bg-[var(--color-surface-2)] px-3 py-1.5 text-[var(--text-sm)] text-[var(--color-text-primary)] shadow-lg border border-[var(--color-border)] opacity-80">
-              {activeChapter.title}
+          {activeVolumeTitle ? (
+            <div className="rounded-lg bg-[var(--color-surface-2)] px-3 py-1.5 text-[var(--text-xs)] font-medium uppercase tracking-wider text-[var(--color-text-primary)] shadow-xl border border-[var(--color-primary)]/30 ring-1 ring-[var(--color-primary)]/10">
+              {activeVolumeTitle}
             </div>
           ) : null}
         </DragOverlay>

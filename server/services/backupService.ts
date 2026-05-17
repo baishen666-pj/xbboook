@@ -153,3 +153,53 @@ export function setBackupConfig(patch: Partial<BackupConfig>): BackupConfig {
   writeConfig(updated);
   return updated;
 }
+
+export function restoreBackup(id: string): { success: boolean; message: string } {
+  if (!/^\d{4}-\d{2}-\d{2}T/.test(id) && !/^\d{4}-\d{2}-\d{2}/.test(id)) {
+    return { success: false, message: '无效的备份 ID 格式' };
+  }
+
+  const backupDir = path.resolve(BACKUPS_DIR, id);
+  if (!backupDir.startsWith(BACKUPS_DIR + path.sep)) {
+    return { success: false, message: '路径不合法' };
+  }
+  if (!fs.existsSync(backupDir)) {
+    return { success: false, message: '备份不存在' };
+  }
+
+  const backupDb = path.join(backupDir, 'novel-pen.db');
+  const backupProjects = path.join(backupDir, 'projects');
+  if (!fs.existsSync(backupDb) && !fs.existsSync(backupProjects)) {
+    return { success: false, message: '备份数据不完整' };
+  }
+
+  // Safety: create a pre-restore snapshot
+  try {
+    const safetyTimestamp = new Date().toISOString().replace(/[:.]/g, '-') + '-pre-restore';
+    const safetyDir = path.join(BACKUPS_DIR, safetyTimestamp);
+    fs.mkdirSync(safetyDir, { recursive: true });
+    if (fs.existsSync(DB_FILE)) {
+      fs.copyFileSync(DB_FILE, path.join(safetyDir, 'novel-pen.db'));
+    }
+    if (fs.existsSync(PROJECTS_DIR)) {
+      fs.cpSync(PROJECTS_DIR, path.join(safetyDir, 'projects'), { recursive: true });
+    }
+  } catch {
+    // If safety backup fails, still proceed with restore
+  }
+
+  // Restore database
+  if (fs.existsSync(backupDb)) {
+    fs.copyFileSync(backupDb, DB_FILE);
+  }
+
+  // Restore projects directory
+  if (fs.existsSync(backupProjects)) {
+    if (fs.existsSync(PROJECTS_DIR)) {
+      fs.rmSync(PROJECTS_DIR, { recursive: true, force: true });
+    }
+    fs.cpSync(backupProjects, PROJECTS_DIR, { recursive: true });
+  }
+
+  return { success: true, message: '恢复成功，建议重启服务器以刷新数据库连接' };
+}

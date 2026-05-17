@@ -7,6 +7,7 @@ import { findByProject as findWorldviews } from '../db/repositories/worldviewRep
 import { findAll as findAllForeshadowing } from '../db/repositories/foreshadowingRepo.js';
 import { findByProject as findOutlines } from '../db/repositories/outlineRepo.js';
 import { findById as findProject } from '../db/repositories/projectRepo.js';
+import { get as getPreference } from '../db/repositories/userPreferenceRepo.js';
 import type { Chapter, Character, CharacterRelation } from '../types/index.js';
 
 export interface ContextSource {
@@ -22,6 +23,15 @@ export interface BuildContextOptions {
   maxTokens?: number;
   outlineContent?: string;
   skillId?: string;
+  pipelinePreviousChapter?: string;
+  disabledSources?: string[];
+}
+
+export interface ContextSourceInfo {
+  label: string;
+  description: string;
+  estimatedTokens: number;
+  enabled: boolean;
 }
 
 const CHARS_PER_TOKEN = 2.5;
@@ -137,6 +147,60 @@ function lostInMiddleSort(sources: ContextSource[]): ContextSource[] {
   return result;
 }
 
+const ALL_SOURCE_LABELS = [
+  '选中内容', '当前章节', '前文', '上一章生成内容',
+  '大纲内容', '角色设定', '章节概要', '故事弧线与情节线索',
+  '项目设定', '世界设定', '伏笔线索', '角色关系', '大纲结构',
+];
+
+export function getContextSourceLabels(): string[] {
+  return [...ALL_SOURCE_LABELS];
+}
+
+export async function getContextSources(projectId: string, disabledSources?: string[]): Promise<ContextSourceInfo[]> {
+  const disabled = new Set(disabledSources ?? []);
+  const sources: ContextSourceInfo[] = [];
+
+  const chapters = findChapters(projectId);
+  const characters = findCharacters(projectId);
+  const project = findProject(projectId);
+
+  sources.push({ label: '当前章节', description: '当前打开章节的完整内容', estimatedTokens: Math.floor(10000 * 0.4), enabled: !disabled.has('当前章节') });
+  sources.push({ label: '角色设定', description: '所有角色的姓名、性格、说话风格等', estimatedTokens: Math.ceil(characters.length * 60 / 2.5), enabled: !disabled.has('角色设定') });
+  sources.push({ label: '章节概要', description: '所有章节的标题和摘要', estimatedTokens: Math.ceil(chapters.length * 40 / 2.5), enabled: !disabled.has('章节概要') });
+  sources.push({ label: '项目设定', description: '题材、写作风格、作品简介', estimatedTokens: 50, enabled: !disabled.has('项目设定') });
+
+  try {
+    const worldviews = findWorldviews(projectId);
+    sources.push({ label: '世界设定', description: `世界观设定（${worldviews.length} 项）`, estimatedTokens: Math.min(500, Math.ceil(worldviews.length * 60 / 2.5)), enabled: !disabled.has('世界设定') });
+  } catch { /* skip */ }
+
+  try {
+    const foreshadowings = findAllForeshadowing(projectId);
+    sources.push({ label: '伏笔线索', description: `伏笔与线索（${foreshadowings.length} 个）`, estimatedTokens: Math.min(400, Math.ceil(foreshadowings.length * 30 / 2.5)), enabled: !disabled.has('伏笔线索') });
+  } catch { /* skip */ }
+
+  try {
+    const relations = findRelations(projectId);
+    sources.push({ label: '角色关系', description: `角色间关系（${relations.length} 对）`, estimatedTokens: Math.ceil(relations.length * 25 / 2.5), enabled: !disabled.has('角色关系') });
+  } catch { /* skip */ }
+
+  try {
+    const arcs = findArcs(projectId);
+    const threads = findThreads(projectId);
+    sources.push({ label: '故事弧线与情节线索', description: `弧线 ${arcs.length} 个，线索 ${threads.length} 条`, estimatedTokens: Math.ceil((arcs.length + threads.length) * 30 / 2.5), enabled: !disabled.has('故事弧线与情节线索') });
+  } catch { /* skip */ }
+
+  try {
+    const outlines = findOutlines(projectId);
+    sources.push({ label: '大纲结构', description: `大纲节点 ${outlines.length} 个`, estimatedTokens: Math.min(400, Math.ceil(outlines.length * 20 / 2.5)), enabled: !disabled.has('大纲结构') });
+  } catch { /* skip */ }
+
+  sources.push({ label: '前文', description: '当前章节前 2 章内容', estimatedTokens: Math.floor(10000 * 0.15) * 2, enabled: !disabled.has('前文') });
+
+  return sources;
+}
+
 export async function buildContext(options: BuildContextOptions): Promise<ContextSource[]> {
   const {
     projectId,
@@ -145,12 +209,16 @@ export async function buildContext(options: BuildContextOptions): Promise<Contex
     maxTokens = 10000,
     outlineContent,
     skillId = '',
+    pipelinePreviousChapter,
+    disabledSources = [],
   } = options;
+
+  const disabled = new Set(disabledSources);
 
   const sources: ContextSource[] = [];
 
   // Priority 10: selected text (user is directly working with this)
-  if (selectedText) {
+  if (selectedText && !disabled.has('选中内容')) {
     sources.push({
       priority: 10,
       label: '选中内容',
@@ -164,7 +232,7 @@ export async function buildContext(options: BuildContextOptions): Promise<Contex
     ? chapters.find((c) => c.id === currentChapterId)
     : undefined;
 
-  if (currentChapter) {
+  if (currentChapter && !disabled.has('当前章节')) {
     const content = await readChapter(projectId, currentChapter.id);
     if (content) {
       const idx = chapters.findIndex((c) => c.id === currentChapter.id);
@@ -175,7 +243,7 @@ export async function buildContext(options: BuildContextOptions): Promise<Contex
       });
 
       // Priority 7: previous 2 chapters for continuity
-      for (let i = Math.max(0, idx - 2); i < idx; i++) {
+      for (let i = Math.max(0, idx - 2); i < idx && !disabled.has('前文'); i++) {
         const prev = chapters[i];
         const prevContent = await readChapter(projectId, prev.id);
         if (prevContent) {
@@ -189,8 +257,17 @@ export async function buildContext(options: BuildContextOptions): Promise<Contex
     }
   }
 
+  // Priority 8: pipeline previous chapter content (for sequential generation)
+  if (pipelinePreviousChapter && !disabled.has('上一章生成内容')) {
+    sources.push({
+      priority: 8,
+      label: '上一章生成内容',
+      content: truncateToTokens(pipelinePreviousChapter, Math.floor(maxTokens * 0.2)),
+    });
+  }
+
   // Priority 9: outline content (for chapter-generate skill)
-  if (outlineContent) {
+  if (outlineContent && !disabled.has('大纲内容')) {
     sources.push({
       priority: 9,
       label: '大纲内容',
@@ -201,7 +278,7 @@ export async function buildContext(options: BuildContextOptions): Promise<Contex
   // Priority 8: character profiles (elevated — voice consistency is critical)
   const characters = findCharacters(projectId);
   const charText = characterProfiles(characters);
-  if (charText) {
+  if (charText && !disabled.has('角色设定')) {
     sources.push({
       priority: 8,
       label: '角色设定',
@@ -210,7 +287,7 @@ export async function buildContext(options: BuildContextOptions): Promise<Contex
   }
 
   // Priority 4: chapter summaries for plot awareness
-  if (chapters.length > 0) {
+  if (chapters.length > 0 && !disabled.has('章节概要')) {
     const summaries = chapters.map((c, i) => buildChapterSummary(c, i)).join('\n');
     sources.push({
       priority: 4,
@@ -228,7 +305,7 @@ export async function buildContext(options: BuildContextOptions): Promise<Contex
   } catch (err) {
     console.warn('[contextBuilder] Failed to load arcs/threads:', err instanceof Error ? err.message : err);
   }
-  if (arcs.length > 0 || threads.length > 0) {
+  if ((arcs.length > 0 || threads.length > 0) && !disabled.has('故事弧线与情节线索')) {
     const arcText = arcs.map(a => `【${a.name}】(${a.status}) ${a.description || ''}`).join('\n');
     const threadText = threads.map(t => `线索「${t.name}」(${t.status}, 优先级: ${t.priority}) ${t.description || ''}`).join('\n');
     sources.push({
@@ -248,7 +325,7 @@ export async function buildContext(options: BuildContextOptions): Promise<Contex
     if (project.writing_mode && project.writing_mode !== 'webnovel') {
       parts.push(`写作模式: ${project.writing_mode}`);
     }
-    if (parts.length > 0) {
+    if (parts.length > 0 && !disabled.has('项目设定')) {
       sources.push({ priority: 9, label: '项目设定', content: parts.join('\n') });
     }
   }
@@ -275,7 +352,7 @@ export async function buildContext(options: BuildContextOptions): Promise<Contex
   // Priority 6: foreshadowing (skill-aware filtering)
   try {
     const foreshadowings = findAllForeshadowing(projectId);
-    if (foreshadowings.length > 0) {
+    if (foreshadowings.length > 0 && !disabled.has('伏笔线索')) {
       const foreshadowingSkills = ['continue', 'plot-planning', 'foreshadowing-track', 'consistency', 'consistency-scan', 'inspiration', 'chapter-generate'];
       const filtered = foreshadowingSkills.includes(skillId)
         ? foreshadowings
@@ -293,7 +370,7 @@ export async function buildContext(options: BuildContextOptions): Promise<Contex
   }
 
   // Priority 6: character relations
-  if (characters.length > 0) {
+  if (characters.length > 0 && !disabled.has('角色关系')) {
     try {
       const relations = findRelations(projectId);
       if (relations.length > 0) {
@@ -313,7 +390,7 @@ export async function buildContext(options: BuildContextOptions): Promise<Contex
   }
 
   // Priority 5: outline structure (when not passed via outlineContent)
-  if (!outlineContent) {
+  if (!outlineContent && !disabled.has('大纲结构')) {
     try {
       const outlines = findOutlines(projectId);
       if (outlines.length > 0) {
@@ -325,6 +402,32 @@ export async function buildContext(options: BuildContextOptions): Promise<Contex
     } catch (err) {
       if (process.env.NODE_ENV === 'development') console.warn('[contextBuilder] outlines load failed:', err);
     }
+  }
+
+  // Priority 7: style profile
+  try {
+    const styleRaw = getPreference(`default_${projectId}`, 'style_profile');
+    if (styleRaw) {
+      const styleProfile = JSON.parse(styleRaw) as {
+        dimensions: Record<string, number>;
+        keywords: string[];
+        summary: string;
+      };
+      const dimLabels: Record<string, string> = {
+        language: '语言风格', narrative: '叙事节奏', emotional: '情感基调',
+        dialogue: '对话风格', description: '描写特点', webNovel: '网文特质',
+      };
+      const dimText = Object.entries(styleProfile.dimensions)
+        .map(([k, v]) => `${dimLabels[k] ?? k}: ${v}/10`)
+        .join('\n');
+      const kwText = styleProfile.keywords.length > 0 ? `关键词: ${styleProfile.keywords.join('、')}` : '';
+      const styleText = [dimText, kwText, styleProfile.summary].filter(Boolean).join('\n');
+      if (styleText) {
+        sources.push({ priority: 7, label: '写作风格档案', content: styleText });
+      }
+    }
+  } catch (err) {
+    if (process.env.NODE_ENV === 'development') console.warn('[contextBuilder] style profile load failed:', err);
   }
 
   // Apply Lost-in-Middle ordering and budget
@@ -362,6 +465,12 @@ export function characterDialogueProfiles(
     if (c.background) parts.push(`背景: ${c.background}`);
     if (c.abilities) parts.push(`能力: ${c.abilities}`);
     if (c.notes) parts.push(`备注: ${c.notes}`);
+    if (c.speech_style) parts.push(`说话风格: ${c.speech_style}`);
+    if (c.verbal_tics) parts.push(`口头禅: ${c.verbal_tics}`);
+    if (c.vocabulary_level && c.vocabulary_level !== 'common') parts.push(`用词水平: ${c.vocabulary_level}`);
+    if (c.sentence_length_pref && c.sentence_length_pref !== 'medium') parts.push(`句式偏好: ${c.sentence_length_pref}`);
+    if (c.emotional_expressiveness && c.emotional_expressiveness !== 'moderate') parts.push(`情感表达: ${c.emotional_expressiveness}`);
+    if (c.voice_examples) parts.push(`对话示例: ${c.voice_examples}`);
     return parts.join('\n');
   };
 

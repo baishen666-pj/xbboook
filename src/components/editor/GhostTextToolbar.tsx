@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { useEditorStore } from "@/stores/editorStore";
+import { useProjectStore } from "@/stores/projectStore";
+import { versionService } from "@/services/versionService";
 
 export function GhostTextToolbar() {
   const editor = useEditorStore((s) => s.editorInstance);
@@ -50,9 +52,19 @@ export function GhostTextToolbar() {
       style={{ top: pos.top, left: pos.left }}
     >
       <button
-        onClick={() => {
+        onClick={async () => {
+          // Create pre-AI snapshot before adopting ghost text
+          const pid = useProjectStore.getState().currentProject?.id;
+          const cid = useEditorStore.getState().activeChapterId;
+          if (pid && cid) {
+            try {
+              const res = await versionService.create(pid, cid, { label: "AI编辑前快照" });
+              if (res.success && res.data) {
+                useEditorStore.getState().setAiEditSnapshot(res.data.id);
+              }
+            } catch { /* best-effort */ }
+          }
           const { from, to } = editor.state.selection;
-          // Find the full ghost mark range
           let start = from;
           let end = to;
           editor.state.doc.nodesBetween(from, to, (node, nodePos) => {

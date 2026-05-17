@@ -7,6 +7,7 @@ import {
   cleanupOldBackups,
   getBackupConfig,
   setBackupConfig,
+  restoreBackup,
 } from '../services/backupService.js';
 
 const router = Router();
@@ -89,6 +90,22 @@ router.delete('/:id', (req, res) => {
     res.status(500).json({
       success: false,
       error: err instanceof Error ? err.message : '删除备份失败',
+    });
+  }
+});
+
+router.post('/:id/restore', (req, res) => {
+  try {
+    const result = restoreBackup(req.params.id);
+    if (!result.success) {
+      res.status(400).json({ success: false, error: result.message });
+      return;
+    }
+    res.json({ success: true, data: { message: result.message } });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: err instanceof Error ? err.message : '恢复备份失败',
     });
   }
 });

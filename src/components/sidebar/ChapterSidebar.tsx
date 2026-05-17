@@ -16,8 +16,10 @@ const ImportPanel = lazy(() => import("@/components/settings/ImportPanel").then(
 const WritingGoalPanel = lazy(() => import("@/components/settings/WritingGoalPanel").then(m => ({ default: m.WritingGoalPanel })));
 const StoryArcPanel = lazy(() => import("@/components/story-arcs/StoryArcPanel").then(m => ({ default: m.StoryArcPanel })));
 const SnippetPanel = lazy(() => import("@/components/snippets/SnippetPanel").then(m => ({ default: m.SnippetPanel })));
+const ConsistencyPanel = lazy(() => import("@/components/consistency/ConsistencyPanel").then(m => ({ default: m.ConsistencyPanel })));
+const TimelinePanel = lazy(() => import("@/components/timeline/TimelinePanel").then(m => ({ default: m.TimelinePanel })));
 
-type Tab = "chapters" | "characters" | "worldview" | "outline" | "versions" | "schedule" | "foreshadowing" | "snippets" | "arcs";
+type Tab = "chapters" | "characters" | "worldview" | "outline" | "versions" | "schedule" | "foreshadowing" | "snippets" | "arcs" | "consistency" | "timeline";
 
 const TABS: Array<{ key: Tab; label: string }> = [
   { key: "chapters", label: "章节" },
@@ -26,7 +28,9 @@ const TABS: Array<{ key: Tab; label: string }> = [
   { key: "outline", label: "大纲" },
   { key: "foreshadowing", label: "伏笔" },
   { key: "arcs", label: "弧线" },
+  { key: "timeline", label: "时间线" },
   { key: "snippets", label: "片段" },
+  { key: "consistency", label: "一致性" },
   { key: "versions", label: "历史" },
   { key: "schedule", label: "排期" },
 ];
@@ -188,6 +192,8 @@ export function ChapterSidebar() {
                   {activeLeftTab === "foreshadowing" && <div id="tabpanel-foreshadowing" role="tabpanel" aria-label="伏笔"><ForeshadowingPanel /></div>}
                   {activeLeftTab === "arcs" && <div id="tabpanel-arcs" role="tabpanel" aria-label="故事弧线"><StoryArcPanel /></div>}
                   {activeLeftTab === "snippets" && <div id="tabpanel-snippets" role="tabpanel" aria-label="片段"><SnippetPanel /></div>}
+                  {activeLeftTab === "consistency" && <div id="tabpanel-consistency" role="tabpanel" aria-label="一致性检查"><ConsistencyPanel /></div>}
+                  {activeLeftTab === "timeline" && <div id="tabpanel-timeline" role="tabpanel" aria-label="时间线"><TimelinePanel /></div>}
                 </Suspense>
               </ErrorBoundary>
             </div>

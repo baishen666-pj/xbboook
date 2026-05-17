@@ -2,6 +2,8 @@ import { type ReactNode, useEffect, useRef } from "react";
 import { useUiStore } from "@/stores/uiStore";
 import { ChapterSidebar } from "@/components/sidebar/ChapterSidebar";
 import { ResizablePanel } from "./ResizablePanel";
+import { FocusToolbar } from "@/components/editor/FocusToolbar";
+import { FocusProgressBar } from "@/components/editor/FocusProgressBar";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -18,6 +20,8 @@ export function AppLayout({ children, rightPanel }: AppLayoutProps) {
   const setLeftPanelWidth = useUiStore((s) => s.setLeftPanelWidth);
   const setRightPanelWidth = useUiStore((s) => s.setRightPanelWidth);
   const activeLeftTab = useUiStore((s) => s.activeLeftTab);
+  const focusEditorWidth = useUiStore((s) => s.focusEditorWidth);
+  const focusFontSizeMultiplier = useUiStore((s) => s.focusFontSizeMultiplier);
 
   // Swipe gestures for mobile
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -62,20 +66,22 @@ export function AppLayout({ children, rightPanel }: AppLayoutProps) {
     return () => window.removeEventListener("keydown", handler);
   }, [isFocusMode]);
 
-  // Focus mode: editor only, centered
+  // Focus mode: editor only, centered with progress bar and toolbar
   if (isFocusMode) {
     return (
-      <div className="flex flex-1 overflow-hidden bg-[var(--color-surface-0)]" role="main" aria-label="专注模式编辑器">
+      <div className="flex flex-1 flex-col overflow-hidden bg-gradient-to-b from-[var(--color-surface-0)] to-[var(--color-surface-1)] transition-all duration-500 ease-out" role="main" aria-label="专注模式编辑器">
+        <FocusProgressBar />
         <div className="flex-1 overflow-hidden smooth-scroll">
-          <div className="mx-auto h-full" style={{ maxWidth: 720 }}>
-            {children}
+          <div
+            className="mx-auto h-full transition-all duration-300"
+            style={{ maxWidth: focusEditorWidth }}
+          >
+            <div style={{ fontSize: `${focusFontSizeMultiplier}em` }}>
+              {children}
+            </div>
           </div>
         </div>
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full bg-[var(--color-surface-2)]/80 px-3 py-1.5 text-[var(--text-xs)] text-[var(--color-text-muted)] shadow-[var(--shadow-lg)] backdrop-blur-sm" role="status">
-          <span>专注模式</span>
-          <span className="text-[var(--color-text-muted)]" aria-hidden="true">·</span>
-          <span>ESC 退出</span>
-        </div>
+        <FocusToolbar />
       </div>
     );
   }

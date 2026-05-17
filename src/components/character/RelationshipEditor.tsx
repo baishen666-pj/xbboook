@@ -2,25 +2,23 @@ import { useState, useCallback } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { characterService } from "@/services/characterService";
 import { ROLE_LABELS } from "@/lib/role-types";
+import { RELATION_PRESETS } from "@/lib/relationship-types";
 import type { CharacterRelation } from "@/types/project";
-
-const RELATION_PRESETS = [
-  "朋友", "敌人", "恋人", "师徒", "亲属", "同门",
-  "上下级", "盟友", "对手", "暗恋", "仇人", "搭档",
-];
 
 interface Props {
   onClose: () => void;
   editingRelation?: CharacterRelation | null;
+  initialCharacterAId?: string;
+  initialCharacterBId?: string;
 }
 
-export function RelationshipEditor({ onClose, editingRelation }: Props) {
+export function RelationshipEditor({ onClose, editingRelation, initialCharacterAId, initialCharacterBId }: Props) {
   const currentProject = useProjectStore((s) => s.currentProject);
   const characters = useProjectStore((s) => s.characters);
   const relations = useProjectStore((s) => s.characterRelations);
 
-  const [characterAId, setCharacterAId] = useState(editingRelation?.characterAId ?? "");
-  const [characterBId, setCharacterBId] = useState(editingRelation?.characterBId ?? "");
+  const [characterAId, setCharacterAId] = useState(editingRelation?.characterAId ?? initialCharacterAId ?? "");
+  const [characterBId, setCharacterBId] = useState(editingRelation?.characterBId ?? initialCharacterBId ?? "");
   const [relationType, setRelationType] = useState(editingRelation?.relationType ?? "");
   const [description, setDescription] = useState(editingRelation?.description ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);

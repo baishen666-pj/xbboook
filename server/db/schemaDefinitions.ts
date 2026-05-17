@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS chapters (
   publish_status TEXT DEFAULT 'draft' CHECK(publish_status IN ('draft','scheduled','published','archived')),
   scheduled_at TEXT,
   sort_order INTEGER DEFAULT 0,
+  tags TEXT DEFAULT '[]',
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
@@ -306,6 +307,54 @@ CREATE TABLE IF NOT EXISTS achievements (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_achievements_project_badge ON achievements(project_id, badge_type);
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL,
+  chapter_id TEXT,
+  role TEXT NOT NULL CHECK(role IN ('user','assistant','system')),
+  content TEXT NOT NULL,
+  skill_id TEXT DEFAULT '',
+  token_usage INTEGER,
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+  FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_messages_project ON chat_messages(project_id, created_at ASC);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_chapter ON chat_messages(chapter_id, created_at ASC);
+
+CREATE TABLE IF NOT EXISTS pipeline_jobs (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL,
+  chapter_ids TEXT NOT NULL,
+  current_step INTEGER DEFAULT 0,
+  status TEXT DEFAULT 'pending' CHECK(status IN ('pending','running','paused','completed','failed')),
+  error TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS user_preferences (
+  user_id TEXT NOT NULL,
+  key TEXT NOT NULL,
+  value TEXT NOT NULL,
+  updated_at TEXT DEFAULT (datetime('now')),
+  PRIMARY KEY (user_id, key),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS project_templates (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  genre TEXT,
+  description TEXT,
+  is_builtin INTEGER DEFAULT 0,
+  structure TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
 `;
 
 /**

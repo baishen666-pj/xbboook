@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-type LeftTab = "chapters" | "characters" | "worldview" | "outline" | "versions" | "schedule" | "foreshadowing" | "snippets" | "arcs";
+type LeftTab = "chapters" | "characters" | "worldview" | "outline" | "versions" | "schedule" | "foreshadowing" | "snippets" | "arcs" | "consistency" | "timeline";
 type Theme = "dark" | "light" | "sepia";
 
 interface UiState {
@@ -13,9 +13,12 @@ interface UiState {
   activeLeftTab: LeftTab;
   theme: Theme;
   isSearchOpen: boolean;
+  isCommandPaletteOpen: boolean;
   splitPane: boolean;
   splitChapterId: string | null;
   splitRatio: number;
+  focusEditorWidth: number;
+  focusFontSizeMultiplier: number;
 }
 
 interface UiActions {
@@ -32,9 +35,13 @@ interface UiActions {
   cycleTheme: () => void;
   toggleSearch: () => void;
   closeSearch: () => void;
+  toggleCommandPalette: () => void;
+  closeCommandPalette: () => void;
   toggleSplitPane: () => void;
   setSplitChapterId: (id: string | null) => void;
   setSplitRatio: (ratio: number) => void;
+  setFocusEditorWidth: (width: number) => void;
+  setFocusFontSizeMultiplier: (multiplier: number) => void;
 }
 
 const THEME_CYCLE: Theme[] = ["dark", "light", "sepia"];
@@ -49,9 +56,12 @@ export const useUiStore = create<UiState & UiActions>((set) => ({
   activeLeftTab: "chapters",
   theme: "dark",
   isSearchOpen: false,
+  isCommandPaletteOpen: false,
   splitPane: false,
   splitChapterId: null,
   splitRatio: 0.5,
+  focusEditorWidth: 720,
+  focusFontSizeMultiplier: 1.0,
 
   toggleLeftPanel: () =>
     set((state) => ({ isLeftPanelOpen: !state.isLeftPanelOpen })),
@@ -88,6 +98,10 @@ export const useUiStore = create<UiState & UiActions>((set) => ({
 
   closeSearch: () => set({ isSearchOpen: false }),
 
+  toggleCommandPalette: () => set((state) => ({ isCommandPaletteOpen: !state.isCommandPaletteOpen })),
+
+  closeCommandPalette: () => set({ isCommandPaletteOpen: false }),
+
   toggleSplitPane: () =>
     set((state) => ({
       splitPane: !state.splitPane,
@@ -97,6 +111,9 @@ export const useUiStore = create<UiState & UiActions>((set) => ({
   setSplitChapterId: (id) => set({ splitChapterId: id }),
 
   setSplitRatio: (ratio) => set({ splitRatio: Math.min(0.8, Math.max(0.2, ratio)) }),
+
+  setFocusEditorWidth: (width) => set({ focusEditorWidth: Math.min(1200, Math.max(480, width)) }),
+  setFocusFontSizeMultiplier: (multiplier) => set({ focusFontSizeMultiplier: Math.min(1.5, Math.max(0.8, multiplier)) }),
 }));
 
 useUiStore.subscribe((state, prev) => {

@@ -29,4 +29,8 @@ export const projectService = {
   async remove(id: string): Promise<ApiResponse<void>> {
     return apiClient.delete<void>(`${PATH}/${id}`);
   },
+
+  async reorderVolumes(projectId: string, items: { id: string; sortOrder: number }[]): Promise<ApiResponse<void>> {
+    return apiClient.put<void>(`${PATH}/${projectId}/volumes/reorder`, { items });
+  },
 };

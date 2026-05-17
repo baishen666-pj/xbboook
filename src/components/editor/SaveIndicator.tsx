@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useEditorStore } from "@/stores/editorStore";
+import { useOfflineStore } from "@/stores/offlineStore";
 
 const AUTO_SAVE_INTERVAL = 30;
 
@@ -8,6 +9,7 @@ export function SaveIndicator() {
   const isSaving = useEditorStore((s) => s.isSaving);
   const lastSavedAt = useEditorStore((s) => s.lastSavedAt);
   const dirtyAt = useEditorStore((s) => s.dirtyAt);
+  const isOnline = useOfflineStore((s) => s.isOnline);
 
   const [elapsed, setElapsed] = useState(0);
 
@@ -46,6 +48,14 @@ export function SaveIndicator() {
   }
 
   if (lastSavedAt) {
+    if (!isOnline) {
+      return (
+        <span className="flex items-center gap-1.5 text-[var(--text-xs)] text-[var(--color-warning)]">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-warning)]" />
+          已保存到本地
+        </span>
+      );
+    }
     return (
       <span className="flex items-center gap-1.5 text-[var(--text-xs)] text-[var(--color-text-muted)]">
         <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-success)]" />

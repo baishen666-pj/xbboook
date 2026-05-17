@@ -1,6 +1,8 @@
 import { memo, useState } from "react";
 import type { AiMessage } from "@/stores/aiStore";
 import { useEditorStore } from "@/stores/editorStore";
+import { useProjectStore } from "@/stores/projectStore";
+import { versionService } from "@/services/versionService";
 import { ConsistencyReport } from "./ConsistencyReport";
 
 interface Props {
@@ -11,6 +13,7 @@ export const AiMessageBubble = memo(function AiMessageBubble({ message }: Props)
   const isUser = message.role === "user";
   const editor = useEditorStore((s) => s.editorInstance);
   const activeChapterId = useEditorStore((s) => s.activeChapterId);
+  const currentProject = useProjectStore((s) => s.currentProject);
   const [inserted, setInserted] = useState(false);
 
   const canInsert = !isUser && !message.isStreaming && editor && activeChapterId && message.content
@@ -18,8 +21,14 @@ export const AiMessageBubble = memo(function AiMessageBubble({ message }: Props)
 
   const isConsistencyReport = !isUser && message.skillId === "consistency-scan" && !message.isStreaming;
 
-  const handleInsert = () => {
-    if (!editor || !message.content) return;
+  const handleInsert = async () => {
+    if (!editor || !message.content || !activeChapterId || !currentProject) return;
+    try {
+      const res = await versionService.create(currentProject.id, activeChapterId, { label: "AI编辑前快照" });
+      if (res.success && res.data) {
+        useEditorStore.getState().setAiEditSnapshot(res.data.id);
+      }
+    } catch { /* snapshot creation is best-effort */ }
     const html = message.content
       .split("\n")
       .filter(Boolean)

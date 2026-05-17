@@ -11,6 +11,7 @@ import { useSessionTracker } from "@/hooks/useSessionTracker";
 import { useCollabPresence } from "@/hooks/useCollabPresence";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { ToastContainer } from "@/components/ui/ToastContainer";
+import { CommandPalette } from "@/components/ui/CommandPalette";
 
 const ProjectList = lazy(() =>
   import("@/components/project/ProjectList").then((m) => ({ default: m.ProjectList })),
@@ -94,6 +95,8 @@ function Workspace() {
       <Suspense fallback={null}>
         <EditorContextMenu />
       </Suspense>
+
+      <CommandPalette />
 
       {/* Toggle buttons when panels are closed */}
       {!isLeftPanelOpen && (

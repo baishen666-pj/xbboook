@@ -3,6 +3,7 @@ import { processAiRequest, listSkills, getSkill, isConfigured } from '../service
 import { setupSSE, sendSSE, sendSSEError, sendSSEDone } from '../middleware/sse.js';
 import { getConfig } from '../ai/agentFactory.js';
 import { saveConfig, loadStoredConfig } from '../ai/configStore.js';
+import { getContextSources, estimateTokens } from '../ai/contextBuilder.js';
 import { PROVIDERS } from '../ai/providers.js';
 import { findById as findChapterById } from '../db/repositories/chapterRepo.js';
 import { findById as findProjectById } from '../db/repositories/projectRepo.js';
@@ -13,6 +14,7 @@ import { findAll as findAllForeshadowing } from '../db/repositories/foreshadowin
 import { readChapter } from '../services/fileService.js';
 import { createJob, runPipeline, getJob } from '../ai/chapterPipeline.js';
 import { getPluginSkill, getPluginSkills } from '../plugins/registry.js';
+import * as chatMessageRepo from '../db/repositories/chatMessageRepo.js';
 
 const router = Router();
 
@@ -385,6 +387,30 @@ router.post('/complete', async (req, res) => {
   }
 });
 
+// Context info: list available sources with estimated tokens
+router.get('/projects/:projectId/context-info', async (req, res) => {
+  const disabledParam = req.query.disabledSources as string | undefined;
+  const disabledSources = disabledParam ? disabledParam.split(',').filter(Boolean) : undefined;
+  const { projectId } = req.params;
+  try {
+    const config = loadStoredConfig();
+    const maxTokens = config.maxTokens || 10000;
+    const sources = await getContextSources(projectId, disabledSources);
+    const enabledTokens = sources.filter(s => s.enabled).reduce((sum, s) => sum + s.estimatedTokens, 0);
+    res.json({
+      success: true,
+      data: {
+        sources,
+        maxTokens,
+        usedTokens: enabledTokens,
+        budgetPercentage: Math.round((enabledTokens / maxTokens) * 100),
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err instanceof Error ? err.message : 'Failed to get context info' });
+  }
+});
+
 // Context summary for frontend hints
 router.get('/context-summary/:projectId', (req, res) => {
   const { projectId } = req.params;
@@ -407,6 +433,55 @@ router.get('/context-summary/:projectId', (req, res) => {
   } catch (err) {
     res.status(500).json({ success: false, error: err instanceof Error ? err.message : '获取上下文摘要失败' });
   }
+});
+
+// Chat history: GET
+router.get('/chat-history/:projectId', (req, res) => {
+  const { projectId } = req.params;
+  const { chapterId } = req.query as { chapterId?: string };
+  const messages = chatMessageRepo.findByProject(projectId, chapterId);
+  res.json({ success: true, data: messages });
+});
+
+// Chat history: POST (batch save)
+router.post('/chat-history/:projectId', (req, res) => {
+  const { projectId } = req.params;
+  const { messages } = req.body as {
+    messages: Array<{
+      chapterId?: string;
+      role: string;
+      content: string;
+      skillId?: string;
+      tokenUsage?: number;
+    }>;
+  };
+
+  if (!Array.isArray(messages)) {
+    res.status(400).json({ success: false, error: 'messages must be an array' });
+    return;
+  }
+
+  for (const msg of messages) {
+    chatMessageRepo.create({
+      projectId,
+      chapterId: msg.chapterId,
+      role: msg.role as 'user' | 'assistant' | 'system',
+      content: msg.content,
+      skillId: msg.skillId,
+      tokenUsage: msg.tokenUsage,
+    });
+  }
+  res.json({ success: true, data: null });
+});
+
+// Chat history: DELETE
+router.delete('/chat-history/:projectId', (req, res) => {
+  const { projectId } = req.params;
+  const { chapterId } = req.query as { chapterId?: string };
+  const deleted = chapterId
+    ? chatMessageRepo.deleteByChapter(projectId, chapterId)
+    : chatMessageRepo.deleteByProject(projectId);
+  res.json({ success: true, data: { deleted } });
 });
 
 export default router;

@@ -23,6 +23,7 @@ export function CharacterList() {
   const [showRelationEditor, setShowRelationEditor] = useState(false);
   const [editingRelation, setEditingRelation] = useState<CharacterRelation | null>(null);
   const [selectedRelation, setSelectedRelation] = useState<CharacterRelation | null>(null);
+  const [connectFrom, setConnectFrom] = useState<{ characterAId: string; characterBId: string } | null>(null);
 
   if (!currentProject) return null;
 
@@ -94,6 +95,33 @@ export function CharacterList() {
     }
     setSelectedRelation(null);
   };
+
+  const handleCreateRelationFromGraph = useCallback((characterAId: string, characterBId: string) => {
+    setConnectFrom({ characterAId, characterBId });
+    setEditingRelation(null);
+    setShowRelationEditor(true);
+  }, []);
+
+  const handleDeleteCharacterFromGraph = useCallback(async (characterId: string) => {
+    await handleDelete(characterId);
+  }, [handleDelete]);
+
+  const handleEditRelationFromGraph = useCallback((relationId: string) => {
+    const rel = relations.find((r) => r.id === relationId);
+    if (rel) {
+      setEditingRelation(rel);
+      setShowRelationEditor(true);
+    }
+  }, [relations]);
+
+  const handleDeleteRelationFromGraph = useCallback(async (relationId: string) => {
+    const res = await characterService.deleteRelation(currentProject.id, relationId);
+    if (res.success) {
+      useProjectStore.setState((s) => ({
+        characterRelations: s.characterRelations.filter((r) => r.id !== relationId),
+      }));
+    }
+  }, [currentProject]);
 
   return (
     <div className="flex flex-col h-full">
@@ -209,18 +237,6 @@ export function CharacterList() {
         </>
       ) : (
         <div className="flex-1 flex flex-col min-h-0">
-          {/* Graph toolbar */}
-          <div className="flex items-center justify-between px-3 py-1.5 border-b border-[var(--color-border)]">
-            <span className="text-[10px] text-[var(--color-text-muted)]">
-              拖拽节点调整位置 / 点击节点查看角色 / 点击连线查看关系
-            </span>
-            <button
-              onClick={() => { setEditingRelation(null); setShowRelationEditor(true); }}
-              className="rounded bg-[var(--color-primary)] px-2 py-1 text-[var(--text-xs)] text-white hover:opacity-90"
-            >
-              + 添加关系
-            </button>
-          </div>
 
           {/* Graph */}
           <div className="flex-1 min-h-0 p-2">
@@ -235,30 +251,17 @@ export function CharacterList() {
                   relations={relations}
                   onNodeClick={handleNodeClick}
                   onEdgeClick={handleEdgeClick}
+                  onCreateRelation={handleCreateRelationFromGraph}
+                  onEditCharacter={(id) => { const c = characters.find((ch) => ch.id === id); if (c) { setEditingCharacter(c); setShowForm(true); } }}
+                  onDeleteCharacter={handleDeleteCharacterFromGraph}
+                  onEditRelation={handleEditRelationFromGraph}
+                  onDeleteRelationFromGraph={handleDeleteRelationFromGraph}
                   filterRole={filterRole}
                 />
               </Suspense>
             )}
           </div>
 
-          {/* Legend */}
-          <div className="flex items-center gap-3 px-3 py-1.5 border-t border-[var(--color-border)]">
-            <span className="text-[10px] text-[var(--color-text-muted)]">图例:</span>
-            {[
-              { label: "主角", color: "#f59e0b" },
-              { label: "反派", color: "#ef4444" },
-              { label: "配角", color: "#3b82f6" },
-              { label: "路人", color: "#6b7280" },
-            ].map((item) => (
-              <div key={item.label} className="flex items-center gap-1">
-                <span
-                  className="inline-block h-2 w-2 rounded-full"
-                  style={{ backgroundColor: item.color }}
-                />
-                <span className="text-[10px] text-[var(--color-text-muted)]">{item.label}</span>
-              </div>
-            ))}
-          </div>
         </div>
       )}
 
@@ -277,7 +280,9 @@ export function CharacterList() {
       {showRelationEditor && (
         <RelationshipEditor
           editingRelation={editingRelation}
-          onClose={() => { setShowRelationEditor(false); setEditingRelation(null); }}
+          initialCharacterAId={connectFrom?.characterAId}
+          initialCharacterBId={connectFrom?.characterBId}
+          onClose={() => { setShowRelationEditor(false); setEditingRelation(null); setConnectFrom(null); }}
         />
       )}
 
@@ -295,6 +300,7 @@ export function CharacterList() {
           onClose={() => setSelectedRelation(null)}
         />
       )}
+
     </div>
   );
 }

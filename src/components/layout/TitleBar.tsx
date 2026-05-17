@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { useUiStore } from "@/stores/uiStore";
 import { SaveIndicator } from "@/components/editor/SaveIndicator";
+import { PreferencesPanel } from "@/components/settings/PreferencesPanel";
+import { NetworkStatusIndicator } from "@/components/ui/NetworkStatusIndicator";
+import { ExportDialog } from "@/components/project/ExportDialog";
 
 export function TitleBar() {
   const currentProject = useProjectStore((s) => s.currentProject);
@@ -12,20 +15,21 @@ export function TitleBar() {
   const theme = useUiStore((s) => s.theme);
   const cycleTheme = useUiStore((s) => s.cycleTheme);
   const [showExport, setShowExport] = useState(false);
-  const exportRef = useRef<HTMLDivElement>(null);
+  const [showPrefs, setShowPrefs] = useState(false);
+  const prefsRef = useRef<HTMLDivElement>(null);
 
   const themeIcon = theme === "dark" ? "🌙" : theme === "light" ? "☀️" : "📖";
 
   useEffect(() => {
-    if (!showExport) return;
+    if (!showPrefs) return;
     function handleClick(e: MouseEvent) {
-      if (exportRef.current && !exportRef.current.contains(e.target as Node)) {
-        setShowExport(false);
+      if (showPrefs && prefsRef.current && !prefsRef.current.contains(e.target as Node)) {
+        setShowPrefs(false);
       }
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [showExport]);
+  }, [showPrefs]);
 
   return (
     <header className="flex h-10 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface-1)] px-4" role="banner">
@@ -47,43 +51,39 @@ export function TitleBar() {
         {/* Save indicator */}
         <SaveIndicator />
 
+        {/* Network status */}
+        <NetworkStatusIndicator />
+
         {/* Export */}
         {currentProject && (
-          <div className="relative" ref={exportRef}>
-            <button
-              onClick={() => setShowExport(!showExport)}
-              className="rounded-[var(--radius-sm)] px-2 py-1 text-[var(--text-xs)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)] transition-colors btn-hover-scale"
-              aria-label="导出"
-              aria-expanded={showExport}
-              aria-haspopup="true"
-            >
-              导出
-            </button>
-            {showExport && (
-              <div className="absolute right-0 top-full mt-1 z-20 w-44 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-1)] py-1 shadow-[var(--shadow-lg)] animate-[slideUp_150ms_var(--ease-out)]" role="menu" aria-label="导出格式">
-                {[
-                  { label: "TXT", path: "txt" },
-                  { label: "Markdown", path: "md" },
-                  { label: "EPUB", path: "epub" },
-                  { label: "DOCX", path: "docx" },
-                  { label: "PDF", path: "pdf" },
-                ].map((fmt) => (
-                  <a
-                    key={fmt.path}
-                    href={`/api/projects/${currentProject.id}/export/${fmt.path}`}
-                    download
-                    onClick={() => setShowExport(false)}
-                    className="flex items-center justify-between px-3 py-1.5 text-[var(--text-xs)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)] transition-colors"
-                    role="menuitem"
-                  >
-                    导出 {fmt.label}
-                    <span className="text-[10px] text-[var(--color-text-muted)]" aria-hidden="true">.{fmt.path === "md" ? "md" : fmt.path}</span>
-                  </a>
-                ))}
-              </div>
-            )}
-          </div>
+          <button
+            onClick={() => setShowExport(true)}
+            className="rounded-[var(--radius-sm)] px-2 py-1 text-[var(--text-xs)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)] transition-colors btn-hover-scale"
+            aria-label="导出"
+          >
+            导出
+          </button>
         )}
+
+        {/* Settings */}
+        <div ref={prefsRef} className="relative">
+          <button
+            onClick={() => setShowPrefs(!showPrefs)}
+            className="rounded-[var(--radius-sm)] px-2 py-1 text-[var(--text-xs)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-3)] hover:text-[var(--color-text-primary)] transition-colors btn-hover-scale"
+            title="设置"
+            aria-label="偏好设置"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.2" aria-hidden="true">
+              <circle cx="7" cy="7" r="2.5" />
+              <path d="M7 1v2M7 11v2M1 7h2M11 7h2M2.5 2.5l1.4 1.4M10.1 10.1l1.4 1.4M2.5 11.5l1.4-1.4M10.1 3.9l1.4-1.4" />
+            </svg>
+          </button>
+          {showPrefs && (
+            <div className="absolute right-0 top-full mt-1 z-50 w-64 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-1)] shadow-lg animate-[fadeIn_150ms_var(--ease-out)]">
+              <PreferencesPanel />
+            </div>
+          )}
+        </div>
 
         {/* Theme toggle */}
         <button
@@ -127,6 +127,13 @@ export function TitleBar() {
           )}
         </button>
       </div>
+
+      {currentProject && (
+        <ExportDialog
+          isOpen={showExport}
+          onClose={() => setShowExport(false)}
+        />
+      )}
     </header>
   );
 }
