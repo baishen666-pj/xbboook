@@ -583,6 +583,25 @@ const MIGRATIONS: Migration[] = [
       'CREATE INDEX IF NOT EXISTS idx_char_timeline_character ON character_timelines(character_id)',
     ],
   },
+  {
+    version: 28,
+    name: 'writing_templates',
+    up: [
+      `CREATE TABLE IF NOT EXISTS writing_templates (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        category TEXT DEFAULT 'general',
+        description TEXT,
+        content TEXT NOT NULL,
+        sort_order INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_writing_templates_project ON writing_templates(project_id)',
+    ],
+  },
 ];
 
 // Check if a migration's effects already exist in the database
@@ -699,6 +718,10 @@ function isMigrationApplied(db: ReturnType<typeof getDb>, migration: Migration):
   // Version 27: character_timelines
   if (migration.version === 27) {
     return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='character_timelines'").get();
+  }
+  // Version 28: writing_templates
+  if (migration.version === 28) {
+    return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='writing_templates'").get();
   }
   return false;
 }

@@ -62,6 +62,14 @@ import loreGeneratorRouter from './routes/loreGenerator.js';
 import chapterTagsRouter from './routes/chapterTags.js';
 import voiceStyleRouter from './routes/voiceStyle.js';
 import autoBackupRouter from './routes/autoBackup.js';
+import continuationSuggestRouter from './routes/continuationSuggest.js';
+import relationshipGraphRouter from './routes/relationshipGraph.js';
+import writingStatsRouter from './routes/writingStats.js';
+import chapterCompareRouter from './routes/chapterCompare.js';
+import nameGeneratorRouter from './routes/nameGenerator.js';
+import writingTemplatesRouter from './routes/writingTemplates.js';
+import translationRouter from './routes/translation.js';
+import readerFeedbackRouter from './routes/readerFeedback.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestIdMiddleware, requestLogger } from './middleware/logger.js';
 
@@ -170,6 +178,14 @@ app.use('/api/projects/:projectId/lore-generator', aiLimiter, loreGeneratorRoute
 app.use('/api/projects/:projectId/chapter-tags', chapterTagsRouter);
 app.use('/api/projects/:projectId/voice-style', aiLimiter, voiceStyleRouter);
 app.use('/api/projects/:projectId/auto-backup', autoBackupRouter);
+app.use('/api/projects/:projectId/continuation-suggest', aiLimiter, continuationSuggestRouter);
+app.use('/api/projects/:projectId/relationship-graph', relationshipGraphRouter);
+app.use('/api/projects/:projectId/writing-stats', writingStatsRouter);
+app.use('/api/projects/:projectId/chapter-compare', chapterCompareRouter);
+app.use('/api/projects/:projectId/name-generator', aiLimiter, nameGeneratorRouter);
+app.use('/api/projects/:projectId/writing-templates', writingTemplatesRouter);
+app.use('/api/projects/:projectId/translation', aiLimiter, translationRouter);
+app.use('/api/projects/:projectId/reader-feedback', aiLimiter, readerFeedbackRouter);
 
 app.use(errorHandler);
 

@@ -1,4 +1,4 @@
-import { useState, useCallback, lazy, Suspense } from "react";
+import { useState, lazy, Suspense } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { characterService } from "@/services/characterService";
 import { CharacterCard } from "./CharacterCard";
@@ -74,18 +74,6 @@ export function CharacterList() {
     }
   };
 
-  const handleNodeClick = useCallback((characterId: string) => {
-    const char = characters.find((c) => c.id === characterId);
-    if (char) {
-      setEditingCharacter(char);
-      setShowForm(true);
-    }
-  }, [characters]);
-
-  const handleEdgeClick = useCallback((relation: CharacterRelation) => {
-    setSelectedRelation(relation);
-  }, []);
-
   const handleDeleteRelation = async (relation: CharacterRelation) => {
     const res = await characterService.deleteRelation(currentProject.id, relation.id);
     if (res.success) {
@@ -95,33 +83,6 @@ export function CharacterList() {
     }
     setSelectedRelation(null);
   };
-
-  const handleCreateRelationFromGraph = useCallback((characterAId: string, characterBId: string) => {
-    setConnectFrom({ characterAId, characterBId });
-    setEditingRelation(null);
-    setShowRelationEditor(true);
-  }, []);
-
-  const handleDeleteCharacterFromGraph = useCallback(async (characterId: string) => {
-    await handleDelete(characterId);
-  }, [handleDelete]);
-
-  const handleEditRelationFromGraph = useCallback((relationId: string) => {
-    const rel = relations.find((r) => r.id === relationId);
-    if (rel) {
-      setEditingRelation(rel);
-      setShowRelationEditor(true);
-    }
-  }, [relations]);
-
-  const handleDeleteRelationFromGraph = useCallback(async (relationId: string) => {
-    const res = await characterService.deleteRelation(currentProject.id, relationId);
-    if (res.success) {
-      useProjectStore.setState((s) => ({
-        characterRelations: s.characterRelations.filter((r) => r.id !== relationId),
-      }));
-    }
-  }, [currentProject]);
 
   return (
     <div className="flex flex-col h-full">
@@ -240,26 +201,9 @@ export function CharacterList() {
 
           {/* Graph */}
           <div className="flex-1 min-h-0 p-2">
-            {characters.length < 2 ? (
-              <div className="flex items-center justify-center h-full text-[var(--text-xs)] text-[var(--color-text-muted)]">
-                至少需要2个角色才能显示关系图谱
-              </div>
-            ) : (
-              <Suspense fallback={<div className="flex items-center justify-center h-full text-[var(--color-text-muted)] text-[var(--text-sm)]">加载图谱...</div>}>
-                <RelationshipGraph
-                  characters={characters}
-                  relations={relations}
-                  onNodeClick={handleNodeClick}
-                  onEdgeClick={handleEdgeClick}
-                  onCreateRelation={handleCreateRelationFromGraph}
-                  onEditCharacter={(id) => { const c = characters.find((ch) => ch.id === id); if (c) { setEditingCharacter(c); setShowForm(true); } }}
-                  onDeleteCharacter={handleDeleteCharacterFromGraph}
-                  onEditRelation={handleEditRelationFromGraph}
-                  onDeleteRelationFromGraph={handleDeleteRelationFromGraph}
-                  filterRole={filterRole}
-                />
-              </Suspense>
-            )}
+            <Suspense fallback={<div className="flex items-center justify-center h-full text-[var(--color-text-muted)] text-[var(--text-sm)]">加载图谱...</div>}>
+              <RelationshipGraph projectId={currentProject.id} />
+            </Suspense>
           </div>
 
         </div>

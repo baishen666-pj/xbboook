@@ -7,6 +7,9 @@ export interface WritingSkill {
   needsSelection: boolean;
   temperature: number;
   maxTokens: number;
+  category?: string;
+  needsContext?: boolean;
+  buildPrompt?: (ctx: Record<string, unknown>) => string;
 }
 
 export const WRITING_SKILLS: Record<string, WritingSkill> = {
@@ -1357,6 +1360,59 @@ summary: 一句话风格总结`,
     needsSelection: true,
     temperature: 0.6,
     maxTokens: 3000,
+  },
+
+  'continuation-suggest': {
+    id: 'continuation-suggest',
+    name: '续写建议',
+    description: '基于前文生成多个续写方向建议',
+    icon: '💡',
+    systemPrompt: `你是一位经验丰富的网文作者，擅长分析前文走向并提供多种续写可能性。请根据给定的文本，生成多个不同方向的续写建议。每个建议需包含方向名称、续写内容和置信度。`,
+    needsSelection: false,
+    category: 'writing',
+    needsContext: true,
+    temperature: 0.8,
+    maxTokens: 3000,
+    buildPrompt: (ctx) => `基于以下文本，生成${ctx.numSuggestions || 3}个不同方向的续写建议：\n\n${ctx.text}\n\n请以JSON格式返回：{ "suggestions": [{ "direction": "方向名称", "content": "续写内容(200字以内)", "confidence": 85 }] }`,
+  },
+  'name-generator': {
+    id: 'name-generator',
+    name: '起名生成',
+    description: '根据世界观生成角色名、地名等',
+    icon: '🏷️',
+    systemPrompt: `你是一位精通各种文学命名惯例的创意命名专家。请根据给定的背景信息和类别，生成符合世界观的名称。每个名称需包含名称本身、含义和风格描述。`,
+    needsSelection: false,
+    category: 'worldbuilding',
+    needsContext: false,
+    temperature: 0.9,
+    maxTokens: 2000,
+    buildPrompt: (ctx) => `根据以下信息生成${ctx.count || 5}个${ctx.category === 'character' ? '角色' : ctx.category === 'location' ? '地名' : ctx.category === 'technique' ? '功法' : '势力'}名称：\n背景：${ctx.context}\n${ctx.gender ? '性别：' + ctx.gender : ''}\n${ctx.race ? '种族：' + ctx.race : ''}\n\n以JSON格式返回：{ "names": [{ "name": "名称", "meaning": "含义", "style": "风格描述" }] }`,
+  },
+  'translation': {
+    id: 'translation',
+    name: '多语言翻译',
+    description: '将文本翻译为目标语言',
+    icon: '🌐',
+    systemPrompt: `你是一位专业的文学翻译家，精通多种语言之间的互译。请根据指定的翻译风格（直译/意译/本地化）将文本翻译为目标语言。返回翻译结果、翻译说明和置信度。`,
+    needsSelection: false,
+    category: 'utility',
+    needsContext: false,
+    temperature: 0.3,
+    maxTokens: 4000,
+    buildPrompt: (ctx) => `将以下中文文本翻译为${ctx.targetLang}，翻译风格：${ctx.style === 'literal' ? '直译' : ctx.style === 'free' ? '意译' : '本地化'}：\n\n${ctx.text}\n\n以JSON格式返回：{ "translated": "翻译结果", "notes": "翻译说明", "confidence": 90 }`,
+  },
+  'reader-feedback': {
+    id: 'reader-feedback',
+    name: '读者评论模拟',
+    description: '模拟不同类型读者对文本的反馈',
+    icon: '👥',
+    systemPrompt: `你是一位善于换位思考的文学评论家，能够从不同读者视角分析文本。请模拟不同类型读者对文本的真实反馈，包括第一反应、评分、详细评论和改进建议。`,
+    needsSelection: false,
+    category: 'review',
+    needsContext: true,
+    temperature: 0.7,
+    maxTokens: 3000,
+    buildPrompt: (ctx) => `请模拟以下类型的读者对这段文本的反馈：${(ctx.readerTypes as string[])?.join('、') || '普通读者'}\n\n文本：\n${ctx.text}\n\n以JSON格式返回：{ "feedbacks": [{ "readerType": "读者类型", "reaction": "第一反应", "score": 85, "comment": "详细评论", "suggestions": ["建议1"] }] }`,
   },
 };
 
