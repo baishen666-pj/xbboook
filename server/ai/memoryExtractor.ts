@@ -1,4 +1,4 @@
-import { getConfig } from './configStore.js';
+import { loadStoredConfig } from './configStore.js';
 import { streamChat } from './agentFactory.js';
 import { logger } from '../middleware/logger.js';
 import * as memoryRepo from '../db/repositories/memoryRepo.js';
@@ -32,7 +32,7 @@ export async function extractMemories(
   chapterTitle: string,
   chapterContent: string,
 ): Promise<ExtractedMemory[]> {
-  const config = getConfig();
+  const config = loadStoredConfig();
   if (!config.apiKey) {
     logger.warn('AI memory extraction skipped: no API key configured');
     return [];
