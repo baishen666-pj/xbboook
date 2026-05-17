@@ -85,6 +85,11 @@ import readerEngagementRoutes from './routes/readerEngagement.js';
 import chapterVersionsRouter from './routes/chapterVersions.js';
 import creativeBreakthroughRouter from './routes/creativeBreakthrough.js';
 import sensoryEnhanceRoutes from './routes/sensoryEnhance.js';
+import multiEndingRouter from './routes/multiEnding.js';
+import readerGroupSimRoutes from './routes/readerGroupSim.js';
+import foreshadowingTrackerRoutes from './routes/foreshadowingTracker.js';
+import writingCoachRoutes from './routes/writingCoach.js';
+import styleTransferRoutes from './routes/styleTransfer.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestIdMiddleware, requestLogger } from './middleware/logger.js';
 
@@ -216,6 +221,11 @@ app.use('/api/projects/:projectId/reader-engagement', readerEngagementRoutes);
 app.use('/api/projects/:projectId/chapter-versions', chapterVersionsRouter);
 app.use('/api/projects/:projectId/creative-breakthrough', aiLimiter, creativeBreakthroughRouter);
 app.use('/api/projects/:projectId/sensory-enhance', aiLimiter, sensoryEnhanceRoutes);
+app.use('/api/projects/:projectId/multi-ending', aiLimiter, multiEndingRouter);
+app.use('/api/projects/:projectId/reader-group-sim', aiLimiter, readerGroupSimRoutes);
+app.use('/api/projects/:projectId/foreshadowing-tracker', aiLimiter, foreshadowingTrackerRoutes);
+app.use('/api/projects/:projectId/writing-coach', aiLimiter, writingCoachRoutes);
+app.use('/api/projects/:projectId/style-transfer', aiLimiter, styleTransferRoutes);
 
 app.use(errorHandler);
 
