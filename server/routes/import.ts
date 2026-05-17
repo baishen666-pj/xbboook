@@ -3,6 +3,7 @@ import multer from 'multer';
 import { create as createChapter } from '../db/repositories/chapterRepo.js';
 import { writeChapter } from '../services/fileService.js';
 import mammoth from 'mammoth';
+import EPub from 'epub2';
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -115,6 +116,74 @@ export function splitMdIntoChapters(text: string): ImportChapter[] {
   return chapters;
 }
 
+export function parseEpubFromBuffer(buffer: Buffer): Promise<ImportChapter[]> {
+  return new Promise((resolve, reject) => {
+    const epub = new EPub(buffer, '', '');
+
+    epub.on('error', (err: Error) => {
+      reject(err);
+    });
+
+    epub.on('end', () => {
+      const chapters: ImportChapter[] = [];
+      const spine = epub.flow as Array<{ id: string; title?: string; href?: string }>;
+
+      if (!spine || spine.length === 0) {
+        resolve([]);
+        return;
+      }
+
+      let pending = 0;
+      let settled = false;
+
+      for (const item of spine) {
+        if (!item.id) continue;
+        pending++;
+
+        epub.getChapter(item.id, (err: Error | null, text: string) => {
+          if (settled) return;
+          if (err) {
+            // Skip failed chapters but continue
+            pending--;
+            if (pending === 0) {
+              settled = true;
+              resolve(chapters);
+            }
+            return;
+          }
+
+          const plainText = text
+            .replace(/<[^>]+>/g, '')
+            .replace(/&nbsp;/g, ' ')
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"')
+            .trim();
+
+          if (plainText.length > 50) {
+            const title = item.title?.trim() || `第${chapters.length + 1}章`;
+            chapters.push({ title, content: plainText });
+          }
+
+          pending--;
+          if (pending === 0) {
+            settled = true;
+            resolve(chapters);
+          }
+        });
+      }
+
+      if (pending === 0) {
+        settled = true;
+        resolve([]);
+      }
+    });
+
+    epub.parse();
+  });
+}
+
 router.post('/:projectId/import', upload.single('file'), async (req, res) => {
   const { projectId } = req.params as { projectId: string };
   const file = req.file;
@@ -141,8 +210,10 @@ router.post('/:projectId/import', upload.single('file'), async (req, res) => {
     } else if (ext === 'txt') {
       const text = file.buffer.toString('utf-8');
       chapters = splitTxtIntoChapters(text);
+    } else if (ext === 'epub') {
+      chapters = await parseEpubFromBuffer(file.buffer);
     } else {
-      res.status(400).json({ success: false, error: `不支持的文件格式: .${ext}（支持 .txt, .md, .docx）` });
+      res.status(400).json({ success: false, error: `不支持的文件格式: .${ext}（支持 .txt, .md, .docx, .epub）` });
       return;
     }
 

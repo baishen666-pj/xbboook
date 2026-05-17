@@ -33,6 +33,7 @@
     "d3-zoom": "^3.0.0",
     "docx": "^9.5.0",
     "epub-gen-memory": "^1.0.10",
+    "epub2": "^3.0.2",
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.2",
     "helmet": "^8.1.0",

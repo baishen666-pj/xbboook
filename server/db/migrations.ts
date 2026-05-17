@@ -514,6 +514,28 @@ const MIGRATIONS: Migration[] = [
       'CREATE INDEX IF NOT EXISTS idx_scenes_pov ON scenes(pov_character_id)',
     ],
   },
+  {
+    version: 25,
+    name: 'chapter_dependencies',
+    up: [
+      `CREATE TABLE IF NOT EXISTS chapter_dependencies (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        source_chapter_id TEXT NOT NULL,
+        target_chapter_id TEXT NOT NULL,
+        dependency_type TEXT DEFAULT 'plot' CHECK(dependency_type IN ('plot','character','foreshadowing','timeline','worldview')),
+        description TEXT DEFAULT '',
+        strength TEXT DEFAULT 'normal' CHECK(strength IN ('weak','normal','strong')),
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+        FOREIGN KEY (source_chapter_id) REFERENCES chapters(id) ON DELETE CASCADE,
+        FOREIGN KEY (target_chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_ch_deps_project ON chapter_dependencies(project_id)',
+      'CREATE INDEX IF NOT EXISTS idx_ch_deps_source ON chapter_dependencies(source_chapter_id)',
+      'CREATE INDEX IF NOT EXISTS idx_ch_deps_target ON chapter_dependencies(target_chapter_id)',
+    ],
+  },
 ];
 
 // Check if a migration's effects already exist in the database
@@ -618,6 +640,10 @@ function isMigrationApplied(db: ReturnType<typeof getDb>, migration: Migration):
   // Version 24: scenes
   if (migration.version === 24) {
     return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='scenes'").get();
+  }
+  // Version 25: chapter_dependencies
+  if (migration.version === 25) {
+    return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='chapter_dependencies'").get();
   }
   return false;
 }
