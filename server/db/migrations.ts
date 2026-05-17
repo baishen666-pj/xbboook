@@ -560,6 +560,29 @@ const MIGRATIONS: Migration[] = [
       'CREATE INDEX IF NOT EXISTS idx_turning_pts_chapter ON plot_turning_points(chapter_id)',
     ],
   },
+  {
+    version: 27,
+    name: 'character_timelines',
+    up: [
+      `CREATE TABLE IF NOT EXISTS character_timelines (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        character_id TEXT NOT NULL,
+        chapter_id TEXT,
+        event_title TEXT NOT NULL,
+        event_description TEXT,
+        story_time TEXT,
+        sort_order INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+        FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE,
+        FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE SET NULL
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_char_timeline_project ON character_timelines(project_id)',
+      'CREATE INDEX IF NOT EXISTS idx_char_timeline_character ON character_timelines(character_id)',
+    ],
+  },
 ];
 
 // Check if a migration's effects already exist in the database
@@ -672,6 +695,10 @@ function isMigrationApplied(db: ReturnType<typeof getDb>, migration: Migration):
   // Version 26: plot_turning_points
   if (migration.version === 26) {
     return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='plot_turning_points'").get();
+  }
+  // Version 27: character_timelines
+  if (migration.version === 27) {
+    return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='character_timelines'").get();
   }
   return false;
 }

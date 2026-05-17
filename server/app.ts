@@ -56,6 +56,9 @@ import chapterOperationsRouter from './routes/chapterOperations.js';
 import aiPolishRouter from './routes/aiPolish.js';
 import turningPointsRouter from './routes/turningPoints.js';
 import consistencyCheckRouter from './routes/consistencyCheck.js';
+import characterTimelineRouter from './routes/characterTimelines.js';
+import smartCompleteRouter from './routes/smartComplete.js';
+import loreGeneratorRouter from './routes/loreGenerator.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestIdMiddleware, requestLogger } from './middleware/logger.js';
 
@@ -158,6 +161,9 @@ app.use('/api/projects/:projectId/chapter-ops', chapterOperationsRouter);
 app.use('/api/projects/:projectId/ai-polish', aiLimiter, aiPolishRouter);
 app.use('/api/projects/:projectId/turning-points', turningPointsRouter);
 app.use('/api/projects/:projectId/consistency', aiLimiter, consistencyCheckRouter);
+app.use('/api/projects/:projectId/timelines', characterTimelineRouter);
+app.use('/api/projects/:projectId/smart-complete', aiLimiter, smartCompleteRouter);
+app.use('/api/projects/:projectId/lore-generator', aiLimiter, loreGeneratorRouter);
 
 app.use(errorHandler);
 
