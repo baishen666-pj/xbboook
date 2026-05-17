@@ -20,6 +20,7 @@ import { MaterialPanel } from "./MaterialPanel";
 import { ReaderSimulator } from "./ReaderSimulator";
 import { OrchestratorPanel } from "./OrchestratorPanel";
 import { PluginMarketplace } from "./PluginMarketplace";
+import { IntegrationPanel } from "./IntegrationPanel";
 
 export function AiPanel() {
   const activeSkillId = useAiStore((s) => s.activeSkillId);
@@ -37,6 +38,7 @@ export function AiPanel() {
   const [showReaderSim, setShowReaderSim] = useState(false);
   const [showOrchestrator, setShowOrchestrator] = useState(false);
   const [showPlugins, setShowPlugins] = useState(false);
+  const [showIntegration, setShowIntegration] = useState(false);
 
   const autoContinue = useAutoContinue(currentProject?.id, activeChapterId ?? undefined);
 
@@ -160,6 +162,17 @@ export function AiPanel() {
               <path d="M6 3h4M6 8h4M6 13h4M3 3h1v1H3zM3 8h1v1H3zM3 13h1v1H3z" />
             </svg>
           </button>
+          <button
+            onClick={() => setShowIntegration(!showIntegration)}
+            className={`rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors ${showIntegration ? "bg-[var(--color-primary-subtle)] text-[var(--color-primary)]" : ""}`}
+            title="第三方集成"
+            aria-label="第三方集成"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M6 2v4l-4 4v4h4l4-4h4V6H10L6 2z" />
+              <path d="M1 15l4-4M10 6l4-4" />
+            </svg>
+          </button>
           <AiSettingsPanel />
         </div>
       </div>
@@ -230,6 +243,13 @@ export function AiPanel() {
       {showPlugins && (
         <div className="border-b border-[var(--color-border)] max-h-96 overflow-y-auto">
           <PluginMarketplace />
+        </div>
+      )}
+
+      {/* Integration panel (collapsible) */}
+      {showIntegration && currentProject && (
+        <div className="border-b border-[var(--color-border)] max-h-96 overflow-y-auto">
+          <IntegrationPanel projectId={currentProject.id} />
         </div>
       )}
 

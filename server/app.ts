@@ -35,6 +35,10 @@ import publishRouter from './routes/publish.js';
 import analysisRouter from './routes/analysis.js';
 import materialsRouter from './routes/materials.js';
 import orchestratorRouter from './routes/orchestrator.js';
+import webhooksRouter from './routes/webhooks.js';
+import notionRouter from './routes/notion.js';
+import feishuRouter from './routes/feishu.js';
+import automationsRouter from './routes/automations.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestIdMiddleware, requestLogger } from './middleware/logger.js';
 
@@ -116,6 +120,10 @@ app.use('/api/projects/:projectId/publish', publishRouter);
 app.use('/api/projects/:projectId/analysis', analysisRouter);
 app.use('/api/projects/:projectId/materials', materialsRouter);
 app.use('/api/projects/:projectId/orchestrator', orchestratorRouter);
+app.use('/api/webhooks', webhooksRouter);
+app.use('/api/projects/:projectId/notion', notionRouter);
+app.use('/api/projects/:projectId/feishu', feishuRouter);
+app.use('/api/projects/:projectId/automations', automationsRouter);
 
 app.use(errorHandler);
 

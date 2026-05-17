@@ -287,6 +287,54 @@ const MIGRATIONS: Migration[] = [
       'CREATE INDEX IF NOT EXISTS idx_material_box_category ON material_box(project_id, category)',
     ],
   },
+  {
+    version: 18,
+    name: 'integrations',
+    up: [
+      `CREATE TABLE IF NOT EXISTS webhooks (
+        id TEXT PRIMARY KEY, name TEXT NOT NULL, url TEXT NOT NULL, secret TEXT NOT NULL,
+        events TEXT NOT NULL DEFAULT '[]', enabled INTEGER DEFAULT 1, project_id TEXT,
+        headers TEXT DEFAULT '{}', created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_webhooks_project ON webhooks(project_id)',
+      `CREATE TABLE IF NOT EXISTS webhook_deliveries (
+        id TEXT PRIMARY KEY, webhook_id TEXT NOT NULL, event TEXT NOT NULL,
+        status_code INTEGER DEFAULT 0, duration_ms INTEGER DEFAULT 0, success INTEGER DEFAULT 0,
+        error TEXT, created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE CASCADE
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_webhook ON webhook_deliveries(webhook_id, created_at DESC)',
+      `CREATE TABLE IF NOT EXISTS notion_sync (
+        id TEXT PRIMARY KEY, project_id TEXT NOT NULL UNIQUE, notion_token TEXT NOT NULL,
+        database_id TEXT NOT NULL, sync_mode TEXT DEFAULT 'all', last_sync_at TEXT,
+        created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS feishu_sync (
+        id TEXT PRIMARY KEY, project_id TEXT NOT NULL UNIQUE, app_id TEXT NOT NULL,
+        app_secret TEXT NOT NULL, doc_token TEXT NOT NULL, sync_mode TEXT DEFAULT 'all',
+        last_sync_at TEXT, created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS automation_rules (
+        id TEXT PRIMARY KEY, project_id TEXT NOT NULL, name TEXT NOT NULL, enabled INTEGER DEFAULT 1,
+        trigger_config TEXT NOT NULL DEFAULT '{}', action_config TEXT NOT NULL DEFAULT '{}',
+        last_triggered_at TEXT, run_count INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_automation_rules_project ON automation_rules(project_id)',
+      `CREATE TABLE IF NOT EXISTS automation_executions (
+        id TEXT PRIMARY KEY, rule_id TEXT NOT NULL, trigger_event TEXT NOT NULL,
+        action_type TEXT NOT NULL, success INTEGER DEFAULT 0, error TEXT,
+        duration_ms INTEGER DEFAULT 0, created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (rule_id) REFERENCES automation_rules(id) ON DELETE CASCADE
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_automation_executions_rule ON automation_executions(rule_id, created_at DESC)',
+    ],
+  },
 ];
 
 // Check if a migration's effects already exist in the database
@@ -363,6 +411,10 @@ function isMigrationApplied(db: ReturnType<typeof getDb>, migration: Migration):
   // Version 17: material_box table
   if (migration.version === 17) {
     return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='material_box'").get();
+  }
+  // Version 18: integrations tables
+  if (migration.version === 18) {
+    return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='webhooks'").get();
   }
   return false;
 }
