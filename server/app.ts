@@ -90,6 +90,11 @@ import readerGroupSimRoutes from './routes/readerGroupSim.js';
 import foreshadowingTrackerRoutes from './routes/foreshadowingTracker.js';
 import writingCoachRoutes from './routes/writingCoach.js';
 import styleTransferRoutes from './routes/styleTransfer.js';
+import emotionJourneyRoutes from './routes/emotionJourney.js';
+import worldConsistencyRouter from './routes/worldConsistency.js';
+import suspenseOptimizerRouter from './routes/suspenseOptimizer.js';
+import productivityAnalyzerRouter from './routes/productivityAnalyzer.js';
+import dialogueConsistencyRoutes from './routes/dialogueConsistency.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestIdMiddleware, requestLogger } from './middleware/logger.js';
 
@@ -226,6 +231,11 @@ app.use('/api/projects/:projectId/reader-group-sim', aiLimiter, readerGroupSimRo
 app.use('/api/projects/:projectId/foreshadowing-tracker', aiLimiter, foreshadowingTrackerRoutes);
 app.use('/api/projects/:projectId/writing-coach', aiLimiter, writingCoachRoutes);
 app.use('/api/projects/:projectId/style-transfer', aiLimiter, styleTransferRoutes);
+app.use('/api/projects/:projectId/emotion-journey', aiLimiter, emotionJourneyRoutes);
+app.use('/api/projects/:projectId/world-consistency', aiLimiter, worldConsistencyRouter);
+app.use('/api/projects/:projectId/suspense-optimizer', aiLimiter, suspenseOptimizerRouter);
+app.use('/api/projects/:projectId/productivity-analyzer', aiLimiter, productivityAnalyzerRouter);
+app.use('/api/projects/:projectId/dialogue-consistency', aiLimiter, dialogueConsistencyRoutes);
 
 app.use(errorHandler);
 

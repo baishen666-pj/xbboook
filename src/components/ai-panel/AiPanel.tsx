@@ -27,6 +27,7 @@ import { StoryPlannerPanel } from "./StoryPlannerPanel";
 import { PromptTemplatePanel } from "./PromptTemplatePanel";
 import { ModelComparisonPanel } from "./ModelComparisonPanel";
 import { BatchGenerationPanel } from "./BatchGenerationPanel";
+import { DialogueConsistencyPanel } from "./DialogueConsistencyPanel";
 
 export function AiPanel() {
   const activeSkillId = useAiStore((s) => s.activeSkillId);
@@ -51,6 +52,7 @@ export function AiPanel() {
   const [showPromptTemplates, setShowPromptTemplates] = useState(false);
   const [showModelComparison, setShowModelComparison] = useState(false);
   const [showBatchGeneration, setShowBatchGeneration] = useState(false);
+  const [showDialogueConsistency, setShowDialogueConsistency] = useState(false);
 
   const autoContinue = useAutoContinue(currentProject?.id, activeChapterId ?? undefined);
 
@@ -255,6 +257,16 @@ export function AiPanel() {
               <path d="M6 4h4M4 6v4M6 12h4M12 6v4" />
             </svg>
           </button>
+          <button
+            onClick={() => setShowDialogueConsistency(!showDialogueConsistency)}
+            className={`rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors ${showDialogueConsistency ? "bg-[var(--color-primary-subtle)] text-[var(--color-primary)]" : ""}`}
+            title="角色语音一致性"
+            aria-label="角色语音一致性"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M2 3h12v2H2zM4 7h8v2H4zM6 11h4v2H6z" />
+            </svg>
+          </button>
           <AiSettingsPanel />
         </div>
       </div>
@@ -374,6 +386,13 @@ export function AiPanel() {
       {showBatchGeneration && currentProject && (
         <div className="border-b border-[var(--color-border)] max-h-96 overflow-y-auto">
           <BatchGenerationPanel projectId={currentProject.id} />
+        </div>
+      )}
+
+      {/* Dialogue consistency (collapsible) */}
+      {showDialogueConsistency && currentProject && (
+        <div className="border-b border-[var(--color-border)] max-h-96 overflow-y-auto">
+          <DialogueConsistencyPanel projectId={currentProject.id} />
         </div>
       )}
 
