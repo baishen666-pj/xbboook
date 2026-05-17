@@ -193,6 +193,79 @@ const MIGRATIONS: Migration[] = [
       'CREATE INDEX IF NOT EXISTS idx_search_cache_project ON chapter_search_cache(project_id)',
     ],
   },
+  {
+    version: 14,
+    name: 'ai_memory_and_knowledge',
+    up: [
+      `CREATE TABLE IF NOT EXISTS ai_memory_entries (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        chapter_id TEXT,
+        category TEXT NOT NULL CHECK(category IN ('plot_event','character_state','setting_detail','timeline','foreshadowing_hint','worldbuilding','other')),
+        title TEXT NOT NULL,
+        content TEXT NOT NULL DEFAULT '',
+        importance TEXT DEFAULT 'normal' CHECK(importance IN ('critical','high','normal','low')),
+        chapter_index INTEGER,
+        is_auto_extracted INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+        FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE SET NULL
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_ai_memory_project ON ai_memory_entries(project_id, category)',
+      'CREATE INDEX IF NOT EXISTS idx_ai_memory_chapter ON ai_memory_entries(chapter_id)',
+      `CREATE TABLE IF NOT EXISTS knowledge_chunks (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        source_type TEXT NOT NULL CHECK(source_type IN ('chapter','character','worldview','outline','foreshadowing','memory')),
+        source_id TEXT NOT NULL,
+        chunk_text TEXT NOT NULL,
+        chunk_index INTEGER DEFAULT 0,
+        token_count INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_knowledge_chunks_source ON knowledge_chunks(project_id, source_type, source_id)',
+    ],
+  },
+  {
+    version: 15,
+    name: 'export_templates',
+    up: [
+      `CREATE TABLE IF NOT EXISTS export_templates (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        platform TEXT NOT NULL CHECK(platform IN ('wechat','generic_html','custom')),
+        description TEXT DEFAULT '',
+        css TEXT NOT NULL DEFAULT '',
+        header_html TEXT DEFAULT '',
+        footer_html TEXT DEFAULT '',
+        is_builtin INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_export_templates_platform ON export_templates(platform)',
+    ],
+  },
+  {
+    version: 16,
+    name: 'publish_targets',
+    up: [
+      `CREATE TABLE IF NOT EXISTS publish_targets (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        platform TEXT NOT NULL CHECK(platform IN ('wechat','zhihu','jianshu','csdn','custom')),
+        config TEXT NOT NULL DEFAULT '{}',
+        last_published_at TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_publish_targets_project ON publish_targets(project_id)',
+    ],
+  },
 ];
 
 // Check if a migration's effects already exist in the database
@@ -253,6 +326,18 @@ function isMigrationApplied(db: ReturnType<typeof getDb>, migration: Migration):
   // Version 13: chapter_search_cache table
   if (migration.version === 13) {
     return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='chapter_search_cache'").get();
+  }
+  // Version 14: ai_memory_entries + knowledge_chunks tables
+  if (migration.version === 14) {
+    return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='ai_memory_entries'").get();
+  }
+  // Version 15: export_templates table
+  if (migration.version === 15) {
+    return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='export_templates'").get();
+  }
+  // Version 16: publish_targets table
+  if (migration.version === 16) {
+    return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='publish_targets'").get();
   }
   return false;
 }

@@ -3,7 +3,8 @@ import { processAiRequest, listSkills, getSkill, isConfigured } from '../service
 import { setupSSE, sendSSE, sendSSEError, sendSSEDone } from '../middleware/sse.js';
 import { getConfig } from '../ai/agentFactory.js';
 import { saveConfig, loadStoredConfig } from '../ai/configStore.js';
-import { getContextSources, estimateTokens } from '../ai/contextBuilder.js';
+import { getContextSources, estimateTokens, buildContext, contextToString } from '../ai/contextBuilder.js';
+import { buildPrompt, toMessages } from '../ai/promptBuilder.js';
 import { PROVIDERS } from '../ai/providers.js';
 import { findById as findChapterById } from '../db/repositories/chapterRepo.js';
 import { findById as findProjectById } from '../db/repositories/projectRepo.js';
@@ -361,7 +362,7 @@ router.get('/pipeline/:jobId', (req, res) => {
   res.json({ success: true, data: job });
 });
 
-// Lightweight inline completion
+// Lightweight inline completion (context-aware)
 router.post('/complete', async (req, res) => {
   const { projectId, chapterId, cursorContext, maxTokens } = req.body;
   if (!projectId || !chapterId || !cursorContext) {
@@ -374,16 +375,118 @@ router.post('/complete', async (req, res) => {
   }
   try {
     const { completeChat } = await import('../ai/agentFactory.js');
+    const { buildContext: buildCtx, contextToString, estimateTokens } = await import('../ai/contextBuilder.js');
+
+    // Build lightweight context (only project settings + characters + previous 1 chapter)
+    const sources = await buildCtx({
+      projectId,
+      currentChapterId: chapterId,
+      maxTokens: 3000,
+      disabledSources: ['选中内容', '章节概要', '故事弧线与情节线索', '世界设定', '伏笔线索', '角色关系', '大纲结构', '写作风格档案', 'AI记忆', 'RAG检索'],
+    });
+
+    const contextText = contextToString(sources);
+    const systemPrompt = `你是一位网文写作助手。根据给定的光标前后文本和项目上下文，续写接下来的内容。只输出续写内容，不要解释。续写应自然衔接上下文，保持风格一致，50-200字。`;
+
     const result = await completeChat(
       [
-        { role: 'system', content: '你是一位网文写作助手。根据给定的光标前后文本，续写接下来的内容。只输出续写内容，不要解释。续写应自然衔接上下文，保持风格一致，50-200字。' },
-        { role: 'user', content: cursorContext },
+        { role: 'system', content: `${systemPrompt}\n\n项目上下文：\n${contextText}` },
+        { role: 'user', content: `光标前文本：${cursorContext}` },
       ],
       { maxTokens: maxTokens || 200 },
     );
     res.json({ success: true, data: { completion: result } });
   } catch (err) {
     res.status(500).json({ success: false, error: err instanceof Error ? err.message : '补全失败' });
+  }
+});
+
+// Full auto-continuation with rich context
+router.post('/auto-continue', async (req, res) => {
+  const { projectId, chapterId, currentContent, direction } = req.body as {
+    projectId: string;
+    chapterId: string;
+    currentContent?: string;
+    direction?: 'forward' | 'scene' | 'dialogue';
+  };
+
+  if (!projectId || !chapterId) {
+    res.status(400).json({ success: false, error: 'projectId, chapterId required' });
+    return;
+  }
+  if (!isConfigured()) {
+    res.status(400).json({ success: false, error: 'AI 未配置' });
+    return;
+  }
+
+  try {
+    const sources = await buildContext({
+      projectId,
+      currentChapterId: chapterId,
+      maxTokens: 10000,
+    });
+
+    const directionHint = direction === 'dialogue' ? '以角色对话为主' :
+      direction === 'scene' ? '以场景描写为主' : '自然推进情节';
+
+    const userPrompt = currentContent
+      ? `以下是当前章节已有内容（末尾部分）：\n\n${currentContent.slice(-2000)}\n\n请从上文结尾处${directionHint}，续写 300-500 字。`
+      : `请为当前章节${directionHint}，续写 300-500 字。`;
+
+    const prompt = buildPrompt({
+      skillId: 'continue',
+      sources,
+      userMessage: userPrompt,
+      maxContextTokens: 8000,
+    });
+
+    const messages = toMessages(prompt);
+
+    let fullContent = '';
+    const { streamChat } = await import('../ai/agentFactory.js');
+    for await (const chunk of streamChat(messages, { temperature: 0.85, maxTokens: 600 })) {
+      if (chunk.content) fullContent += chunk.content;
+      if (chunk.done) break;
+    }
+
+    res.json({ success: true, data: { continuation: fullContent } });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err instanceof Error ? err.message : '续写失败' });
+  }
+});
+
+// Generate conversation summary for cross-chapter context
+router.post('/chat-summary/:projectId', async (req, res) => {
+  const { projectId } = req.params;
+  const { chapterId, maxTokens: maxTok } = req.body as { chapterId?: string; maxTokens?: number };
+
+  if (!isConfigured()) {
+    res.status(400).json({ success: false, error: 'AI 未配置' });
+    return;
+  }
+
+  try {
+    const history = chatMessageRepo.findByProject(projectId, chapterId);
+    if (history.length === 0) {
+      res.json({ success: true, data: { summary: '', messageCount: 0 } });
+      return;
+    }
+
+    const recentHistory = history.slice(-20);
+    const historyText = recentHistory.map(m => `[${m.role}] ${m.content.slice(0, 200)}`).join('\n');
+
+    const { completeChat } = await import('../ai/agentFactory.js');
+    const summary = await completeChat(
+      [
+        { role: 'system', content: '请将以下对话历史总结为 2-3 句简短摘要，重点关注用户在写什么、遇到了什么问题、AI 提供了什么建议。只输出摘要。' },
+        { role: 'user', content: historyText },
+      ],
+      { maxTokens: maxTok || 200 },
+    );
+
+    res.json({ success: true, data: { summary, messageCount: history.length } });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err instanceof Error ? err.message : '摘要生成失败' });
   }
 });
 

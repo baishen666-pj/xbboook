@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useProjectStore } from "@/stores/projectStore";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
+import { PublishPanel } from "./PublishPanel";
 
 const FORMATS = [
   { ext: "txt", label: "TXT", desc: "纯文本" },
@@ -9,6 +10,7 @@ const FORMATS = [
   { ext: "epub", label: "EPUB", desc: "电子书" },
   { ext: "docx", label: "DOCX", desc: "Word 文档" },
   { ext: "pdf", label: "PDF", desc: "打印友好" },
+  { ext: "wechat", label: "微信HTML", desc: "公众号排版" },
 ] as const;
 
 interface ExportDialogProps {
@@ -20,6 +22,7 @@ export function ExportDialog({ isOpen, onClose }: ExportDialogProps) {
   const currentProject = useProjectStore((s) => s.currentProject);
   const chapters = useProjectStore((s) => s.chapters);
   const [format, setFormat] = useState<string>("pdf");
+  const [tab, setTab] = useState<"export" | "publish">("export");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [includeToc, setIncludeToc] = useState(true);
   const [includeCover, setIncludeCover] = useState(true);
@@ -73,6 +76,30 @@ export function ExportDialog({ isOpen, onClose }: ExportDialogProps) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="导出作品">
       <div className="flex flex-col gap-4">
+        {/* Tab switcher */}
+        <div className="flex gap-1 bg-[var(--color-surface-2)] rounded p-0.5">
+          <button
+            onClick={() => setTab("export")}
+            className={`flex-1 rounded px-3 py-1 text-[var(--text-xs)] transition-colors ${
+              tab === "export" ? "bg-[var(--color-primary)] text-white" : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+            }`}
+          >
+            导出
+          </button>
+          <button
+            onClick={() => setTab("publish")}
+            className={`flex-1 rounded px-3 py-1 text-[var(--text-xs)] transition-colors ${
+              tab === "publish" ? "bg-[var(--color-primary)] text-white" : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+            }`}
+          >
+            多平台发布
+          </button>
+        </div>
+
+        {tab === "publish" ? (
+          <PublishPanel projectId={currentProject.id} />
+        ) : (
+        <>
         {/* Format selection */}
         <div className="flex flex-col gap-1">
           <label className="text-sm text-[var(--color-text-secondary)]">格式</label>
@@ -172,6 +199,8 @@ export function ExportDialog({ isOpen, onClose }: ExportDialogProps) {
             导出
           </Button>
         </div>
+        </>
+        )}
       </div>
     </Modal>
   );

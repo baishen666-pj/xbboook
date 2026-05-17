@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { useAiStore } from "@/stores/aiStore";
+import { useProjectStore } from "@/stores/projectStore";
+import { useEditorStore } from "@/stores/editorStore";
+import { useAutoContinue } from "@/hooks/useAutoContinue";
 import { AiChatList } from "./AiChatList";
 import { AiChatInput } from "./AiChatInput";
 import { AiSkillPicker } from "./AiSkillPicker";
@@ -9,13 +12,28 @@ import { DialogueSimulator } from "./DialogueSimulator";
 import { ContextHints } from "./ContextHints";
 import { ContextConfigPanel } from "./ContextConfigPanel";
 import { StyleProfilePanel } from "./StyleProfilePanel";
+import { MemoryPanel } from "./MemoryPanel";
+import { AutoContinueSuggestion } from "./AutoContinueSuggestion";
 
 export function AiPanel() {
   const activeSkillId = useAiStore((s) => s.activeSkillId);
   const skills = useAiStore((s) => s.skills);
   const activeSkill = skills.find((s) => s.id === activeSkillId);
+  const currentProject = useProjectStore((s) => s.currentProject);
+  const activeChapterId = useEditorStore((s) => s.activeChapterId);
+  const editor = useEditorStore((s) => s.editorInstance);
   const [showContextConfig, setShowContextConfig] = useState(false);
   const [showStyleProfile, setShowStyleProfile] = useState(false);
+  const [showMemory, setShowMemory] = useState(false);
+
+  const autoContinue = useAutoContinue(currentProject?.id, activeChapterId ?? undefined);
+
+  const handleInsertContinuation = (text: string) => {
+    if (editor) {
+      editor.chain().focus().insertContent(text).run();
+    }
+    autoContinue.clearSuggestion();
+  };
 
   return (
     <div className="flex h-full flex-col bg-[var(--color-surface-1)]">
@@ -52,6 +70,19 @@ export function AiPanel() {
               <polygon points="8,1 10,6 15,6.5 11,10 12.5,15 8,12 3.5,15 5,10 1,6.5 6,6" />
             </svg>
           </button>
+          <button
+            onClick={() => setShowMemory(!showMemory)}
+            className={`rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors ${showMemory ? "bg-[var(--color-primary-subtle)] text-[var(--color-primary)]" : ""}`}
+            title="AI 记忆库"
+            aria-label="AI 记忆库"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M2 4h12v8H2z" />
+              <path d="M5 4V2h6v2" />
+              <circle cx="8" cy="8" r="2" />
+              <path d="M8 10v2" />
+            </svg>
+          </button>
           <AiSettingsPanel />
         </div>
       </div>
@@ -76,6 +107,13 @@ export function AiPanel() {
         </div>
       )}
 
+      {/* Memory panel (collapsible) */}
+      {showMemory && currentProject && (
+        <div className="border-b border-[var(--color-border)] max-h-80 overflow-y-auto">
+          <MemoryPanel projectId={currentProject.id} />
+        </div>
+      )}
+
       {/* Character dialogue picker (only for character-dialogue skill) */}
       {activeSkillId === "character-dialogue" && <CharacterDialoguePicker />}
       {activeSkillId === "character-dialogue" && <DialogueSimulator />}
@@ -85,6 +123,9 @@ export function AiPanel() {
 
       {/* Input */}
       <AiChatInput />
+
+      {/* Auto-continue suggestion */}
+      <AutoContinueSuggestion autoContinue={autoContinue} onInsert={handleInsertContinuation} />
     </div>
   );
 }

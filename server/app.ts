@@ -30,6 +30,8 @@ import achievementsRouter from './routes/achievements.js';
 import pluginsRouter from './routes/plugins.js';
 import projectTemplatesRouter from './routes/projectTemplates.js';
 import { consistencyRouter } from './routes/consistency.js';
+import memoryRouter from './routes/memory.js';
+import publishRouter from './routes/publish.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestIdMiddleware, requestLogger } from './middleware/logger.js';
 
@@ -98,6 +100,8 @@ app.use('/api/projects/:projectId/achievements', achievementsRouter);
 app.use('/api/plugins', pluginsRouter);
 app.use('/api/project-templates', projectTemplatesRouter);
 app.use('/api/consistency/:projectId', consistencyRouter);
+app.use('/api/projects/:projectId/memory', memoryRouter);
+app.use('/api/projects/:projectId/publish', publishRouter);
 
 app.use(errorHandler);
 

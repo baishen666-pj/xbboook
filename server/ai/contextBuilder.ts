@@ -8,6 +8,8 @@ import { findAll as findAllForeshadowing } from '../db/repositories/foreshadowin
 import { findByProject as findOutlines } from '../db/repositories/outlineRepo.js';
 import { findById as findProject } from '../db/repositories/projectRepo.js';
 import { get as getPreference } from '../db/repositories/userPreferenceRepo.js';
+import { findRelevant as findRelevantMemories } from '../db/repositories/memoryRepo.js';
+import { retrieve as ragRetrieve } from './ragRetriever.js';
 import type { Chapter, Character, CharacterRelation } from '../types/index.js';
 
 export interface ContextSource {
@@ -151,6 +153,7 @@ const ALL_SOURCE_LABELS = [
   '选中内容', '当前章节', '前文', '上一章生成内容',
   '大纲内容', '角色设定', '章节概要', '故事弧线与情节线索',
   '项目设定', '世界设定', '伏笔线索', '角色关系', '大纲结构',
+  'AI记忆', 'RAG检索',
 ];
 
 export function getContextSourceLabels(): string[] {
@@ -428,6 +431,43 @@ export async function buildContext(options: BuildContextOptions): Promise<Contex
     }
   } catch (err) {
     if (process.env.NODE_ENV === 'development') console.warn('[contextBuilder] style profile load failed:', err);
+  }
+
+  // Priority 5: AI memories (auto-extracted and manual)
+  if (!disabled.has('AI记忆')) {
+    try {
+      const memories = findRelevantMemories(projectId, 20);
+      if (memories.length > 0) {
+        const memText = memories.map(m => {
+          const prefix = m.importance === 'critical' ? '【重要】' : m.importance === 'high' ? '【注意】' : '';
+          return `${prefix}[${m.category}] ${m.title}: ${m.content}`;
+        }).join('\n');
+        sources.push({ priority: 5, label: 'AI记忆', content: truncateToTokens(memText, 600) });
+      }
+    } catch (err) {
+      if (process.env.NODE_ENV === 'development') console.warn('[contextBuilder] memory load failed:', err);
+    }
+  }
+
+  // Priority 3: RAG retrieval (semantic search across all knowledge)
+  if (!disabled.has('RAG检索') && currentChapterId) {
+    try {
+      const ragQuery = [
+        selectedText || '',
+        currentChapter?.summary || '',
+        project?.genre || '',
+      ].filter(Boolean).join(' ').slice(0, 200);
+
+      if (ragQuery.length >= 4) {
+        const ragResults = ragRetrieve(projectId, ragQuery, { maxTokens: 800, maxResults: 5 });
+        if (ragResults.length > 0) {
+          const ragText = ragResults.map(r => `[${r.sourceType}] ${r.content}`).join('\n');
+          sources.push({ priority: 3, label: 'RAG检索', content: truncateToTokens(ragText, 800) });
+        }
+      }
+    } catch (err) {
+      if (process.env.NODE_ENV === 'development') console.warn('[contextBuilder] RAG retrieval failed:', err);
+    }
   }
 
   // Apply Lost-in-Middle ordering and budget

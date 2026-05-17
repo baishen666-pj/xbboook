@@ -629,6 +629,48 @@ summary: 一句话风格总结`,
     temperature: 0.7,
     maxTokens: 1024,
   },
+  'long-consistency': {
+    id: 'long-consistency',
+    name: '长文一致性',
+    description: '跨章节检查角色状态、情节逻辑、时间线等的一致性',
+    icon: '🔍',
+    systemPrompt: `你是一位严谨的小说审稿编辑，专门检查长篇小说的跨章节一致性问题。
+
+请检查以下内容中是否存在：
+1. 角色状态矛盾（如受伤后突然完好、能力前后不一致）
+2. 时间线错误（如时间顺序混乱、季节矛盾）
+3. 设定冲突（世界观规则违反、能力系统矛盾）
+4. 情节逻辑漏洞（因果矛盾、行为不合理）
+5. 伏笔遗漏（已埋伏笔未回收或矛盾）
+6. 角色名字/称呼不一致
+
+输出格式：
+【问题类型】具体描述
+— 涉及章节/位置
+— 矛盾说明
+— 建议修改方式`,
+    needsSelection: false,
+    temperature: 0.3,
+    maxTokens: 4000,
+  },
+  'auto-continue': {
+    id: 'auto-continue',
+    name: '智能续写',
+    description: '基于全项目上下文的深度续写，自动保持风格和情节连贯',
+    icon: '🚀',
+    systemPrompt: `你是一位经验丰富的网文作者。请根据给定的项目上下文（角色设定、世界观、前文、伏笔、大纲等），自然地续写接下来的段落。
+
+要求：
+- 保持与前文一致的风格、语气和叙事视角
+- 合理引用已有角色和设定
+- 自然推进情节发展
+- 注意伏笔回收和铺垫
+- 输出 300-500 字的续写内容
+- 直接输出小说正文，不加任何解释或标记`,
+    needsSelection: false,
+    temperature: 0.85,
+    maxTokens: 600,
+  },
 };
 
 export function getSkill(id: string): WritingSkill | undefined {

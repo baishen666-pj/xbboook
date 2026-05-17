@@ -140,6 +140,12 @@ export function buildUserPrompt(skillId: string, params: {
     case 'voice-design':
       return '请根据角色设定，生成个性化的语音特征档案（严格按 JSON 格式输出）：';
 
+    case 'long-consistency':
+      return '请对提供的跨章节内容进行一致性检查，重点关注角色状态、时间线、设定冲突和情节逻辑';
+
+    case 'auto-continue':
+      return `请基于完整项目上下文，为当前章节续写内容（当前章节：${params.currentChapterTitle || '未知'}）`;
+
     default:
       return params.question || '请协助创作';
   }

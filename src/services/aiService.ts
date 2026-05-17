@@ -166,3 +166,31 @@ export async function* streamAi(req: StreamRequest, signal?: AbortSignal): Async
     reader.releaseLock();
   }
 }
+
+export async function fetchAutoContinue(
+  projectId: string,
+  chapterId: string,
+  currentContent?: string,
+  direction?: 'forward' | 'scene' | 'dialogue',
+): Promise<{ continuation: string }> {
+  const res = await apiClient.post<{ continuation: string }>('/ai/auto-continue', {
+    projectId,
+    chapterId,
+    currentContent,
+    direction,
+  });
+  if (!res.success || !res.data) throw new Error(res.error || '续写失败');
+  return res.data;
+}
+
+export async function fetchChatSummary(
+  projectId: string,
+  chapterId?: string,
+): Promise<{ summary: string; messageCount: number }> {
+  const res = await apiClient.post<{ summary: string; messageCount: number }>(
+    `/ai/chat-summary/${projectId}`,
+    { chapterId },
+  );
+  if (!res.success || !res.data) throw new Error(res.error || '摘要生成失败');
+  return res.data;
+}

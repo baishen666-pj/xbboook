@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { findByProject as findChapters } from '../db/repositories/chapterRepo.js';
 import { findByProject as findVolumes } from '../db/repositories/volumeRepo.js';
 import { findById as findProject } from '../db/repositories/projectRepo.js';
+import * as exportTemplateRepo from '../db/repositories/exportTemplateRepo.js';
 import { readChapter } from '../services/fileService.js';
 import fs from 'fs';
 import path from 'path';
@@ -46,6 +47,51 @@ function stripHtml(html: string): string {
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&nbsp;/g, ' ');
+}
+
+function htmlToMarkdown(html: string): string {
+  let md = html;
+
+  // Headings
+  md = md.replace(/<h1[^>]*>(.*?)<\/h1>/gi, (_, c) => `# ${c}`);
+  md = md.replace(/<h2[^>]*>(.*?)<\/h2>/gi, (_, c) => `## ${c}`);
+  md = md.replace(/<h3[^>]*>(.*?)<\/h3>/gi, (_, c) => `### ${c}`);
+  md = md.replace(/<h4[^>]*>(.*?)<\/h4>/gi, (_, c) => `#### ${c}`);
+
+  // Inline formatting
+  md = md.replace(/<(strong|b)[^>]*>(.*?)<\/\1>/gi, '**$2**');
+  md = md.replace(/<(em|i)[^>]*>(.*?)<\/\1>/gi, '*$2*');
+  md = md.replace(/<u[^>]*>(.*?)<\/u>/gi, '$1');
+  md = md.replace(/<del[^>]*>(.*?)<\/del>/gi, '~~$1~~');
+  md = md.replace(/<code[^>]*>(.*?)<\/code>/gi, '`$1`');
+
+  // Block elements
+  md = md.replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gis, (_, c) => {
+    return c.split('\n').map((l: string) => `> ${l.trim()}`).join('\n');
+  });
+  md = md.replace(/<hr\s*\/?>/gi, '\n---\n');
+
+  // Lists
+  md = md.replace(/<li[^>]*>(.*?)<\/li>/gi, (_, c) => `- ${c.trim()}`);
+
+  // Paragraphs and line breaks
+  md = md.replace(/<\/p>/gi, '\n\n');
+  md = md.replace(/<br\s*\/?>/gi, '\n');
+
+  // Remove remaining tags
+  md = md.replace(/<[^>]+>/g, '');
+
+  // Decode entities
+  md = md.replace(/&amp;/g, '&');
+  md = md.replace(/&lt;/g, '<');
+  md = md.replace(/&gt;/g, '>');
+  md = md.replace(/&quot;/g, '"');
+  md = md.replace(/&#39;/g, "'");
+  md = md.replace(/&nbsp;/g, ' ');
+
+  // Clean up whitespace
+  md = md.replace(/\n{3,}/g, '\n\n');
+  return md.trim();
 }
 
 const CJK_FONT_PATH = (() => {
@@ -156,7 +202,7 @@ router.get('/txt', async (req, res) => {
   res.send(parts.join('\n\n'));
 });
 
-// Export as Markdown
+// Export as Markdown (enhanced: converts HTML to proper Markdown)
 router.get('/md', async (req, res) => {
   const { projectId } = req.params as { projectId: string };
 
@@ -167,19 +213,25 @@ router.get('/md', async (req, res) => {
     return;
   }
 
+  const project = findProject(projectId);
+
   const parts: string[] = [];
+  if (project?.name) parts.push(`# ${project.name}\n`);
+  if (project?.description) parts.push(`> ${project.description}\n`);
+
   for (const group of groups) {
     if (group.volumeTitle) {
-      parts.push(`# ${group.volumeTitle}`);
+      parts.push(`## ${group.volumeTitle}`);
     }
     for (const ch of group.chapters) {
-      const content = isHtmlContent(ch.content) ? stripHtml(ch.content) : ch.content;
-      parts.push(`## ${ch.title}\n\n${content}`);
+      parts.push(`### ${ch.title}\n`);
+      const content = isHtmlContent(ch.content) ? htmlToMarkdown(ch.content) : ch.content;
+      parts.push(content);
     }
   }
 
   res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
-  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(projectId)}.md"`);
+  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(project?.name || projectId)}.md"`);
   res.send(parts.join('\n\n---\n\n'));
 });
 
@@ -407,6 +459,124 @@ router.get('/pdf', async (req, res) => {
       res.status(500).json({ success: false, error: 'PDF 导出失败' });
     }
   }
+});
+
+// Export as WeChat-compatible HTML
+router.get('/wechat', async (req, res) => {
+  const { projectId } = req.params as { projectId: string };
+  const templateId = req.query.template as string | undefined;
+
+  try {
+    const opts = parseExportOptions(req.query as Record<string, unknown>);
+    const groups = await buildChapterGroups(projectId, opts.chapterIds);
+    if (groups.length === 0 || groups.every((g) => g.chapters.length === 0)) {
+      res.status(404).json({ success: false, error: '没有可导出的章节' });
+      return;
+    }
+
+    const project = findProject(projectId);
+    const projectName = project?.name || 'Novel';
+
+    const template = templateId
+      ? exportTemplateRepo.findById(templateId)
+      : exportTemplateRepo.findByPlatform('wechat')[0];
+
+    const css = template?.css || `
+body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; color: #333; line-height: 1.75; font-size: 15px; }
+h1 { text-align: center; font-size: 22px; font-weight: bold; margin: 20px 0; }
+h2 { font-size: 18px; font-weight: bold; margin: 16px 0; border-left: 4px solid #1a73e8; padding-left: 10px; }
+p { text-indent: 2em; margin: 10px 0; }
+`;
+
+    let html = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${escapeHtml(projectName)}</title>
+<style>${css}</style>
+</head>
+<body>`;
+
+    if (template?.header_html) {
+      html += template.header_html;
+    }
+
+    if (opts.includeToc) {
+      html += '<h1>目录</h1>';
+      for (const group of groups) {
+        if (group.volumeTitle) html += `<h2>${escapeHtml(group.volumeTitle)}</h2>`;
+        for (const ch of group.chapters) {
+          html += `<p>${escapeHtml(ch.title)}</p>`;
+        }
+      }
+      html += '<hr/>';
+    }
+
+    for (const group of groups) {
+      if (group.volumeTitle) {
+        html += `<h1>${escapeHtml(group.volumeTitle)}</h1>`;
+      }
+      for (const ch of group.chapters) {
+        html += `<h2>${escapeHtml(ch.title)}</h2>`;
+        const htmlContent = isHtmlContent(ch.content) ? sanitizeHtml(ch.content) : textToHtml(ch.content);
+        html += htmlContent;
+      }
+    }
+
+    if (template?.footer_html) {
+      html += template.footer_html;
+    }
+
+    html += '</body></html>';
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(projectName)}_wechat.html"`);
+    res.send(html);
+  } catch {
+    res.status(500).json({ success: false, error: '微信 HTML 导出失败' });
+  }
+});
+
+// Export templates CRUD
+router.get('/templates', (_req, res) => {
+  const templates = exportTemplateRepo.findAll();
+  res.json({ success: true, data: templates });
+});
+
+router.get('/templates/:templateId', (req, res) => {
+  const template = exportTemplateRepo.findById(req.params.templateId);
+  if (!template) {
+    res.status(404).json({ success: false, error: '模板不存在' });
+    return;
+  }
+  res.json({ success: true, data: template });
+});
+
+router.post('/templates', (req, res) => {
+  const { name, platform, description, css, headerHtml, footerHtml } = req.body;
+  if (!name || !platform || !css) {
+    res.status(400).json({ success: false, error: 'name, platform, css 必填' });
+    return;
+  }
+  const template = exportTemplateRepo.create({ name, platform, description, css, headerHtml, footerHtml });
+  res.status(201).json({ success: true, data: template });
+});
+
+router.patch('/templates/:templateId', (req, res) => {
+  const updated = exportTemplateRepo.update(req.params.templateId, req.body);
+  if (!updated) {
+    res.status(404).json({ success: false, error: '模板不存在或为内置模板' });
+    return;
+  }
+  res.json({ success: true, data: updated });
+});
+
+router.delete('/templates/:templateId', (req, res) => {
+  const deleted = exportTemplateRepo.deleteById(req.params.templateId);
+  if (!deleted) {
+    res.status(404).json({ success: false, error: '模板不存在或为内置模板' });
+    return;
+  }
+  res.json({ success: true, data: null });
 });
 
 export default router;
