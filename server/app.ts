@@ -80,6 +80,11 @@ import writingSprintRouter from './routes/writingSprint.js';
 import keyboardMacrosRouter from './routes/keyboardMacros.js';
 import bookSummaryRouter from './routes/bookSummary.js';
 import coherenceEngineRouter from './routes/coherenceEngine.js';
+import pacingCurveRouter from './routes/pacingCurve.js';
+import readerEngagementRoutes from './routes/readerEngagement.js';
+import chapterVersionsRouter from './routes/chapterVersions.js';
+import creativeBreakthroughRouter from './routes/creativeBreakthrough.js';
+import sensoryEnhanceRoutes from './routes/sensoryEnhance.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestIdMiddleware, requestLogger } from './middleware/logger.js';
 
@@ -206,6 +211,11 @@ app.use('/api/projects/:projectId/sprints', writingSprintRouter);
 app.use('/api/projects/:projectId/macros', keyboardMacrosRouter);
 app.use('/api/projects/:projectId/book-summary', aiLimiter, bookSummaryRouter);
 app.use('/api/projects/:projectId/coherence', aiLimiter, coherenceEngineRouter);
+app.use('/api/projects/:projectId/pacing-curve', aiLimiter, pacingCurveRouter);
+app.use('/api/projects/:projectId/reader-engagement', readerEngagementRoutes);
+app.use('/api/projects/:projectId/chapter-versions', chapterVersionsRouter);
+app.use('/api/projects/:projectId/creative-breakthrough', aiLimiter, creativeBreakthroughRouter);
+app.use('/api/projects/:projectId/sensory-enhance', aiLimiter, sensoryEnhanceRoutes);
 
 app.use(errorHandler);
 

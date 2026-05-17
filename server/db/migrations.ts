@@ -6,6 +6,7 @@ interface Migration {
   version: number;
   name: string;
   up: string[];
+  down?: string[];
 }
 
 const MIGRATIONS: Migration[] = [
@@ -713,6 +714,31 @@ const MIGRATIONS: Migration[] = [
       'CREATE INDEX IF NOT EXISTS idx_keyboard_macros_project ON keyboard_macros(project_id)',
     ],
   },
+  {
+    version: 33,
+    name: 'chapter_version_snapshots',
+    up: [
+      `CREATE TABLE IF NOT EXISTS chapter_version_snapshots (
+        id TEXT PRIMARY KEY,
+        chapter_id TEXT NOT NULL,
+        project_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        word_count INTEGER DEFAULT 0,
+        snapshot_type TEXT NOT NULL DEFAULT 'manual',
+        note TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE,
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_cvs_chapter ON chapter_version_snapshots(chapter_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_cvs_project ON chapter_version_snapshots(project_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_cvs_created ON chapter_version_snapshots(created_at)`,
+    ],
+    down: [
+      'DROP TABLE IF EXISTS chapter_version_snapshots',
+    ],
+  },
 ];
 
 // Check if a migration's effects already exist in the database
@@ -849,6 +875,10 @@ function isMigrationApplied(db: ReturnType<typeof getDb>, migration: Migration):
   // Version 32: keyboard_macros
   if (migration.version === 32) {
     return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='keyboard_macros'").get();
+  }
+  // Version 33: chapter_version_snapshots
+  if (migration.version === 33) {
+    return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='chapter_version_snapshots'").get();
   }
   return false;
 }
