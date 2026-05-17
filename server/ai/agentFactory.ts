@@ -1,4 +1,4 @@
-import { loadStoredConfig, type StoredAiConfig } from './configStore.js';
+import { loadStoredConfig, getProviderConfigById, type StoredAiConfig } from './configStore.js';
 
 export interface StreamChunk {
   content: string;
@@ -32,20 +32,40 @@ function isRetryableError(error: unknown): boolean {
   return false;
 }
 
+function resolveConfig(providerId?: string): { baseUrl: string; apiKey: string; model: string; temperature: number; maxTokens: number } {
+  if (providerId) {
+    const pc = getProviderConfigById(providerId);
+    if (pc) {
+      const global = loadStoredConfig();
+      return {
+        baseUrl: pc.baseUrl,
+        apiKey: pc.apiKey,
+        model: pc.model,
+        temperature: global.temperature,
+        maxTokens: global.maxTokens,
+      };
+    }
+  }
+  return loadStoredConfig();
+}
+
 export function getConfig(): AiConfig {
   return loadStoredConfig();
 }
 
 export async function* streamChat(
   messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
-  overrides?: Partial<Pick<AiConfig, 'model' | 'temperature' | 'maxTokens'>>,
+  overrides?: Partial<Pick<AiConfig, 'model' | 'temperature' | 'maxTokens'>> & { providerId?: string },
 ): AsyncGenerator<StreamChunk> {
-  const config = getConfig();
+  const config = resolveConfig(overrides?.providerId);
   const model = overrides?.model || config.model;
   const temperature = overrides?.temperature ?? config.temperature;
   const maxTokens = overrides?.maxTokens || config.maxTokens;
 
   const url = `${config.baseUrl.replace(/\/$/, '')}/chat/completions`;
+
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (config.apiKey) headers['Authorization'] = `Bearer ${config.apiKey}`;
 
   let lastError: Error | null = null;
 
@@ -56,10 +76,7 @@ export async function* streamChat(
     try {
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${config.apiKey}`,
-        },
+        headers,
         body: JSON.stringify({
           model,
           messages,
@@ -142,16 +159,18 @@ export async function* streamChat(
 
 export async function completeChat(
   messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
-  overrides?: { maxTokens?: number; temperature?: number },
+  overrides?: { maxTokens?: number; temperature?: number; providerId?: string },
 ): Promise<string> {
-  const config = getConfig();
+  const config = resolveConfig(overrides?.providerId);
   const url = `${config.baseUrl.replace(/\/$/, '')}/chat/completions`;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30_000);
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (config.apiKey) headers['Authorization'] = `Bearer ${config.apiKey}`;
   try {
     const response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${config.apiKey}` },
+      headers,
       body: JSON.stringify({
         model: config.model,
         messages,

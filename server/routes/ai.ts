@@ -2,10 +2,10 @@ import { Router } from 'express';
 import { processAiRequest, listSkills, getSkill, isConfigured } from '../services/aiService.js';
 import { setupSSE, sendSSE, sendSSEError, sendSSEDone } from '../middleware/sse.js';
 import { getConfig } from '../ai/agentFactory.js';
-import { saveConfig, loadStoredConfig } from '../ai/configStore.js';
+import { saveConfig, loadStoredConfig, getProviderConfigs, saveProviderConfigs, setActiveProvider } from '../ai/configStore.js';
 import { getContextSources, estimateTokens, buildContext, contextToString } from '../ai/contextBuilder.js';
 import { buildPrompt, toMessages } from '../ai/promptBuilder.js';
-import { PROVIDERS } from '../ai/providers.js';
+import { PROVIDERS, fetchOllamaModels } from '../ai/providers.js';
 import { findById as findChapterById } from '../db/repositories/chapterRepo.js';
 import { findById as findProjectById } from '../db/repositories/projectRepo.js';
 import { findByProject as findCharacters } from '../db/repositories/characterRepo.js';
@@ -46,6 +46,42 @@ function sanitizeApiKey(text: string): string {
 // List available providers
 router.get('/providers', (_req, res) => {
   res.json({ success: true, data: PROVIDERS });
+});
+
+// Get multi-provider configs
+router.get('/providers/config', (_req, res) => {
+  const providers = getProviderConfigs();
+  res.json({ success: true, data: providers });
+});
+
+// Update multi-provider configs
+router.patch('/providers/config', (req, res) => {
+  const { providers, activeId } = req.body as { providers?: unknown[]; activeId?: string };
+
+  if (activeId) {
+    const updated = setActiveProvider(activeId);
+    res.json({ success: true, data: updated });
+    return;
+  }
+
+  if (providers && Array.isArray(providers)) {
+    const updated = saveProviderConfigs(providers as Array<ReturnType<typeof getProviderConfigs>[0]>);
+    res.json({ success: true, data: updated });
+    return;
+  }
+
+  res.status(400).json({ success: false, error: 'providers 或 activeId 必填' });
+});
+
+// Fetch Ollama models
+router.post('/providers/ollama/models', async (req, res) => {
+  const { baseUrl } = req.body as { baseUrl?: string };
+  try {
+    const models = await fetchOllamaModels(baseUrl);
+    res.json({ success: true, data: models });
+  } catch {
+    res.json({ success: true, data: [] });
+  }
 });
 
 // List available skills
@@ -646,5 +682,26 @@ function buildUserPromptWithText(skillId: string, text: string, targetStyle?: st
     default: return text;
   }
 }
+
+// Model comparison
+router.post('/compare', async (req, res) => {
+  const { prompt, providerIds, systemPrompt, maxTokens, temperature } = req.body as {
+    prompt?: string; providerIds?: string[]; systemPrompt?: string; maxTokens?: number; temperature?: number;
+  };
+
+  if (!prompt || !providerIds || providerIds.length < 2) {
+    res.status(400).json({ success: false, error: 'prompt 和至少2个 providerIds 必填' });
+    return;
+  }
+
+  try {
+    const { compareModels } = await import('../services/modelComparison.js');
+    const results = await compareModels({ prompt, providerIds, systemPrompt, maxTokens, temperature });
+    res.json({ success: true, data: results });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    res.status(500).json({ success: false, error: message });
+  }
+});
 
 export default router;

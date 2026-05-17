@@ -1135,6 +1135,17 @@ summary: 一句话风格总结`,
     temperature: 0.7,
     maxTokens: 4000,
   },
+
+  'prompt-template': {
+    id: 'prompt-template',
+    name: 'Prompt模板',
+    description: '使用自定义Prompt模板进行写作',
+    icon: '📋',
+    systemPrompt: `此技能由Prompt模板系统处理，通过模板面板选择使用。`,
+    needsSelection: false,
+    temperature: 0.7,
+    maxTokens: 4096,
+  },
 };
 
 export function getSkill(id: string): WritingSkill | undefined {

@@ -406,6 +406,44 @@ const MIGRATIONS: Migration[] = [
       'CREATE INDEX IF NOT EXISTS idx_story_plans_project ON story_plans(project_id, sort_order)',
     ],
   },
+  {
+    version: 20,
+    name: 'prompt_templates',
+    up: [
+      `CREATE TABLE IF NOT EXISTS prompt_templates (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        description TEXT DEFAULT '',
+        category TEXT DEFAULT 'custom' CHECK(category IN ('custom','writing','analysis','editing','planning','creative')),
+        system_prompt TEXT NOT NULL,
+        user_prompt_template TEXT DEFAULT '',
+        suggested_temperature REAL DEFAULT 0.7,
+        suggested_max_tokens INTEGER DEFAULT 2048,
+        is_builtin INTEGER DEFAULT 0,
+        is_public INTEGER DEFAULT 0,
+        usage_count INTEGER DEFAULT 0,
+        tags TEXT DEFAULT '[]',
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_prompt_templates_category ON prompt_templates(category)',
+    ],
+  },
+  {
+    version: 21,
+    name: 'agent_workflows',
+    up: [
+      `CREATE TABLE IF NOT EXISTS agent_workflows (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        description TEXT DEFAULT '',
+        steps TEXT NOT NULL DEFAULT '[]',
+        is_builtin INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now'))
+      )`,
+    ],
+  },
 ];
 
 // Check if a migration's effects already exist in the database
@@ -490,6 +528,14 @@ function isMigrationApplied(db: ReturnType<typeof getDb>, migration: Migration):
   // Version 19: agent_writing tables
   if (migration.version === 19) {
     return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='agent_sessions'").get();
+  }
+  // Version 20: prompt_templates
+  if (migration.version === 20) {
+    return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='prompt_templates'").get();
+  }
+  // Version 21: agent_workflows
+  if (migration.version === 21) {
+    return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='agent_workflows'").get();
   }
   return false;
 }

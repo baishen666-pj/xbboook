@@ -24,6 +24,8 @@ import { IntegrationPanel } from "./IntegrationPanel";
 import { AgentWritingPanel } from "./AgentWritingPanel";
 import { StyleFingerprintPanel } from "./StyleFingerprintPanel";
 import { StoryPlannerPanel } from "./StoryPlannerPanel";
+import { PromptTemplatePanel } from "./PromptTemplatePanel";
+import { ModelComparisonPanel } from "./ModelComparisonPanel";
 
 export function AiPanel() {
   const activeSkillId = useAiStore((s) => s.activeSkillId);
@@ -45,6 +47,8 @@ export function AiPanel() {
   const [showAgent, setShowAgent] = useState(false);
   const [showStyleFP, setShowStyleFP] = useState(false);
   const [showStoryPlanner, setShowStoryPlanner] = useState(false);
+  const [showPromptTemplates, setShowPromptTemplates] = useState(false);
+  const [showModelComparison, setShowModelComparison] = useState(false);
 
   const autoContinue = useAutoContinue(currentProject?.id, activeChapterId ?? undefined);
 
@@ -215,6 +219,29 @@ export function AiPanel() {
               <path d="M6 3.5h4M3.5 6v4M6 12.5h4M12.5 6v4" />
             </svg>
           </button>
+          <button
+            onClick={() => setShowPromptTemplates(!showPromptTemplates)}
+            className={`rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors ${showPromptTemplates ? "bg-[var(--color-primary-subtle)] text-[var(--color-primary)]" : ""}`}
+            title="Prompt模板"
+            aria-label="Prompt模板"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <rect x="1" y="2" width="14" height="12" rx="2" />
+              <path d="M4 5h8M4 8h5M4 11h6" />
+            </svg>
+          </button>
+          <button
+            onClick={() => setShowModelComparison(!showModelComparison)}
+            className={`rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors ${showModelComparison ? "bg-[var(--color-primary-subtle)] text-[var(--color-primary)]" : ""}`}
+            title="多模型对比"
+            aria-label="多模型对比"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <rect x="1" y="1" width="6" height="14" rx="1" />
+              <rect x="9" y="1" width="6" height="14" rx="1" />
+              <path d="M3 5h2M3 8h2M11 5h2M11 8h2" />
+            </svg>
+          </button>
           <AiSettingsPanel />
         </div>
       </div>
@@ -313,6 +340,20 @@ export function AiPanel() {
       {showStoryPlanner && currentProject && (
         <div className="border-b border-[var(--color-border)] max-h-96 overflow-y-auto">
           <StoryPlannerPanel projectId={currentProject.id} />
+        </div>
+      )}
+
+      {/* Prompt templates (collapsible) */}
+      {showPromptTemplates && (
+        <div className="border-b border-[var(--color-border)] max-h-96 overflow-y-auto">
+          <PromptTemplatePanel onSelectTemplate={() => {}} />
+        </div>
+      )}
+
+      {/* Model comparison (collapsible) */}
+      {showModelComparison && (
+        <div className="border-b border-[var(--color-border)] max-h-96 overflow-y-auto">
+          <ModelComparisonPanel />
         </div>
       )}
 

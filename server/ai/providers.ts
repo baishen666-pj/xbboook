@@ -42,8 +42,29 @@ export const PROVIDERS: ProviderPreset[] = [
     defaultModel: '',
     models: [],
   },
+  {
+    id: 'ollama',
+    name: 'Ollama (本地)',
+    baseUrl: 'http://localhost:11434/v1',
+    defaultModel: 'llama3',
+    models: [],
+  },
 ];
 
 export function getProvider(id: string): ProviderPreset | undefined {
   return PROVIDERS.find((p) => p.id === id);
+}
+
+export async function fetchOllamaModels(baseUrl?: string): Promise<string[]> {
+  const base = (baseUrl || 'http://localhost:11434').replace(/\/v1$/, '');
+  try {
+    const res = await fetch(`${base}/api/tags`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) return [];
+    const data = await res.json() as { models?: Array<{ name: string }> };
+    return (data.models || []).map(m => m.name);
+  } catch {
+    return [];
+  }
 }
