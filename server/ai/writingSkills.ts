@@ -1102,6 +1102,39 @@ summary: 一句话风格总结`,
     temperature: 0.3,
     maxTokens: 6000,
   },
+
+  'agent-write': {
+    id: 'agent-write',
+    name: 'Agent代理写作',
+    description: 'AI自主规划、撰写、自审、修改章节',
+    icon: '🤖',
+    systemPrompt: `此技能由Agent核心引擎处理，通过专用面板启动。`,
+    needsSelection: false,
+    temperature: 0.8,
+    maxTokens: 4096,
+  },
+
+  'style-learn': {
+    id: 'style-learn',
+    name: '风格学习',
+    description: '深度学习作者写作风格，生成风格指纹',
+    icon: '🎯',
+    systemPrompt: `此技能由风格学习引擎处理，通过专用面板启动。`,
+    needsSelection: false,
+    temperature: 0.3,
+    maxTokens: 2000,
+  },
+
+  'story-plan': {
+    id: 'story-plan',
+    name: '长篇规划',
+    description: '管理和追踪长篇小说的故事弧线与节奏',
+    icon: '🗺️',
+    systemPrompt: `此技能由长篇规划引擎处理，通过专用面板启动。`,
+    needsSelection: false,
+    temperature: 0.7,
+    maxTokens: 4000,
+  },
 };
 
 export function getSkill(id: string): WritingSkill | undefined {

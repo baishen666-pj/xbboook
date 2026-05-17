@@ -433,6 +433,15 @@ export async function buildContext(options: BuildContextOptions): Promise<Contex
     if (process.env.NODE_ENV === 'development') console.warn('[contextBuilder] style profile load failed:', err);
   }
 
+  // Priority 9: deep style fingerprint (if available)
+  try {
+    const { getFingerprint, buildStyleInjectionSource } = await import('./styleLearner.js');
+    const fp = getFingerprint(projectId);
+    if (fp) {
+      sources.push(buildStyleInjectionSource(fp));
+    }
+  } catch { /* skip if style fingerprint not available */ }
+
   // Priority 5: AI memories (auto-extracted and manual)
   if (!disabled.has('AI记忆')) {
     try {

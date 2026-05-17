@@ -335,6 +335,77 @@ const MIGRATIONS: Migration[] = [
       'CREATE INDEX IF NOT EXISTS idx_automation_executions_rule ON automation_executions(rule_id, created_at DESC)',
     ],
   },
+  {
+    version: 19,
+    name: 'agent_writing',
+    up: [
+      `CREATE TABLE IF NOT EXISTS agent_sessions (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        chapter_id TEXT,
+        status TEXT DEFAULT 'idle' CHECK(status IN ('idle','planning','drafting','reviewing','revising','paused','completed','failed')),
+        config TEXT NOT NULL DEFAULT '{}',
+        current_step TEXT DEFAULT '',
+        draft_content TEXT DEFAULT '',
+        iteration INTEGER DEFAULT 0,
+        max_iterations INTEGER DEFAULT 3,
+        plan TEXT DEFAULT '',
+        review_notes TEXT DEFAULT '',
+        final_content TEXT DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+        FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE SET NULL
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_agent_sessions_project ON agent_sessions(project_id, status)',
+      `CREATE TABLE IF NOT EXISTS agent_decisions (
+        id TEXT PRIMARY KEY,
+        session_id TEXT NOT NULL,
+        iteration INTEGER NOT NULL,
+        decision_type TEXT NOT NULL CHECK(decision_type IN ('plan','draft_segment','self_review','revision','accept','reject')),
+        input_summary TEXT DEFAULT '',
+        output_summary TEXT DEFAULT '',
+        reasoning TEXT DEFAULT '',
+        token_usage INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (session_id) REFERENCES agent_sessions(id) ON DELETE CASCADE
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_agent_decisions_session ON agent_decisions(session_id, iteration)',
+      `CREATE TABLE IF NOT EXISTS style_fingerprints (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL UNIQUE,
+        sentence_patterns TEXT NOT NULL DEFAULT '[]',
+        vocabulary_profile TEXT NOT NULL DEFAULT '{}',
+        rhythm_profile TEXT NOT NULL DEFAULT '{}',
+        dialogue_signatures TEXT NOT NULL DEFAULT '[]',
+        narrative_habits TEXT NOT NULL DEFAULT '{}',
+        sample_chapter_ids TEXT NOT NULL DEFAULT '[]',
+        sample_size INTEGER DEFAULT 0,
+        summary TEXT DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS story_plans (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT DEFAULT '',
+        plan_type TEXT DEFAULT 'arc' CHECK(plan_type IN ('arc','volume','chapter_group','milestone')),
+        parent_id TEXT,
+        start_chapter_index INTEGER,
+        end_chapter_index INTEGER,
+        target_data TEXT DEFAULT '{}',
+        status TEXT DEFAULT 'planned' CHECK(status IN ('planned','in_progress','completed','abandoned')),
+        sort_order INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+        FOREIGN KEY (parent_id) REFERENCES story_plans(id) ON DELETE CASCADE
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_story_plans_project ON story_plans(project_id, sort_order)',
+    ],
+  },
 ];
 
 // Check if a migration's effects already exist in the database
@@ -415,6 +486,10 @@ function isMigrationApplied(db: ReturnType<typeof getDb>, migration: Migration):
   // Version 18: integrations tables
   if (migration.version === 18) {
     return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='webhooks'").get();
+  }
+  // Version 19: agent_writing tables
+  if (migration.version === 19) {
+    return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='agent_sessions'").get();
   }
   return false;
 }

@@ -21,6 +21,9 @@ import { ReaderSimulator } from "./ReaderSimulator";
 import { OrchestratorPanel } from "./OrchestratorPanel";
 import { PluginMarketplace } from "./PluginMarketplace";
 import { IntegrationPanel } from "./IntegrationPanel";
+import { AgentWritingPanel } from "./AgentWritingPanel";
+import { StyleFingerprintPanel } from "./StyleFingerprintPanel";
+import { StoryPlannerPanel } from "./StoryPlannerPanel";
 
 export function AiPanel() {
   const activeSkillId = useAiStore((s) => s.activeSkillId);
@@ -39,6 +42,9 @@ export function AiPanel() {
   const [showOrchestrator, setShowOrchestrator] = useState(false);
   const [showPlugins, setShowPlugins] = useState(false);
   const [showIntegration, setShowIntegration] = useState(false);
+  const [showAgent, setShowAgent] = useState(false);
+  const [showStyleFP, setShowStyleFP] = useState(false);
+  const [showStoryPlanner, setShowStoryPlanner] = useState(false);
 
   const autoContinue = useAutoContinue(currentProject?.id, activeChapterId ?? undefined);
 
@@ -173,6 +179,42 @@ export function AiPanel() {
               <path d="M1 15l4-4M10 6l4-4" />
             </svg>
           </button>
+          <button
+            onClick={() => setShowAgent(!showAgent)}
+            className={`rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors ${showAgent ? "bg-[var(--color-primary-subtle)] text-[var(--color-primary)]" : ""}`}
+            title="AI代理写作"
+            aria-label="AI代理写作"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <rect x="2" y="3" width="12" height="10" rx="2" />
+              <circle cx="6" cy="8" r="1.5" />
+              <circle cx="10" cy="8" r="1.5" />
+              <path d="M5 13v2M11 13v2M3 6h10" />
+            </svg>
+          </button>
+          <button
+            onClick={() => setShowStyleFP(!showStyleFP)}
+            className={`rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors ${showStyleFP ? "bg-[var(--color-primary-subtle)] text-[var(--color-primary)]" : ""}`}
+            title="风格学习"
+            aria-label="风格学习"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M2 2h12v12H2z" />
+              <path d="M5 5h6M5 8h4M5 11h6" />
+              <circle cx="12" cy="4" r="2" fill="currentColor" />
+            </svg>
+          </button>
+          <button
+            onClick={() => setShowStoryPlanner(!showStoryPlanner)}
+            className={`rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors ${showStoryPlanner ? "bg-[var(--color-primary-subtle)] text-[var(--color-primary)]" : ""}`}
+            title="长篇规划"
+            aria-label="长篇规划"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M1 1h5v5H1zM10 1h5v5h-5zM1 10h5v5H1zM10 10h5v5h-5z" />
+              <path d="M6 3.5h4M3.5 6v4M6 12.5h4M12.5 6v4" />
+            </svg>
+          </button>
           <AiSettingsPanel />
         </div>
       </div>
@@ -250,6 +292,27 @@ export function AiPanel() {
       {showIntegration && currentProject && (
         <div className="border-b border-[var(--color-border)] max-h-96 overflow-y-auto">
           <IntegrationPanel projectId={currentProject.id} />
+        </div>
+      )}
+
+      {/* Agent writing (collapsible) */}
+      {showAgent && currentProject && (
+        <div className="border-b border-[var(--color-border)] max-h-96 overflow-y-auto">
+          <AgentWritingPanel projectId={currentProject.id} />
+        </div>
+      )}
+
+      {/* Style fingerprint (collapsible) */}
+      {showStyleFP && currentProject && (
+        <div className="border-b border-[var(--color-border)] max-h-96 overflow-y-auto">
+          <StyleFingerprintPanel projectId={currentProject.id} />
+        </div>
+      )}
+
+      {/* Story planner (collapsible) */}
+      {showStoryPlanner && currentProject && (
+        <div className="border-b border-[var(--color-border)] max-h-96 overflow-y-auto">
+          <StoryPlannerPanel projectId={currentProject.id} />
         </div>
       )}
 
