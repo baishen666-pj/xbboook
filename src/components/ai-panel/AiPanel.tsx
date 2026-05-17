@@ -26,6 +26,7 @@ import { StyleFingerprintPanel } from "./StyleFingerprintPanel";
 import { StoryPlannerPanel } from "./StoryPlannerPanel";
 import { PromptTemplatePanel } from "./PromptTemplatePanel";
 import { ModelComparisonPanel } from "./ModelComparisonPanel";
+import { BatchGenerationPanel } from "./BatchGenerationPanel";
 
 export function AiPanel() {
   const activeSkillId = useAiStore((s) => s.activeSkillId);
@@ -49,6 +50,7 @@ export function AiPanel() {
   const [showStoryPlanner, setShowStoryPlanner] = useState(false);
   const [showPromptTemplates, setShowPromptTemplates] = useState(false);
   const [showModelComparison, setShowModelComparison] = useState(false);
+  const [showBatchGeneration, setShowBatchGeneration] = useState(false);
 
   const autoContinue = useAutoContinue(currentProject?.id, activeChapterId ?? undefined);
 
@@ -242,6 +244,17 @@ export function AiPanel() {
               <path d="M3 5h2M3 8h2M11 5h2M11 8h2" />
             </svg>
           </button>
+          <button
+            onClick={() => setShowBatchGeneration(!showBatchGeneration)}
+            className={`rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors ${showBatchGeneration ? "bg-[var(--color-primary-subtle)] text-[var(--color-primary)]" : ""}`}
+            title="批量生章"
+            aria-label="批量生章"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M2 2h4v4H2zM10 2h4v4h-4zM2 10h4v4H2zM10 10h4v4h-4z" />
+              <path d="M6 4h4M4 6v4M6 12h4M12 6v4" />
+            </svg>
+          </button>
           <AiSettingsPanel />
         </div>
       </div>
@@ -354,6 +367,13 @@ export function AiPanel() {
       {showModelComparison && (
         <div className="border-b border-[var(--color-border)] max-h-96 overflow-y-auto">
           <ModelComparisonPanel />
+        </div>
+      )}
+
+      {/* Batch generation (collapsible) */}
+      {showBatchGeneration && currentProject && (
+        <div className="border-b border-[var(--color-border)] max-h-96 overflow-y-auto">
+          <BatchGenerationPanel projectId={currentProject.id} />
         </div>
       )}
 

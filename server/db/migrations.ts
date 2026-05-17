@@ -444,6 +444,44 @@ const MIGRATIONS: Migration[] = [
       )`,
     ],
   },
+  {
+    version: 22,
+    name: 'writing_goals',
+    up: [
+      `CREATE TABLE IF NOT EXISTS writing_goals (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        type TEXT NOT NULL CHECK(type IN ('daily','weekly','monthly','total')),
+        target_words INTEGER NOT NULL,
+        start_date TEXT,
+        end_date TEXT,
+        is_active INTEGER DEFAULT 1,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_writing_goals_project ON writing_goals(project_id, is_active)',
+    ],
+  },
+  {
+    version: 23,
+    name: 'batch_jobs',
+    up: [
+      `CREATE TABLE IF NOT EXISTS batch_jobs (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        plan_json TEXT NOT NULL DEFAULT '{}',
+        status TEXT DEFAULT 'pending' CHECK(status IN ('pending','running','paused','completed','failed','cancelled')),
+        progress_json TEXT DEFAULT '{}',
+        current_chapter_index INTEGER DEFAULT 0,
+        error TEXT,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_batch_jobs_project ON batch_jobs(project_id, status)',
+    ],
+  },
 ];
 
 // Check if a migration's effects already exist in the database
@@ -536,6 +574,14 @@ function isMigrationApplied(db: ReturnType<typeof getDb>, migration: Migration):
   // Version 21: agent_workflows
   if (migration.version === 21) {
     return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='agent_workflows'").get();
+  }
+  // Version 22: writing_goals
+  if (migration.version === 22) {
+    return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='writing_goals'").get();
+  }
+  // Version 23: batch_jobs
+  if (migration.version === 23) {
+    return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='batch_jobs'").get();
   }
   return false;
 }

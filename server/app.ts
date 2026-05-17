@@ -40,10 +40,13 @@ import storyPlannerRouter from './routes/storyPlanner.js';
 import styleFingerprintRouter from './routes/styleFingerprint.js';
 import promptTemplatesRouter from './routes/promptTemplates.js';
 import agentWorkflowRouter from './routes/agentWorkflow.js';
+import batchGenerationRouter from './routes/batchGeneration.js';
 import webhooksRouter from './routes/webhooks.js';
 import notionRouter from './routes/notion.js';
 import feishuRouter from './routes/feishu.js';
 import automationsRouter from './routes/automations.js';
+import goalsRouter from './routes/goals.js';
+import insightsRouter from './routes/insights.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestIdMiddleware, requestLogger } from './middleware/logger.js';
 
@@ -130,10 +133,13 @@ app.use('/api/projects/:projectId/story-planner', storyPlannerRouter);
 app.use('/api/projects/:projectId/style-fingerprint', styleFingerprintRouter);
 app.use('/api/prompt-templates', promptTemplatesRouter);
 app.use('/api/agent-workflows', agentWorkflowRouter);
+app.use('/api/projects/:projectId/batch-generation', aiLimiter, batchGenerationRouter);
 app.use('/api/webhooks', webhooksRouter);
 app.use('/api/projects/:projectId/notion', notionRouter);
 app.use('/api/projects/:projectId/feishu', feishuRouter);
 app.use('/api/projects/:projectId/automations', automationsRouter);
+app.use('/api/projects/:projectId/goals', goalsRouter);
+app.use('/api/projects/:projectId/insights', insightsRouter);
 
 app.use(errorHandler);
 

@@ -13,6 +13,8 @@ import { WritingCalendar } from "./WritingCalendar";
 import { ContentInsightPanel } from "./ContentInsightPanel";
 import { CharacterGraph } from "./CharacterGraph";
 import { PlotTimeline } from "./PlotTimeline";
+import { GoalTracker } from "./GoalTracker";
+import { WritingInsightsPanel } from "./WritingInsightsPanel";
 
 interface Props {
   onClose?: () => void;
@@ -142,6 +144,16 @@ export function DashboardPanel({ onClose }: Props) {
           <div className="rounded-lg bg-white/[0.03] p-3">
             <div className="text-xs text-white/40 mb-2">写作洞察</div>
             <ContentInsightPanel />
+          </div>
+
+          {/* Goal tracker */}
+          <div className="rounded-lg bg-white/[0.03] p-3">
+            <GoalTracker projectId={currentProject.id} />
+          </div>
+
+          {/* Writing insights panel */}
+          <div className="rounded-lg bg-white/[0.03] p-3">
+            <WritingInsightsPanel projectId={currentProject.id} />
           </div>
         </div>
       )}

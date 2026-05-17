@@ -1146,6 +1146,48 @@ summary: 一句话风格总结`,
     temperature: 0.7,
     maxTokens: 4096,
   },
+
+  'batch-generate': {
+    id: 'batch-generate',
+    name: '批量生章',
+    description: '根据大纲一键批量生成多个章节',
+    icon: '📚',
+    systemPrompt: '你是一位网文章节生成专家。请根据提供的大纲节点和上下文，生成完整的章节内容。要求：保持与前文的连贯性；角色行为符合已设定性格；情节推进合理；字数2000-3000字。',
+    needsSelection: false,
+    temperature: 0.8,
+    maxTokens: 4096,
+  },
+
+  'extract-relationships': {
+    id: 'extract-relationships',
+    name: '关系提取',
+    description: 'AI分析章节内容，自动提取角色关系和阵营归属',
+    icon: '🔗',
+    systemPrompt: `你是一位专业的小说角色关系分析师。请分析提供的章节内容，提取所有可以识别的角色关系。
+
+请按以下格式输出（严格 JSON）：
+{
+  "relations": [
+    {
+      "characterA": "角色A名字",
+      "characterB": "角色B名字",
+      "relationType": "关系类型（如师徒、朋友、仇敌、恋人、父子等）",
+      "description": "关系描述（20字以内）",
+      "confidence": 0.9,
+      "keyEvents": ["关键事件1", "关键事件2"]
+    }
+  ],
+  "factions": [
+    {
+      "name": "阵营名称",
+      "members": ["角色名1", "角色名2"]
+    }
+  ]
+}`,
+    needsSelection: false,
+    temperature: 0.3,
+    maxTokens: 4000,
+  },
 };
 
 export function getSkill(id: string): WritingSkill | undefined {

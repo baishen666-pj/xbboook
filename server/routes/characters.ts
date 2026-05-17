@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import * as charRepo from '../db/repositories/characterRepo.js';
 import { validate } from '../middleware/validate.js';
+import { extractRelationships } from '../services/relationshipExtractor.js';
 
 const router = Router({ mergeParams: true });
 
@@ -42,6 +43,20 @@ const createRelationSchema = z.object({
   characterBId: z.string().uuid(),
   relationType: z.string().min(1).max(200),
   description: z.string().max(2000).optional(),
+});
+
+// Extract relationships via AI
+router.post('/extract-relations', async (req, res) => {
+  const { projectId } = req.params as { projectId: string };
+  const { chapterIds } = req.body as { chapterIds?: string[] };
+
+  try {
+    const result = await extractRelationships(projectId, chapterIds);
+    res.json({ success: true, data: result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '关系提取失败';
+    res.status(500).json({ success: false, error: message });
+  }
 });
 
 // List characters for a project
