@@ -19,6 +19,7 @@ import { InspirationPanel } from "./InspirationPanel";
 import { MaterialPanel } from "./MaterialPanel";
 import { ReaderSimulator } from "./ReaderSimulator";
 import { OrchestratorPanel } from "./OrchestratorPanel";
+import { PluginMarketplace } from "./PluginMarketplace";
 
 export function AiPanel() {
   const activeSkillId = useAiStore((s) => s.activeSkillId);
@@ -35,6 +36,7 @@ export function AiPanel() {
   const [showMaterials, setShowMaterials] = useState(false);
   const [showReaderSim, setShowReaderSim] = useState(false);
   const [showOrchestrator, setShowOrchestrator] = useState(false);
+  const [showPlugins, setShowPlugins] = useState(false);
 
   const autoContinue = useAutoContinue(currentProject?.id, activeChapterId ?? undefined);
 
@@ -148,6 +150,16 @@ export function AiPanel() {
               <circle cx="8" cy="8" r="3" />
             </svg>
           </button>
+          <button
+            onClick={() => setShowPlugins(!showPlugins)}
+            className={`rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors ${showPlugins ? "bg-[var(--color-primary-subtle)] text-[var(--color-primary)]" : ""}`}
+            title="插件市场"
+            aria-label="插件市场"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M6 3h4M6 8h4M6 13h4M3 3h1v1H3zM3 8h1v1H3zM3 13h1v1H3z" />
+            </svg>
+          </button>
           <AiSettingsPanel />
         </div>
       </div>
@@ -211,6 +223,13 @@ export function AiPanel() {
       {showOrchestrator && currentProject && (
         <div className="border-b border-[var(--color-border)] max-h-96 overflow-y-auto">
           <OrchestratorPanel projectId={currentProject.id} />
+        </div>
+      )}
+
+      {/* Plugin marketplace (collapsible) */}
+      {showPlugins && (
+        <div className="border-b border-[var(--color-border)] max-h-96 overflow-y-auto">
+          <PluginMarketplace />
         </div>
       )}
 

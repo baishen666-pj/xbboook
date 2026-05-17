@@ -366,6 +366,23 @@ CREATE TABLE IF NOT EXISTS chapter_search_cache (
 );
 
 CREATE INDEX IF NOT EXISTS idx_search_cache_project ON chapter_search_cache(project_id);
+
+CREATE TABLE IF NOT EXISTS material_box (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL DEFAULT '',
+  category TEXT NOT NULL DEFAULT 'other',
+  tags TEXT NOT NULL DEFAULT '[]',
+  source TEXT,
+  metadata TEXT DEFAULT '{}',
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_material_box_project ON material_box(project_id);
+CREATE INDEX IF NOT EXISTS idx_material_box_category ON material_box(project_id, category);
 `;
 
 /**
