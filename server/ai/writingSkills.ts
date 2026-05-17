@@ -671,6 +671,166 @@ summary: 一句话风格总结`,
     temperature: 0.85,
     maxTokens: 600,
   },
+  'story-analysis': {
+    id: 'story-analysis',
+    name: '故事结构分析',
+    description: '分析故事的三幕结构、起承转合、转折点和高潮',
+    icon: '📐',
+    systemPrompt: `你是一位专业的小说结构分析师。请分析以下小说内容，识别其叙事结构。
+
+请按以下格式输出（严格 JSON）：
+{
+  "structure_type": "三幕式|起承转合|英雄之旅|多线并行",
+  "acts": [
+    {
+      "name": "第一幕：开端",
+      "chapters": "第1-5章",
+      "description": "描述这一部分的主要内容和功能",
+      "key_events": ["事件1", "事件2"],
+      "turning_point": "转折点描述（如有）"
+    }
+  ],
+  "turning_points": [
+    { "name": "触发事件", "location": "第3章", "description": "..." }
+  ],
+  "climax": { "location": "第X章", "description": "..." },
+  "pacing_score": 7,
+  "tension_curve": [3, 4, 5, 4, 6, 7, 8, 9, 7, 5],
+  "strengths": ["优点1", "优点2"],
+  "weaknesses": ["问题1", "问题2"],
+  "suggestions": ["建议1", "建议2"]
+}`,
+    needsSelection: false,
+    temperature: 0.3,
+    maxTokens: 4000,
+  },
+  'pacing-analysis': {
+    id: 'pacing-analysis',
+    name: '节奏分析',
+    description: '分析写作节奏，检测拖沓和过快的段落',
+    icon: '📊',
+    systemPrompt: `你是一位专业的小说节奏分析师。请分析以下章节内容的写作节奏。
+
+请按以下格式输出（严格 JSON）：
+{
+  "overall_pacing": "紧凑|适中|偏慢|拖沓",
+  "chapter_analyses": [
+    {
+      "chapter": "章节标题",
+      "pacing": "快|适中|慢",
+      "dialogue_ratio": 0.4,
+      "action_ratio": 0.3,
+      "description_ratio": 0.3,
+      "issues": ["问题描述"],
+      "suggestion": "改进建议"
+    }
+  ],
+  "slow_sections": ["拖沓的章节/段落"],
+  "fast_sections": ["节奏过快的章节/段落"],
+  "balance_score": 7,
+  "improvement_plan": "整体节奏改进建议"
+}`,
+    needsSelection: false,
+    temperature: 0.3,
+    maxTokens: 3000,
+  },
+  'emotion-arc': {
+    id: 'emotion-arc',
+    name: '情感曲线',
+    description: '追踪故事的情感走向，生成情感强度曲线',
+    icon: '📈',
+    systemPrompt: `你是一位专业的叙事情感分析师。请分析以下章节内容的情感走向。
+
+请按以下格式输出（严格 JSON）：
+{
+  "chapters": [
+    {
+      "title": "章节标题",
+      "dominant_emotion": "紧张|喜悦|悲伤|愤怒|平静|恐惧|期待|感动",
+      "intensity": 7,
+      "secondary_emotion": "期待",
+      "key_moment": "关键情感时刻描述"
+    }
+  ],
+  "overall_arc": "上升|波浪式|上升-下降|平稳|下降",
+  "emotional_peaks": [{ "chapter": "第X章", "emotion": "...", "intensity": 9 }],
+  "emotional_valleys": [{ "chapter": "第X章", "emotion": "...", "intensity": 2 }],
+  "reader_experience": "读者在阅读过程中的情感体验描述",
+  "suggestions": ["情感节奏改进建议"]
+}`,
+    needsSelection: false,
+    temperature: 0.3,
+    maxTokens: 3000,
+  },
+  'character-arc': {
+    id: 'character-arc',
+    name: '角色弧线分析',
+    description: '分析角色在故事中的成长轨迹和变化',
+    icon: '🎭',
+    systemPrompt: `你是一位专业的角色弧线分析师。请分析以下角色在故事中的发展变化。
+
+请按以下格式输出（严格 JSON）：
+{
+  "characters": [
+    {
+      "name": "角色名",
+      "arc_type": "正面成长|堕落|平坦|摇摆|顿悟",
+      "stages": [
+        {
+          "chapter_range": "第1-5章",
+          "state": "角色状态描述",
+          "motivation": "角色动机",
+          "conflict": "面临的冲突"
+        }
+      ],
+      "key_moments": ["转折时刻1", "转折时刻2"],
+      "growth_score": 7,
+      "consistency_score": 8
+    }
+  ],
+  "interactions": [
+    { "characters": ["角色A", "角色B"], "dynamic": "关系动态描述", "evolution": "关系变化趋势" }
+  ],
+  "suggestions": ["角色弧线改进建议"]
+}`,
+    needsSelection: false,
+    temperature: 0.3,
+    maxTokens: 4000,
+  },
+  'outline-generate': {
+    id: 'outline-generate',
+    name: '大纲自动生成',
+    description: '从已有章节内容反向生成结构化大纲',
+    icon: '🗺️',
+    systemPrompt: `你是一位专业的小说大纲编辑。请根据以下章节内容，生成结构化的故事大纲。
+
+请按以下格式输出（严格 JSON）：
+{
+  "volumes": [
+    {
+      "title": "卷名建议",
+      "theme": "本卷主题",
+      "chapters": [
+        {
+          "title": "章节标题（可优化）",
+          "summary": "章节内容摘要（50-100字）",
+          "key_events": ["关键事件1", "关键事件2"],
+          "characters_involved": ["角色1", "角色2"],
+          "emotional_tone": "情感基调",
+          "foreshadowing": ["伏笔（如有）"]
+        }
+      ],
+      "arc_summary": "本卷故事弧线总结"
+    }
+  ],
+  "overall_structure": "整体结构描述",
+  "missing_beats": ["可能缺失的故事节拍"],
+  "suggested_additions": ["建议增加的内容"]
+}`,
+    needsSelection: false,
+    temperature: 0.3,
+    maxTokens: 6000,
+  },
 };
 
 export function getSkill(id: string): WritingSkill | undefined {

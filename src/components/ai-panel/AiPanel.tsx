@@ -14,6 +14,7 @@ import { ContextConfigPanel } from "./ContextConfigPanel";
 import { StyleProfilePanel } from "./StyleProfilePanel";
 import { MemoryPanel } from "./MemoryPanel";
 import { AutoContinueSuggestion } from "./AutoContinueSuggestion";
+import { AnalysisPanel } from "./AnalysisPanel";
 
 export function AiPanel() {
   const activeSkillId = useAiStore((s) => s.activeSkillId);
@@ -25,6 +26,7 @@ export function AiPanel() {
   const [showContextConfig, setShowContextConfig] = useState(false);
   const [showStyleProfile, setShowStyleProfile] = useState(false);
   const [showMemory, setShowMemory] = useState(false);
+  const [showAnalysis, setShowAnalysis] = useState(false);
 
   const autoContinue = useAutoContinue(currentProject?.id, activeChapterId ?? undefined);
 
@@ -83,6 +85,18 @@ export function AiPanel() {
               <path d="M8 10v2" />
             </svg>
           </button>
+          <button
+            onClick={() => setShowAnalysis(!showAnalysis)}
+            className={`rounded p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors ${showAnalysis ? "bg-[var(--color-primary-subtle)] text-[var(--color-primary)]" : ""}`}
+            title="深度分析"
+            aria-label="深度分析"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M4 14V6l4-4 4 4v8" />
+              <path d="M6 14v-4h4v4" />
+              <circle cx="8" cy="8" r="1.5" />
+            </svg>
+          </button>
           <AiSettingsPanel />
         </div>
       </div>
@@ -111,6 +125,13 @@ export function AiPanel() {
       {showMemory && currentProject && (
         <div className="border-b border-[var(--color-border)] max-h-80 overflow-y-auto">
           <MemoryPanel projectId={currentProject.id} />
+        </div>
+      )}
+
+      {/* Analysis panel (collapsible) */}
+      {showAnalysis && currentProject && (
+        <div className="border-b border-[var(--color-border)] max-h-96 overflow-y-auto">
+          <AnalysisPanel projectId={currentProject.id} />
         </div>
       )}
 

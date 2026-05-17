@@ -146,6 +146,21 @@ export function buildUserPrompt(skillId: string, params: {
     case 'auto-continue':
       return `请基于完整项目上下文，为当前章节续写内容（当前章节：${params.currentChapterTitle || '未知'}）`;
 
+    case 'story-analysis':
+      return '请分析以下小说内容的故事结构，识别叙事框架、转折点和高潮（严格按 JSON 格式输出）';
+
+    case 'pacing-analysis':
+      return '请分析以下章节的写作节奏，检测拖沓和过快的段落（严格按 JSON 格式输出）';
+
+    case 'emotion-arc':
+      return '请分析以下章节内容的情感走向，生成情感强度曲线（严格按 JSON 格式输出）';
+
+    case 'character-arc':
+      return '请分析以下角色在故事中的发展变化和成长轨迹（严格按 JSON 格式输出）';
+
+    case 'outline-generate':
+      return '请根据以下章节内容，反向生成结构化的故事大纲（严格按 JSON 格式输出）';
+
     default:
       return params.question || '请协助创作';
   }
