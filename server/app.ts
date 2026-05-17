@@ -70,6 +70,16 @@ import nameGeneratorRouter from './routes/nameGenerator.js';
 import writingTemplatesRouter from './routes/writingTemplates.js';
 import translationRouter from './routes/translation.js';
 import readerFeedbackRouter from './routes/readerFeedback.js';
+import { complianceRouter } from './routes/compliance.js';
+import platformPublishRouter from './routes/platformPublish.js';
+import bookAssetsRouter from './routes/bookAssets.js';
+import storyArchitectureRouter from './routes/storyArchitecture.js';
+import retentionPredictRouter from './routes/retentionPredict.js';
+import characterProfileRouter from './routes/characterProfile.js';
+import writingSprintRouter from './routes/writingSprint.js';
+import keyboardMacrosRouter from './routes/keyboardMacros.js';
+import bookSummaryRouter from './routes/bookSummary.js';
+import coherenceEngineRouter from './routes/coherenceEngine.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestIdMiddleware, requestLogger } from './middleware/logger.js';
 
@@ -186,6 +196,16 @@ app.use('/api/projects/:projectId/name-generator', aiLimiter, nameGeneratorRoute
 app.use('/api/projects/:projectId/writing-templates', writingTemplatesRouter);
 app.use('/api/projects/:projectId/translation', aiLimiter, translationRouter);
 app.use('/api/projects/:projectId/reader-feedback', aiLimiter, readerFeedbackRouter);
+app.use('/api/projects/:projectId/compliance', complianceRouter);
+app.use('/api/projects/:projectId/platform-publish', platformPublishRouter);
+app.use('/api/projects/:projectId/book-assets', aiLimiter, bookAssetsRouter);
+app.use('/api/projects/:projectId/story-architecture', aiLimiter, storyArchitectureRouter);
+app.use('/api/projects/:projectId/retention-predict', aiLimiter, retentionPredictRouter);
+app.use('/api/projects/:projectId/character-profile', aiLimiter, characterProfileRouter);
+app.use('/api/projects/:projectId/sprints', writingSprintRouter);
+app.use('/api/projects/:projectId/macros', keyboardMacrosRouter);
+app.use('/api/projects/:projectId/book-summary', aiLimiter, bookSummaryRouter);
+app.use('/api/projects/:projectId/coherence', aiLimiter, coherenceEngineRouter);
 
 app.use(errorHandler);
 

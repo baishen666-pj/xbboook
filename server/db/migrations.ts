@@ -602,6 +602,117 @@ const MIGRATIONS: Migration[] = [
       'CREATE INDEX IF NOT EXISTS idx_writing_templates_project ON writing_templates(project_id)',
     ],
   },
+  {
+    version: 29,
+    name: 'compliance',
+    up: [
+      `CREATE TABLE IF NOT EXISTS compliance_rules (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        category TEXT NOT NULL DEFAULT 'sensitive' CHECK(category IN ('sensitive','political','violence','adult','platform','custom')),
+        pattern TEXT NOT NULL,
+        severity TEXT DEFAULT 'warning' CHECK(severity IN ('info','warning','error','block')),
+        replacement TEXT DEFAULT '',
+        enabled INTEGER DEFAULT 1,
+        platform TEXT DEFAULT 'all' CHECK(platform IN ('all','qidian','fanqie','jinjiang','zongheng','other')),
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_compliance_rules_project ON compliance_rules(project_id)',
+      `CREATE TABLE IF NOT EXISTS compliance_reports (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        chapter_id TEXT,
+        platform TEXT DEFAULT 'all',
+        total_issues INTEGER DEFAULT 0,
+        severity_breakdown TEXT DEFAULT '{}',
+        issues TEXT NOT NULL DEFAULT '[]',
+        status TEXT DEFAULT 'pending' CHECK(status IN ('pending','reviewed','fixed','ignored')),
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_compliance_reports_project ON compliance_reports(project_id)',
+    ],
+  },
+  {
+    version: 30,
+    name: 'platform_publish_configs',
+    up: [
+      `CREATE TABLE IF NOT EXISTS platform_publish_configs (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        platform TEXT NOT NULL CHECK(platform IN ('qidian','fanqie','jinjiang','zongheng','other')),
+        config TEXT NOT NULL DEFAULT '{}',
+        last_export_at TEXT,
+        chapter_mapping TEXT DEFAULT '{}',
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+        UNIQUE(project_id, platform)
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_platform_publish_project ON platform_publish_configs(project_id)',
+    ],
+  },
+  {
+    version: 31,
+    name: 'writing_sprints',
+    up: [
+      `CREATE TABLE IF NOT EXISTS writing_sprints (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        user_id TEXT DEFAULT 'default',
+        type TEXT NOT NULL DEFAULT 'pomodoro' CHECK(type IN ('pomodoro','sprint','marathon','custom')),
+        duration_minutes INTEGER NOT NULL DEFAULT 25,
+        target_words INTEGER DEFAULT 0,
+        actual_words INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'planned' CHECK(status IN ('planned','active','paused','completed','abandoned')),
+        started_at TEXT,
+        ended_at TEXT,
+        notes TEXT DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_writing_sprints_project ON writing_sprints(project_id, status)',
+      `CREATE TABLE IF NOT EXISTS sprint_stats (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        user_id TEXT DEFAULT 'default',
+        date TEXT NOT NULL,
+        total_sprints INTEGER DEFAULT 0,
+        total_minutes INTEGER DEFAULT 0,
+        total_words INTEGER DEFAULT 0,
+        best_wpm REAL DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+        UNIQUE(project_id, user_id, date)
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_sprint_stats_date ON sprint_stats(project_id, date)',
+    ],
+  },
+  {
+    version: 32,
+    name: 'keyboard_macros',
+    up: [
+      `CREATE TABLE IF NOT EXISTS keyboard_macros (
+        id TEXT PRIMARY KEY,
+        project_id TEXT,
+        name TEXT NOT NULL,
+        description TEXT DEFAULT '',
+        trigger TEXT NOT NULL,
+        actions TEXT NOT NULL DEFAULT '[]',
+        enabled INTEGER DEFAULT 1,
+        scope TEXT DEFAULT 'global' CHECK(scope IN ('global','project','chapter')),
+        sort_order INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+      )`,
+      'CREATE INDEX IF NOT EXISTS idx_keyboard_macros_project ON keyboard_macros(project_id)',
+    ],
+  },
 ];
 
 // Check if a migration's effects already exist in the database
@@ -722,6 +833,22 @@ function isMigrationApplied(db: ReturnType<typeof getDb>, migration: Migration):
   // Version 28: writing_templates
   if (migration.version === 28) {
     return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='writing_templates'").get();
+  }
+  // Version 29: compliance
+  if (migration.version === 29) {
+    return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='compliance_rules'").get();
+  }
+  // Version 30: platform_publish_configs
+  if (migration.version === 30) {
+    return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='platform_publish_configs'").get();
+  }
+  // Version 31: writing_sprints
+  if (migration.version === 31) {
+    return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='writing_sprints'").get();
+  }
+  // Version 32: keyboard_macros
+  if (migration.version === 32) {
+    return !!db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='keyboard_macros'").get();
   }
   return false;
 }
